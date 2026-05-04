@@ -1,0 +1,771 @@
+/* PAGE */
+	@media screen and (max-width:1700px) {
+		#boutique-panier #content-boutique-panier #content-btn button {
+		    width: 45%;
+		}
+	}
+
+	@media screen and (max-width:1400px) {	
+		/* PAGE */
+		.page {
+			max-width: 100%;
+			width: 100%;
+		}
+		/* HEADER */
+		header .container {
+			width: 100%;
+		}
+		/* BOUTIQUE */
+		.boutique article #image {
+			flex: 0 0 40%;
+		}
+		.boutique article #text {
+			flex: 0 0 60%;
+		}
+		#boutique-panier {
+			width: 65%;
+		}
+	}
+
+	@media screen and (max-width:1225px) {	
+		/* AVERTISSEMENT */
+			#avertissement {
+				width: 50%;
+			}
+			#avertissement #content-avertissement .padding {
+			    padding: 30px 30px;
+			}
+		/* ACTUALITES */
+			.actualites #actualites-pannel .actualites-boxe {
+			    flex: 0 0 calc(100% / 4);
+			}
+		/* BRASSERIE */
+			.brasseries #brasseries-pannel .brasseries-boxe {
+			    flex: 0 0 calc(100% / 5);
+			}
+			.catalogue #brasseries-pannel .brasseriesc-boxe {
+			    flex: 0 0 calc(100% / 3);
+			}
+		/* BOUTIQQUE */
+			.boutique .boutique-pannel .boutique-boxe {
+			    flex: 0 0 calc(100% / 4);
+			}
+		/* INFO CADRE */
+			.info-cadre {
+    			padding: 20px;
+    		}
+    	/* BOUTIQUE */
+    	#boutique-panier {
+    		width: 70%;
+    	}
+	}
+
+	@media screen and (max-width:1150px) {
+		/* FOOTER */
+			#abonnement-newsletter #content-abonnement-newsletter .actualites #actualites-pannel .actualites-boxe {
+			    flex: 0 0 calc(100% / 2);
+			}
+			#abonnement-newsletter #content-abonnement-newsletter .actualites #actualites-pannel .actualites-boxe:last-child {
+			    display: none;
+			}
+	}
+
+	@media screen and (max-width:1100px) {
+		/* INFO CADRE */
+			.info-cadre .case {
+				flex: 0 0 100%;
+			}
+			.info-cadre .case.clock {
+   				margin-bottom: 25px;
+			}
+		/* BOUTIQUE */
+	    	#boutique-panier {
+	    		width: 80%;
+	    	}
+	}
+
+/* big landscape tablets, laptops, and desktops */
+	@media screen and (max-width:1020px) {
+		/* ACCUEIL */
+			.accueil #accueil-flex {
+				flex-wrap: wrap;
+			}
+			.accueil #accueil-flex #left {
+				flex: 1 1 100%;
+			}
+			.accueil #accueil-flex #right {
+			    display: -webkit-box;
+			    display: -webkit-flex;
+			    display: -moz-box;
+			    display: -ms-flexbox;
+			    display: flex;
+			    flex: 1 1 100%;
+			    margin: -15px;
+			}
+			.accueil #accueil-flex #right #tireuse {
+			    flex: 50% 0 0;
+			    padding: 15px;
+			}
+			.accueil #accueil-flex #right #catalogue {
+			    flex: 50% 0 0;
+			    padding: 15px;
+			}
+		/* CONTACT */
+			.contact #flex-contact {
+				flex-flow: row wrap;
+			}
+			.contact #flex-contact #formulaire-contact {
+				order: 1;
+				flex: 1 1 auto;
+			}
+			.contact.fiche #flex-contact #formulaire-contact {
+				order: 0 !important;
+			}
+			.contact #flex-contact #map {
+				flex: 0 0 100%;
+				order: 3;
+			}
+			.contact #flex-contact #map {
+				flex: 0 0 100%;
+				order: 3;
+			}
+			.contact.fiche .container #ads-adb {
+				display: none;
+			}
+			.contact .container #ads-adb {
+				order: 2;
+				flex: 0 0 20%;
+			}
+		/* AVERTISSEMENT */
+			#avertissement {
+				width: 55%;
+			}
+
+		/* NEWSLETTER */
+			#abonnement-newsletter #content-abonnement-newsletter #left, #abonnement-newsletter #content-abonnement-newsletter #right {
+			    flex: 0 0 100%;
+			}
+			#abonnement-newsletter #content-abonnement-newsletter {
+				flex-flow: row wrap;
+			}
+			#abonnement-newsletter #content-abonnement-newsletter #right {
+				margin-left: 0px;
+			}
+			.contact #flex-contact #formulaire-contact.abonnement {
+				order: 0;
+			}
+		/* FOOTER */
+			#abonnement-newsletter #content-abonnement-newsletter .actualites #actualites-pannel .actualites-boxe {
+			    flex: 0 0 calc(100% / 3);
+			}
+			#abonnement-newsletter #content-abonnement-newsletter .actualites #actualites-pannel .actualites-boxe:last-child {
+			    display: block;
+			}
+		/* PANIER */
+			.panier #flex-panier #panier-total, .panier #flex-panier #panier-contenu {
+			    flex: 0 0 100%;
+			    padding: 0 15px;
+			}
+			.panier #flex-panier > section:first-child {
+				margin-bottom: 15px;
+			}
+			.panier #flex-panier #panier-total {
+				order: 1;
+			}
+			.panier #flex-panier #panier-contenu {
+				order: 2;
+			}
+			.panier #flex-panier {
+				flex-flow: row wrap;
+			}
+			.panier .button {
+				margin-bottom: 20px;
+			}
+		/* TABLE CATALOGUE */
+			table.boutique-table thead { display: none; }
+			table.boutique-table tr{
+				display: block;
+				background: #fff !important;
+				padding: 10px;
+				border-bottom: 1px dashed #ccc;
+			}
+			table.boutique-table tr:last-child {
+				border-bottom: 0;
+			}
+			table.boutique-table td {
+				display: block;
+				text-align: right;
+				padding: 2px;
+			}
+			table.boutique-table td:before {
+				content: attr(data-label);
+				float: left;
+				font-weight: bold;
+			}
+			table.boutique-table td input {
+				background-color: #eee;
+				margin-top: 5px;
+			}
+			table.boutique-table td.nom {
+				text-align: center;
+				font-family: "GothamBold";
+			}
+			table.boutique-table .actions .btn {
+			    padding: 0px;
+			    width: 50px;
+			}
+			table.boutique-table .nbre-articles {
+				display: none;
+			}
+			table.boutique-table .actions {
+				width: 100%;
+			}
+			table.boutique-table .btn-content {
+				margin: 0px;
+			}
+	}
+
+/* tablet, landscape iPad, lo-res laptops ands desktops */
+	@media screen and (max-width:961px) {
+		/* BRASSERIES */
+			.brasseries article {
+				flex-flow: row wrap;
+			}
+			.brasseries article #image, 
+			.brasseries article #text {
+			    flex: 0 0 100%;
+			    padding: 0;
+			}
+			.brasseries article #text img#logo {
+				margin-bottom: 0px;
+			}
+			.brasseries #brasseries-pannel .brasseries-boxe {
+			    flex: 0 0 calc(100% / 4);
+			}
+			.brasseries article #text img#logo_b {
+			    margin: 10px 0;
+			}
+		/* ACTUALITES */
+			.actualites article #image, 
+			.actualites article #text {
+				flex: 0 0 100%;
+			}
+			.actualites article {
+				flex-flow: row wrap;
+			}
+			.actualites #actualites-pannel .actualites-boxe {
+				flex: 0 0 calc(100% / 3);
+			}
+			.catalogue #brasseries-pannel .brasseriesc-boxe {
+				flex: 0 0 calc(100% / 2);
+			}
+			.actualites article #image #newsletter-like {
+				display: none;
+			}
+		/* BOUTIQUE */
+			.boutique .boutique-pannel .boutique-boxe {
+				flex: 0 0 calc(100% / 3);
+			}
+			#boutique-panier #content-boutique-panier #content-btn button {
+				width: 48%;
+				margin-right: 5px;
+				font-size: 1em;
+				padding: 12px 0;
+				width: 50%;
+				margin-right: 0;
+			}
+			.boutique article #text, .boutique article #image {
+  				flex: 0 0 100%;
+  				text-align: center;
+			}
+			.boutique article {
+				flex-flow: row wrap;
+			}
+			.boutique article #image img {
+  				width: 50%;
+			}
+		/* ACCUEIL */
+			.accueil #accueil-flex #right #tireuse {
+				flex: 45% 0 0;
+			}
+			.accueil #accueil-flex #right #catalogue {
+			    flex: 55% 0 0;
+			}
+		/* FICHE */
+			.contact.fiche #flex-contact #formulaire-contact {
+				flex: 0 0 100%;
+			}
+			.contact.fiche #catalogue {
+				flex: 1 1 65%;
+			}
+			.contact.fiche .container #ads-adb {
+				display: block;
+				flex: 1 1 35%;
+			}
+	}
+
+	@media screen and (max-width: 830px) {
+		/* BARRE */
+			#connexion-barre {
+				padding: 0;
+				display: block;
+			}
+			#connexion-barre .dropbtn {
+				width: 100%;
+			}
+			#connexion-barre .dropdown {
+	    		width: 100%;
+			}
+			#connexion-barre .texte {
+				display: none;
+			}
+			#connexion-barre .dropdown-content {
+				width: 100%;
+			}
+			#connexion-barre .btn {
+				width: 100%;
+			}
+			#connexion-barre .statut {
+			    text-align: center;
+			    padding: 10px;
+			}
+	}
+/* portrait tablets, portrait iPad, landscape e-readers, landscape 800x480 or 854x480 phones */
+	@media screen and (max-width: 740px) {
+		/* AVERTISSEMENT */
+		#avertissement {
+			width: 70%;
+		}
+		/* ACCUEIL */
+			.accueil #accueil-flex #right {
+				display:block;
+				margin: 0;
+			}
+			.accueil #accueil-flex #right #tireuse,
+			.accueil #accueil-flex #right #catalogue {
+			   	margin-left: 0;
+			   	width: 70%;
+			   	padding: 0;
+			}
+			.accueil #accueil-flex #right #catalogue {
+				margin-bottom: 20px;
+			}
+		/* BRASSERIE */
+			.brasseries #brasseries-pannel .brasseries-boxe {
+			    flex: 0 0 calc(100% / 3);
+			}
+			.actualites #actualites-pannel .actualites-boxe {
+				flex: 0 0 calc(100% / 2);
+			}
+		/* ACTUALITES */
+			.catalogue #brasseries-pannel .brasseriesc-boxe {
+				flex: 0 0 100%;
+			}
+		/* BOUTIQUE */
+			.boutique .boutique-pannel .boutique-boxe {
+				flex: 0 0 calc(100% / 2);
+			}
+			#boutique-panier {
+			    width: 90%;
+			}
+		/* FOOTER */
+			#abonnement-newsletter #content-abonnement-newsletter .actualites #actualites-pannel .actualites-boxe {
+			    flex: 0 0 calc(100% / 2);
+			}
+			#abonnement-newsletter #content-abonnement-newsletter .actualites #actualites-pannel .actualites-boxe:last-child {
+			    display: none;
+			}
+		/* COMMANDE-VISUALISATION */
+			.panier .address-content {
+				flex: 0 0 100%;
+			}
+	}
+		
+/* portrait tablets, portrait iPad, landscape e-readers, landscape 800x480 or 854x480 phones */
+	@media screen and (max-width:641px) {
+		/* HEADER */
+			header .container {
+				flex-wrap: wrap;
+				justify-content: space-around;
+			}
+			header #logo {
+				margin-bottom: 40px;
+			}
+		/* ACCUEIL */
+		.accueil #accueil-flex #right #tireuse,
+		.accueil #accueil-flex #right #catalogue {
+		   	margin-left: 0;
+		   	width: 85%;
+		}
+		/* CONTACT */
+			.contact #flex-contact #formulaire-contact {
+				order: 1;
+				flex: 0 0 100%;
+			}
+			.contact #flex-contact #map {
+				flex: 0 0 100%;
+				order: 2;
+				width: 100%;
+			}
+			.contact .container #ads-adb {
+				order: 3;
+				flex: 0 0 50%;
+			}
+		/* AVERTISSEMENT */
+			#avertissement {
+				width: 80%;
+			}
+			#avertissement #content-avertissement .padding {
+				padding: 30px 20px;
+			}
+		/* BRASSERIE */
+			.brasseries #brasseries-pannel .brasseries-boxe {
+			    flex: 0 0 calc(100% / 2);
+			}
+		/* BOUTIQUE */
+			.boutique .button, .panier .button, .catalogue .button {  
+			    flex-flow: row wrap;
+			}
+			.boutique .button a, .panier .button a, .catalogue .button a {
+				flex: 0 0 100%;
+			}
+			.boutique .button a button, .panier .button a button, .catalogue .button a button {
+				width: 100%;
+			}
+			.boutique .button form {
+				text-align: center;
+    			width: 100%;
+			}
+			.boutique .button form input.panier-active {
+			    margin-top: 10px;
+			}
+			#boutique-panier #content-boutique-panier #content-btn {
+			    white-space: normal;
+			}
+			#boutique-panier #content-boutique-panier #content-btn button:last-child {
+			    margin-top: 10px;
+			}
+			#boutique-panier #content-boutique-panier #content-btn button {
+		    	font-size: 1em;
+		   		padding: 12px 0;
+		   		width: 100%;
+			}
+			#boutique-panier article {
+				flex-flow: row wrap;
+			}
+			#boutique-panier article #image-boutique, #boutique-panier article #text {
+    			flex: 0 0 100%;
+			}
+			.boutique article #image img {
+				width: 100%;
+			}
+			.boutique .titre {
+				width: 100%;
+				padding: 15px;
+			}
+			.panier #flex-panier #panier-contenu #content-form .checkout-etape .address-content {
+				-ms-flex: 0 0 100%;
+    			flex: 0 0 100%;
+			}
+	}
+
+	@media screen and (max-width:500px) {
+		/* MESSAGE */
+			#message-content p {
+				white-space: normal;
+			}
+		/* ACCUEIL */
+		.accueil #accueil-flex #right #tireuse,
+		.accueil #accueil-flex #right #catalogue {
+		   	width: 100%;
+		}
+		/* HEADER */
+			header .container nav {
+				width: 100%;
+			}
+			header nav #hashtag {
+				display: none;
+			}
+			header nav #social {
+				margin-bottom: 0;
+			}
+			header #logo {
+				margin-bottom: 20px;
+			}
+			header .btn-header a, header .btn-header a button {
+				width: 100%;
+			}
+		/* CONTAINER */
+			.page .container {
+				padding: 0 0 10px 0;
+			}
+		/* ACCUEIL */
+			.accueil #accueil-flex #right #catalogue #content-catalogue form#newsletter-catalogue label,
+			.accueil #accueil-flex #right #catalogue #content-catalogue .titre {
+				white-space: normal;
+			}
+			.accueil #accueil-flex {
+				display: block;
+				margin: 0;
+			}
+			.accueil #accueil-flex #right,
+			.accueil #accueil-flex #left {
+	    		width: 100%;
+	    		display: block;
+	    		margin: 0;
+	    	}
+			/* CATALOGUE */
+				.accueil #accueil-flex #right #catalogue {
+					padding: 0;
+				}
+				.accueil #accueil-flex #right #catalogue #content-catalogue #image #main {
+					top: -45px;
+				}
+				.accueil #accueil-flex #right #catalogue #content-catalogue #download {
+					margin: 0;
+				}
+				.accueil #accueil-flex #right #catalogue #content-catalogue #download div {
+					padding: 10px 0;
+				}
+				.accueil #accueil-flex #right #catalogue #content-catalogue form#newsletter-catalogue #inputs {
+					display: block;
+				}
+				.accueil #accueil-flex #right #catalogue #content-catalogue form#newsletter-catalogue input[type="email"] {
+					margin-bottom: 10px;
+				}
+				.accueil #accueil-flex #right #catalogue #content-catalogue form#newsletter-catalogue button {
+					margin: auto;
+					display: block;
+				}
+				.accueil #accueil-flex #right #catalogue #content-catalogue #download div p {
+					text-align: center;
+				}
+				.accueil #accueil-flex #right #catalogue #content-catalogue form#newsletter-catalogue label {
+					margin: 8px 0;
+				}
+				.accueil #accueil-flex #right #catalogue #content-catalogue form#newsletter-catalogue button {
+					padding: 8px;
+				}
+				.accueil #accueil-flex #right #catalogue #content-catalogue form#newsletter-catalogue input[type="email"] {
+					padding: 5px;
+				}
+				.accueil #accueil-flex #right #catalogue #content-catalogue #image #catalogue_1,
+				.accueil #accueil-flex #right #catalogue #content-catalogue #image #catalogue_2 {
+					width: 53%;
+				}
+		/* CONTACT */
+			.contact #flex-contact {
+				margin: 0;
+			}
+			.contact #flex-contact #formulaire-contact #content-form form.formulaire > div, .panier #flex-panier #panier-contenu #content-form form.formulaire > div {
+				flex-wrap: wrap;
+			}
+			.contact #flex-contact #formulaire-contact #content-form form.formulaire > div > label, .panier #flex-panier #panier-contenu #content-form form.formulaire > div > label,
+			.contact #flex-contact #formulaire-contact #content-form form.formulaire > div > input[type="text"], .panier #flex-panier #panier-contenu #content-form form.formulaire > div > input[type="text"],
+			.contact #flex-contact #formulaire-contact #content-form form.formulaire > div > input[type="password"], .panier #flex-panier #panier-contenu #content-form form.formulaire > div > input[type="password"],
+			.contact #flex-contact #formulaire-contact #content-form form.formulaire > div > select, .panier #flex-panier #panier-contenu #content-form form.formulaire > div > select,
+			.contact #flex-contact #formulaire-contact #content-form form.formulaire > div > input[type="email"], .panier #flex-panier #panier-contenu #content-form form.formulaire > div > input[type="email"],
+			.contact #flex-contact #formulaire-contact #content-form form.formulaire > div > textarea, .panier #flex-panier #panier-contenu #content-form form.formulaire > div > textarea {
+			    flex: 1 1 100%;
+			}
+
+			.contact #flex-contact #map #content-map p {
+				font-size: 0.7em;
+			}
+		/* ACTUALITES */
+			.actualites #actualites-pannel .actualites-boxe {
+				flex: 0 0 100%;
+			}
+			.actualites #actualites-pannel {
+				margin: 5px 0 0 0;
+			}
+			.actualites #recherche-content #recherche button {
+				flex: 0 0 auto;
+			}
+			.actualites #recherche-content #recherche button#search-btn {
+				display: none;
+			}
+			.actualites #motcles, .catalogue .mot-cle {
+				padding: 0 15px;
+				box-sizing: border-box;
+			}
+			.actualites .button {  
+			    flex-flow: row wrap;
+			}
+			.actualites .button a {
+				flex: 0 0 100%;
+			}
+			.actualites .button a button {
+				width: 100%;
+			}
+			.actualites .button a button.print-active {
+				margin-top: 10px;
+			}
+			.actualites #motcles.actualites-read {
+				margin-bottom: 15px;
+			}
+		/* BOUTIQUE */
+			.boutique .boutique-pannel .boutique-boxe {
+				flex: 0 0 100%;
+			}
+			.boutique .boutique-pannel {
+				margin: 5px 0 0 0;
+			}
+			#boutique-panier #content-boutique-panier .padding {
+			    padding: 20px 30px;
+			}
+			#boutique-panier {
+			    width: 100%;
+			}
+			.boutique .boutique-pannel .boutique-boxe .image {
+				text-align: center;
+			}
+			.boutique .boutique-pannel .boutique-boxe .image img {
+				max-width: 60%;
+			}
+			.boutique article #text {
+				padding: 0;
+			}
+		/* BRASSERIES */
+			.brasseries #brasseries-pannel {
+				margin: 5px 0 0 0;
+			}
+			.brasseries #recherche-content #recherche_b button, .catalogue .recherche-content #recherche_bc button {
+				flex: 0 0 auto;
+			}
+			.brasseries .button {  
+			    flex-flow: row wrap;
+			}
+			.brasseries .button a {
+				flex: 0 0 100%;
+			}
+			.brasseries .button a button {
+				width: 100%;
+			}
+			.brasseries .button a button.print-active {
+				margin-top: 10px;
+			}
+			.brasseries #brasseries-pannel .brasseries-boxe {
+				padding: 0;
+			}
+			.brasseries #recherche-pannel select, .brasseries #recherche-pannel #recherche-content, .catalogue .rechercher select, .catalogue .rechercher .recherche-content {
+				flex: 0 0 100%;
+			}
+			.brasseries #recherche-pannel select, .catalogue .rechercher select {
+    			padding: 13px;
+			}
+			.brasseries #recherche-pannel #recherche-content form#recherche_b input[type="text"], .catalogue .rechercher .recherche-content form#recherche_bc input[type="text"] {
+				flex: 1 1 auto;
+			}
+			.brasseries #recherche-pannel #recherche-content form#recherche_b, .catalogue .rechercher .recherche-content form#recherche_bc {
+				margin-top: 5px;
+			}
+			.brasseries #content-pages {
+			    margin-top: 15px;
+			}
+		/* AVERTISSEMENT */
+			#avertissement {
+				width: 80%;
+			}
+			#avertissement #content-avertissement form#enquete select {
+				width: 100%;
+			}
+		/* CONTACT */
+			.contact .container #ads-adb {
+				order: 3;
+				flex: 0 0 100%;
+			}
+		/* FOOTER */
+			#abonnement-newsletter {
+				padding: 0 20px;
+			}
+			#abonnement-newsletter #content-abonnement-newsletter {
+				margin: 0;
+			}
+		/* BARRE */
+			#connexion-barre {
+				padding-bottom: 10px;
+				background-color: #eee;
+			}
+	}	
+
+	@media screen and (max-width:450px) { 
+		/* AVERTISSEMENT */
+			#avertissement {
+				width: 80%;
+			}
+		/* CATALOGUE */
+			.accueil #accueil-flex #right #catalogue #content-catalogue #image {
+				height: 180px;
+			}
+		/* INFO CADRE */
+			.info-cadre {
+				background: #c32f1d !important;
+			}
+		/* FOOTER */
+			#abonnement-newsletter #content-abonnement-newsletter .actualites #actualites-pannel .actualites-boxe {
+			    flex: 0 0 100%;
+			}
+			#abonnement-newsletter #content-abonnement-newsletter .actualites #actualites-pannel .actualites-boxe:nth-child(2) {
+				display: none;
+			}
+	}
+
+	@media screen and (max-width:400px) { 
+		/* CATALOGUE */
+			.accueil #accueil-flex #right #catalogue #content-catalogue #image {
+				height: 160px;
+			}
+		/* AVERTISSEMENT */
+			#avertissement {
+				width: 85%;
+			}
+		/* LIVRAISON */
+		header #livraison-container form#livraison {
+			flex-wrap: wrap;
+		}
+		header #livraison-container form#livraison a {
+			flex: 0 0 100%;
+		}
+		header #livraison-container form#livraison a button {
+			width: 100%;
+		}
+		header #livraison-container form#livraison .content-btn {
+			flex: 0 0 100%;
+		}
+		header .panier-btn {
+			display: none;
+		}
+	}
+	@media screen and (max-width: 350px) {
+		/* AVERTISSEMENT */
+			#avertissement {
+				width: 90%;
+			}
+		/* INFO CADRE */
+			.info-cadre {
+				padding: 10px;
+			}
+			.info-cadre .case i {
+		    	font-size: 2em;
+		    	margin: 5px 5px 0 0;
+		    }
+		    .info-cadre .case .info .contenu-1 {
+   				font-size: 0.7em;
+   			}
+		    .info-cadre .case .info .contenu-2 {
+		    	font-size: 0.75em;
+			}
+	}
+
+/* smartphones, iPhone, portrait 480x320 phones */
+	@media screen and (max-width:320px) { 
+		/* BRASSERIE */
+			.brasseries #brasseries-pannel .brasseries-boxe {
+			    flex: 0 0 100%;
+			}
+		/* CATALOGUE */
+			.accueil #accueil-flex #right #catalogue #content-catalogue #image {
+				height: 140px;
+			}
+	}

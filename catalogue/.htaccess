@@ -1,0 +1,64 @@
+Options +FollowSymlinks
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME}.php -f 
+RewriteRule ^(.*)$ $1.php [L]
+
+# ACCUEIL #
+RewriteRule accueil/ index.php [L]
+
+# LOGIN #
+RewriteRule deconnexion/ deconnexion_.php [L]
+RewriteRule ^connexion/redirection/(.*)$ connexion_.php?redirect=$1 [QSA]
+RewriteRule connexion/ connexion_.php [L]
+RewriteRule ^inscription/redirection/(.*)$ inscription_.php?redirect=$1 [QSA]
+RewriteRule ^inscription/$ inscription_.php [L]
+
+# MENTIONS LEGALES #
+RewriteRule mentions-legales/ mentions_legales.php [L]
+RewriteRule conditions-generales-de-vente/ cgv.php [L]
+
+# CATALOGUE #
+RewriteRule ^panier/erreur/(.*)$ commande_.php?erreur=$1 [L,B]
+RewriteRule ^panier/$ panier_.php [L]
+RewriteRule ^commande/etape/([0-9]+)/action/(.*)/([0-9]+)$ commande_.php?step=$1&action=$2&id=$3 [L,B]
+RewriteRule ^commande/etape/([0-9]+)/action/(.*)$ commande_.php?step=$1&action=$2 [L,B]
+RewriteRule ^commande/etape/([0-9]+)$ commande_.php?step=$1 [L,B]
+RewriteRule ^commande/$ commande_.php [L]
+RewriteRule ^produit/(.*)-([0-9]+)$ index.php?id=$2&produit=$1 [L,B]
+RewriteRule ^pays/(.*)$ index.php?pays=$1 [L,B]
+RewriteRule ^categorie/([0-9]+)$ index.php?categorie=$1 [L,B]
+RewriteRule ^categorie/([0-9]+)/trier-prix/(.*)$ index.php?categorie=$1&trier_prix=$2 [L,B]
+RewriteRule ^(.*)-([0-9]+)$ index.php?id=$2&nom=$1 [L,B]
+RewriteRule ^(.*)-([0-9]+)/trier-prix/(.*)$ index.php?id=$2&nom=$1&trier_prix=$3 [L,B]
+
+# INFORMATIONS UTILISATEUR #
+RewriteRule informations-personnelles/ informations-personnelles_.php [L]
+RewriteRule ^commande-visualisation/(.*)/([0-9]+)$ commande_visualisation.php?type=$1&id=$2 [L,B]
+RewriteRule commande-visualisation/ commande_visualisation.php [L]
+
+# MOT DE PASSE
+RewriteRule ^mot-de-passe/modification/(.*)/token/(.*)/redirection/(.*)$ mot-de-passe_.php?email=$1&token=$2&redirect=$3 [L,B]
+RewriteRule ^mot-de-passe/modification/(.*)/token/(.*)$ mot-de-passe_.php?email=$1&token=$2 [L,B]
+RewriteRule ^mot-de-passe/modification/(.*)/redirection/(.*)$ mot-de-passe_.php?email=$1&redirect=$2 [L,B]
+RewriteRule ^mot-de-passe/modification/(.*)$ mot-de-passe_.php?email=$1 [L,B]
+RewriteRule ^mot-de-passe/redirection/(.*)$ mot-de-passe_.php?redirect=$1 [L,B]
+RewriteRule mot-de-passe/ mot-de-passe_.php [L]
+
+# PAIEMENT #
+RewriteRule commande-validation/ commande_check.php [L]
+
+# PDF #
+RewriteRule ^pdf/facturation/([0-9]+)$ generer_facture.php?commandeid=$1 [L,B]
+
+# INTROUVABLE #
+RewriteRule ^erreur/([0-9]+)\.html$ introuvable.php?erreur=$1 [L,B]
+ErrorDocument 403 http://catalogue.occitanieboissons.com/erreur/403.html
+ErrorDocument 404 http://catalogue.occitanieboissons.com/erreur/404.html
+
+## www -> no-www
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ 
+RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L,NE,QSA]
+
+  ## http -> https
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L,NE,QSA]

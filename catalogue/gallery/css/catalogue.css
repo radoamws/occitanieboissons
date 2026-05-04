@@ -1,0 +1,397 @@
+/* HEADER */
+header #logo {
+    width: 180px;
+    height: 180px;
+}
+header .container {
+	padding: 15px;
+}
+header .btn-header {
+	text-align: right;
+}
+	/* LIVRAISON */
+	header #livraison-container {
+		margin: 10px 0;
+	}
+	header #livraison-container form#livraison {
+	    width: 100%;
+	    margin: 0 0 15px 0;
+	    display: -webkit-box;
+	    display: -webkit-flex;
+	    display: -moz-box;
+	    display: -ms-flexbox;
+	    display: flex;
+	}
+	header #livraison-container form#livraison .content-btn {
+	    display: -webkit-box;
+	    display: -webkit-flex;
+	    display: -moz-box;
+	    display: -ms-flexbox;
+	    display: flex;
+	}
+	header #livraison-container #livraison input[type="text"] {
+	    background-color: #fff;
+	    flex: 1 1 100%;
+	    padding: 8px;
+	    box-sizing: border-box;
+	    font-family: "GothamBook";
+	    opacity: .8;
+	    -webkit-transition: opacity 0.5s ease-in-out;
+	    -moz-transition: opacity 0.5s ease-in-out;
+	    -ms-transition: opacity 0.5s ease-in-out;
+	    -o-transition: opacity 0.5s ease-in-out;
+	    transition: opacity 0.5s ease-in-out;
+	}
+	header #livraison-container #livraison input[type="text"] {
+	    background-color: #fff;
+	    flex: 1 1 100%;
+	    padding: 8px;
+	    box-sizing: border-box;
+	    font-family: "GothamBook";
+	    opacity: .8;
+	    -webkit-transition: opacity 0.5s ease-in-out;
+	    -moz-transition: opacity 0.5s ease-in-out;
+	    -ms-transition: opacity 0.5s ease-in-out;
+	    -o-transition: opacity 0.5s ease-in-out;
+	    transition: opacity 0.5s ease-in-out;
+	}
+	header #livraison-container #livraison input[type="text"]:focus {
+		opacity: 1;
+	}
+	header #livraison-container #livraison input {
+	    outline: none;
+	    border: none;
+	}
+
+/* BUTTON */
+.button-vide {
+    display: inline-block;
+    box-sizing: border-box;
+    border: 2px solid #000;
+    font-size: 14px;
+    font-weight: 500;
+    color: #202020;
+    margin: 0;
+    padding: 8px 44px;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    border-radius: 0;
+    outline: none;
+    -webkit-appearance: none;
+    background: transparent;
+    cursor: pointer;
+    -webkit-transition: background-color 0.2s ease-in-out;
+    -moz-transition: background-color 0.2s ease-in-out;
+    -ms-transition: background-color 0.2s ease-in-out;
+    -o-transition: background-color 0.2s ease-in-out;
+    transition: background-color 0.2s ease-in-out;
+}
+.button-vide:active, .button-vide:hover {
+    background-color: #000;
+    color: #fff;
+}
+.catalogue .button {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+/* CONTENT */
+	/* RECHERCHER */
+		/* PANNEL RECHERCHER */
+		.catalogue .rechercher {
+			display: -webkit-box;
+		    display: -webkit-flex;
+		    display: -moz-box;
+		    display: -ms-flexbox;
+	     	display: flex;
+	     	flex-flow: row wrap;
+	     	align-items: stretch;
+	     	-webkit-align-items: stretch;
+		}
+			/* RECHERCHE - BRASSERIE */
+			.catalogue .rechercher .recherche-content {
+				margin-right: 10px;
+			}
+			.catalogue .rechercher .recherche-content form#recherche_bc {
+				width: 100%;
+				display: -webkit-box;
+		      	display: -webkit-flex;
+		      	display: -moz-box;
+		     	display: -ms-flexbox;
+		     	display: flex;
+		     	background: #fff;
+			}
+			/* INPUTS */
+			.catalogue .rechercher .recherche-content form#recherche_bc input[type="text"] {
+				background-color: #fff;
+				padding: 8px;
+				box-sizing: border-box;
+				font-family: "GothamBook";
+				outline: none;
+				border: none;
+				width: 200px;
+			}
+			.catalogue .rechercher .recherche-content form#recherche_bc button {
+				border-radius: 100%;
+				margin: 5px;
+			}
+			/* RECHERCHE - PAYS */
+			.catalogue .rechercher select {
+				background-color: #fff;
+			    padding: 8px;
+			    box-sizing: border-box;
+				font-family: "GothamBook";
+			    outline: none;
+			    border: none;
+			    margin-right: 10px;
+			}
+			.catalogue .rechercher select:last-child {
+				margin-right: 0;
+			}
+	/* MOT-CLE */
+	.catalogue .mot-cle {
+		width: 100%;
+		margin: 15px 0 0 0;
+	}
+	.catalogue .mot-cle a {
+	    color: #fff;
+	    text-decoration: none;
+	}
+	.catalogue .mot-cle a div{
+        display: inline-block;
+	    background-color: #505050;
+	    padding: 8px 15px;
+	    border-radius: 15px;
+	    box-sizing: border-box;
+	    font-size: 0.85em;
+	    margin: 5px 5px 0px 0;
+	    cursor: pointer;
+	    -webkit-transition: background-color 0.2s ease-in-out;
+	    -moz-transition: background-color 0.2s ease-in-out;
+	    -ms-transition: background-color 0.2s ease-in-out;
+	    -o-transition: background-color 0.2s ease-in-out;
+	    transition: background-color 0.2s ease-in-out;
+	}
+	.catalogue .mot-cle a div.selected {
+		background-color: #C32E1C;
+	}
+	.catalogue .mot-cle a div:hover {
+    	background-color: #C32E1C;
+	}
+	.catalogue .mot-cle a div:active {
+    	background-color: #C32E1C;
+	}
+	/* BRASSERIES */
+	.catalogue #brasseries-pannel {
+	    display: -webkit-box;
+	    display: -webkit-flex;
+	    display: -moz-box;
+	    display: -ms-flexbox;
+	    display: flex;
+	    flex-flow: row wrap;
+	    align-items: stretch;
+	    -webkit-align-items: stretch;
+	    margin: 5px -15px -15px -15px;
+	    overflow: hidden;
+	}
+	@media screen and (max-width: 961px) {
+		.catalogue #brasseries-pannel .brasseriesc-boxe {
+		    flex: 0 0 calc(100% / 3);
+		}
+	}
+	@media screen and (max-width: 1225px) {
+		.catalogue #brasseries-pannel .brasseriesc-boxe {
+		    flex: 0 0 calc(100% / 4);
+		}
+	}
+	.catalogue #brasseries-pannel .brasseriesc-boxe {
+	    padding: 15px;
+	    flex: 0 0 25%;
+	    box-sizing: border-box;
+	    position: relative;
+	    cursor: pointer;
+	    align-self: stretch;
+	    overflow: hidden;
+	}
+	.catalogue #brasseries-pannel .brasseriesc-boxe .image {
+	    background-repeat: no-repeat;
+	    background-size: 100% 100%;
+	    cursor: pointer;
+	}
+	.catalogue #brasseries-pannel .brasseriesc-boxe .image img {
+	   	max-width: 100%;
+    	height: auto;
+	}
+	.catalogue #brasseries-pannel .brasseriesc-boxe .image .transparent {
+	    background-repeat: no-repeat;
+	    position: absolute;
+	    width: 100%;
+	    height: 100%;
+	    background-position: center;
+	    background-size: contain;
+	    filter: grayscale(100%);
+	    background-origin: content-box;
+	    padding: 25px;
+	    box-sizing: border-box;
+	}
+	.catalogue #brasseries-pannel .brasseriesc-boxe .informations-content {
+	    background: #ffffff;
+	    width: 100%;
+	    box-sizing: border-box;
+	    padding: 9px;
+	    text-align: center;
+	}
+	.catalogue #brasseries-pannel .brasseriesc-boxe .informations-content h4 {
+	    font-size: 1.2em;
+	}
+	.catalogue #brasseries-pannel .brasseriesc-boxe .informations-content h4 img {
+		margin-left: 5px;
+		height: 15px;
+	}
+	.catalogue #brasseries-pannel .brasseriesc-boxe .informations-content button {
+		width: 100%;
+		margin-top: 10px;
+	}
+	/* PRODUITS - NECESSITE PHOTO
+	.catalogue #produits-pannel {
+	    display: -webkit-box;
+	    display: -webkit-flex;
+	    display: -moz-box;
+	    display: -ms-flexbox;
+	    display: flex;
+	    flex-flow: row wrap;
+	    align-items: stretch;
+	    -webkit-align-items: stretch;
+	    margin: 5px -15px 10px -15px;
+	    overflow: hidden;
+	}
+	.catalogue #produits-pannel .produits-boxe {
+	    padding: 15px;
+	    flex: 0 0 25%;
+	    box-sizing: border-box;
+	    position: relative;
+	    align-self: stretch;
+	    overflow: hidden;
+	}
+	.catalogue #produits-pannel .produits-boxe .content {
+		box-shadow: rgba(82, 82, 82, 0.2) 0px 1px 6px 0px;
+		background-color: #fff;
+		border-radius: 4px;
+	}
+	.catalogue #produits-pannel .produits-boxe .informations {
+	    background-color: #fff;
+	    padding: 10px;
+	    box-sizing: border-box;
+	    border-radius: 4px 4px 0 0;
+	    font-family: "GothamBook";
+	}
+	.catalogue #produits-pannel .produits-boxe .image {
+	    background-repeat: no-repeat;
+	    background-size: 100% 100%;
+	    cursor: pointer;
+	    background-color: #fff;
+	    margin-bottom: -3px;
+	    position: relative;
+	    height: 234px;
+	}
+	.catalogue #produits-pannel .produits-boxe .image img {
+	    max-width: 100%;
+	    max-height: 100%;
+	    height: auto;
+	    margin-bottom: -3px;
+	    position: absolute;
+	}
+	.catalogue #produits-pannel .produits-boxe:hover .image button {
+		opacity: 1;
+	}
+	.catalogue #produits-pannel .produits-boxe .image button {
+	    opacity: 0;
+	    position: absolute;
+	    margin: auto;
+	    left: 0;
+	    right: 0;
+	    bottom: 15px;
+	    border-color: rgba(0, 0, 0, 0.8);
+	}
+	.catalogue #produits-pannel .produits-boxe .image button:hover, .catalogue #produits-pannel .produits-boxe .image button:active {
+	    background-color: rgba(0, 0, 0, 0.8);
+	}
+	.catalogue #produits-pannel .produits-boxe .actions {
+	    background-color: #fff;
+	    padding: 10px;
+	    box-sizing: border-box;
+	}
+	.catalogue #produits-pannel .produits-boxe .actions button {
+		width: 100%;
+	    border-radius: 20px;
+	}
+	.catalogue #produits-pannel .produits-boxe .details h5 {
+		text-align: center;
+    	margin: 10px 0;
+    	font-family: "GothamBook";
+    }
+	.catalogue #produits-pannel .produits-boxe .details ul {
+		display: flex;
+	    flex-wrap: nowrap;
+	    width: 100%;
+	    transition: all 0.3s cubic-bezier(0.55, 0, 0.1, 1) 0s;
+	    list-style: none;
+	    margin: 0px;
+	    padding: 0px;
+	}
+	.catalogue #produits-pannel .produits-boxe .details ul li:last-child {
+	    border-right: 0;
+	}
+	.catalogue #produits-pannel .produits-boxe .details ul li {
+	    -webkit-box-pack: center;
+	    justify-content: center;
+	    display: flex;
+	    border-width: 1px 1px 1px;
+	    border-style: solid solid solid none;
+	    border-color: rgb(225, 220, 210) rgb(225, 220, 210) rgb(225, 220, 210);
+	    border-image: initial;
+	    transition: all 0.3s ease 0s;
+	    background: rgb(255, 255, 255);
+	    flex: 1 1 auto;
+	    border-left: none;
+	    padding: 0px;
+	    overflow: hidden;
+	}
+	.catalogue #produits-pannel .produits-boxe .details ul li a {
+	    white-space: nowrap;
+	    text-overflow: ellipsis;
+	    font-family: "Roboto Regular", sans-serif;
+	    line-height: 22px;
+	    color: rgb(38, 36, 36);
+	    font-size: 14px;
+	    width: 100%;
+	    cursor: pointer;
+	    display: flex;
+	    -webkit-box-align: center;
+	    align-items: center;
+	    overflow: hidden;
+	    background: transparent;
+	    border-width: initial;
+	    border-style: none;
+	    border-color: initial;
+	    border-image: initial;
+	    text-decoration: none;
+	    transition: all 0.3s ease 0s;
+	    padding: 0px 15px;
+	    -webkit-box-pack: center;
+	    justify-content: center;
+	}
+	.catalogue #produits-pannel .produits-boxe .details ul li a:hover {
+	    background: rgb(240, 240, 234);
+	}
+	*/
+
+
+
