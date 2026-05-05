@@ -52,13 +52,13 @@ RewriteRule ^pdf/facturation/([0-9]+)$ generer_facture.php?commandeid=$1 [L,B]
 
 # INTROUVABLE #
 RewriteRule ^erreur/([0-9]+)\.html$ introuvable.php?erreur=$1 [L,B]
-ErrorDocument 403 http://catalogue.occitanieboissons.com/erreur/403.html
-ErrorDocument 404 http://catalogue.occitanieboissons.com/erreur/404.html
+ErrorDocument 403 http://localhost/occitanieboissons/catalogue/erreur/403.html
+ErrorDocument 404 http://localhost/occitanieboissons/catalogue/erreur/404.html
 
 ## www -> no-www
-RewriteCond %{HTTP_HOST} ^www\.(.+)$ 
-RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L,NE,QSA]
+# RewriteCond %{HTTP_HOST} ^www\.(.+)$ 
+# RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L,NE,QSA]
 
   ## http -> https
-RewriteCond %{HTTPS} off
-RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L,NE,QSA]
+# RewriteCond %{HTTPS} off
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L,NE,QSA]

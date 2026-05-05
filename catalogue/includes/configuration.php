@@ -2,10 +2,15 @@
 	@session_start();
 
 	# Connexion à la base de donnée
-	$host = "occitanila010301.mysql.db";
+	/*$host = "occitanila010301.mysql.db";
 	$port = "3306";
 	$user = "occitanila010301";
 	$pass = "Lilian0103";
+	$dbname = "occitanila010301";*/
+	$host = "localhost";
+	$port = "3306";
+	$user = "root";
+	$pass = "";
 	$dbname = "occitanila010301";
 	try {
 		$bdd = new PDO('mysql:host='.$host.';port='.$port.';dbname='.$dbname.'', $user, $pass);
@@ -19,8 +24,9 @@
  	#     CONFIGURATION DU CMS     # 
  	################################
 	$sitename = "Occitanie Boissons";
-	$url = "//".$_SERVER["HTTP_HOST"];
-	$image_url = "http://catalogue.occitanieboissons.com";
+	//$url = "//".$_SERVER["HTTP_HOST"];
+	$url = "http://localhost/occitanieboissons/catalogue";
+	$image_url = "http://localhost/occitanieboissons/catalogue";
 	$gallery = $url."/gallery";
 	$galleryimage = str_replace("catalogue.", "", $gallery);
 	$urlupload = $gallery."/upload/";

@@ -1,5 +1,5 @@
 $(function() {
-	url_ob = "//catalogue.occitanieboissons.com";
+	url_ob = "http://localhost/occitanieboissons/catalogue";
 
 	/* MESSAGE */
 		// CREATION DU MESSAGE
