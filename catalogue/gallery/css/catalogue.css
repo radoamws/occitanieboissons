@@ -107,86 +107,189 @@ header .btn-header {
 		/* PANNEL RECHERCHER */
 		.catalogue .rechercher {
 			display: -webkit-box;
-		    display: -webkit-flex;
-		    display: -moz-box;
-		    display: -ms-flexbox;
-	     	display: flex;
-	     	flex-flow: row wrap;
-	     	align-items: stretch;
-	     	-webkit-align-items: stretch;
+			display: -webkit-flex;
+			display: -moz-box;
+			display: -ms-flexbox;
+			display: flex;
+			flex-flow: row wrap;
+			align-items: center;
+			-webkit-align-items: center;
+			gap: 10px;
+			position: relative;
 		}
-			/* RECHERCHE - BRASSERIE */
-			.catalogue .rechercher .recherche-content {
-				margin-right: 10px;
-			}
-			.catalogue .rechercher .recherche-content form#recherche_bc {
-				width: 100%;
+			.catalogue .rechercher .catalogue-tabs {
 				display: -webkit-box;
-		      	display: -webkit-flex;
-		      	display: -moz-box;
-		     	display: -ms-flexbox;
-		     	display: flex;
-		     	background: #fff;
+				display: -webkit-flex;
+				display: -moz-box;
+				display: -ms-flexbox;
+				display: flex;
+				flex-flow: row wrap;
+				gap: 0;
 			}
-			/* INPUTS */
-			.catalogue .rechercher .recherche-content form#recherche_bc input[type="text"] {
+			.catalogue .rechercher .catalogue-tab {
+				display: inline-block;
+				background-color: #505050;
+				color: #fff;
+				padding: 8px 15px;
+				border-radius: 0;
+				box-sizing: border-box;
+				font-size: 0.95em;
+				cursor: pointer;
+				border: none;
+				outline: none;
+				font-family: "GothamBook";
+				-webkit-transition: background-color 0.2s ease-in-out;
+				-moz-transition: background-color 0.2s ease-in-out;
+				-ms-transition: background-color 0.2s ease-in-out;
+				-o-transition: background-color 0.2s ease-in-out;
+				transition: background-color 0.2s ease-in-out;
+			}
+			.catalogue .rechercher .catalogue-tab + .catalogue-tab {
+				border-left: 1px solid #fff;
+			}
+			.catalogue .rechercher .catalogue-tab:hover,
+			.catalogue .rechercher .catalogue-tab:active,
+			.catalogue .rechercher .catalogue-tab.is-active {
+				background-color: #C32E1C;
+			}
+			.catalogue .rechercher .catalogue-sort {
+				margin-left: auto;
+			}
+			.catalogue .rechercher .catalogue-sort select {
 				background-color: #fff;
 				padding: 8px;
 				box-sizing: border-box;
 				font-family: "GothamBook";
 				outline: none;
 				border: none;
-				width: 200px;
-			}
-			.catalogue .rechercher .recherche-content form#recherche_bc button {
-				border-radius: 100%;
-				margin: 5px;
-			}
-			/* RECHERCHE - PAYS */
-			.catalogue .rechercher select {
-				background-color: #fff;
-			    padding: 8px;
-			    box-sizing: border-box;
-				font-family: "GothamBook";
-			    outline: none;
-			    border: none;
-			    margin-right: 10px;
-			}
-			.catalogue .rechercher select:last-child {
-				margin-right: 0;
 			}
 	/* MOT-CLE */
-	.catalogue .mot-cle {
+	.catalogue .mot-cle.catalogue-megamenu {
 		width: 100%;
-		margin: 15px 0 0 0;
+		background-color: #fff;
+		padding: 15px;
+		box-sizing: border-box;
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 100%;
+		margin-top: 0;
+		z-index: 1000;
+		display: none;
+		border: 1px solid #eee;
 	}
-	.catalogue .mot-cle a {
-	    color: #fff;
-	    text-decoration: none;
+	.catalogue .mot-cle.catalogue-megamenu:before {
+		content: "";
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: -12px;
+		height: 12px;
+		background: transparent;
 	}
-	.catalogue .mot-cle a div{
-        display: inline-block;
-	    background-color: #505050;
-	    padding: 8px 15px;
-	    border-radius: 15px;
-	    box-sizing: border-box;
-	    font-size: 0.85em;
-	    margin: 5px 5px 0px 0;
-	    cursor: pointer;
-	    -webkit-transition: background-color 0.2s ease-in-out;
-	    -moz-transition: background-color 0.2s ease-in-out;
-	    -ms-transition: background-color 0.2s ease-in-out;
-	    -o-transition: background-color 0.2s ease-in-out;
-	    transition: background-color 0.2s ease-in-out;
+	.catalogue .rechercher:hover .mot-cle.catalogue-megamenu,
+	.catalogue .rechercher:focus-within .mot-cle.catalogue-megamenu {
+		display: block;
 	}
-	.catalogue .mot-cle a div.selected {
+	.catalogue .catalogue-panel {
+		display: none;
+		flex-flow: row nowrap;
+		align-items: stretch;
+		gap: 0;
+	}
+	.catalogue .catalogue-panel.is-active {
+		display: -webkit-box;
+		display: -webkit-flex;
+		display: -moz-box;
+		display: -ms-flexbox;
+		display: flex;
+	}
+	.catalogue .catalogue-panel .menu-sidenav {
+		flex: 0 0 210px;
+		border-right: 1px solid #eee;
+		padding-right: 12px;
+		box-sizing: border-box;
+	}
+	.catalogue .catalogue-panel .menu-dim-btn {
+		display: block;
+		width: 100%;
+		text-align: left;
+		padding: 10px 10px;
+		margin: 0 0 6px 0;
+		background-color: #f5f5f5;
+		border: none;
+		border-radius: 6px;
+		cursor: pointer;
+		font-family: "GothamBook";
+		font-size: 0.95em;
+		color: #202020;
+	}
+	.catalogue .catalogue-panel .menu-dim-btn:hover,
+	.catalogue .catalogue-panel .menu-dim-btn:active,
+	.catalogue .catalogue-panel .menu-dim-btn.is-active {
 		background-color: #C32E1C;
+		color: #fff;
 	}
-	.catalogue .mot-cle a div:hover {
-    	background-color: #C32E1C;
+	.catalogue .catalogue-panel .menu-content {
+		flex: 1 1 auto;
+		padding-left: 18px;
+		box-sizing: border-box;
+		min-width: 0;
 	}
-	.catalogue .mot-cle a div:active {
-    	background-color: #C32E1C;
+	.catalogue .catalogue-panel .menu-dim-panel {
+		display: none;
+		column-count: 2;
+		column-gap: 30px;
+	}
+	.catalogue .catalogue-panel .menu-dim-panel.is-active {
+		display: block;
+	}
+	@media screen and (max-width: 961px) {
+		.catalogue .catalogue-panel {
+			flex-flow: column nowrap;
+		}
+		.catalogue .catalogue-panel .menu-sidenav {
+			flex: 0 0 auto;
+			border-right: none;
+			padding-right: 0;
+			margin-bottom: 10px;
+		}
+		.catalogue .catalogue-panel .menu-content {
+			padding-left: 0;
+		}
+		.catalogue .catalogue-panel .menu-dim-panel {
+			column-count: 1;
+		}
+	}
+	.catalogue .catalogue-panel .menu-title {
+		font-family: "GothamBook";
+		font-size: 0.85em;
+		text-transform: uppercase;
+		margin-bottom: 10px;
+		color: #202020;
+		-webkit-column-span: all;
+		column-span: all;
+	}
+	.catalogue .catalogue-panel .menu-link {
+		display: block;
+		color: #202020;
+		text-decoration: none;
+		padding: 3px 0;
+	}
+	.catalogue .catalogue-panel .menu-link:hover,
+	.catalogue .catalogue-panel .menu-link:active {
+		color: #C32E1C;
+	}
+	.catalogue .catalogue-panel .menu-more {
+		display: inline-block;
+		margin-top: 10px;
+		color: #C32E1C;
+		text-decoration: none;
+	}
+	.catalogue .catalogue-panel .menu-empty {
+		display: block;
+		color: #505050;
+		opacity: .85;
 	}
 	/* BRASSERIES */
 	.catalogue #brasseries-pannel {

@@ -18,6 +18,17 @@ RewriteRule mentions-legales/ mentions_legales.php [L]
 RewriteRule conditions-generales-de-vente/ cgv.php [L]
 
 # CATALOGUE #
+RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/?$ index.php?univers=$1 [L,B]
+RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/pays/(.*)$ index.php?univers=$1&pays=$2 [L,B]
+RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/categorie/([0-9]+)$ index.php?univers=$1&categorie=$2 [L,B]
+RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/categorie/([0-9]+)/trier-prix/(.*)$ index.php?univers=$1&categorie=$2&trier_prix=$3 [L,B]
+RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/degre/([A-Za-z0-9\-]+)$ index.php?univers=$1&degre=$2 [L,B]
+RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/degre/([A-Za-z0-9\-]+)/trier-prix/(.*)$ index.php?univers=$1&degre=$2&trier_prix=$3 [L,B]
+RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/contenance/([0-9]+(?:\.[0-9]+)?)$ index.php?univers=$1&contenance=$2 [L,B]
+RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/contenance/([0-9]+(?:\.[0-9]+)?)/trier-prix/(.*)$ index.php?univers=$1&contenance=$2&trier_prix=$3 [L,B]
+RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/(.*)-([0-9]+)$ index.php?univers=$1&id=$3&nom=$2 [L,B]
+RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/(.*)-([0-9]+)/trier-prix/(.*)$ index.php?univers=$1&id=$3&nom=$2&trier_prix=$4 [L,B]
+
 RewriteRule ^panier/erreur/(.*)$ commande_.php?erreur=$1 [L,B]
 RewriteRule ^panier/$ panier_.php [L]
 RewriteRule ^commande/etape/([0-9]+)/action/(.*)/([0-9]+)$ commande_.php?step=$1&action=$2&id=$3 [L,B]

@@ -1,5 +1,11 @@
 $(function() {
 	url_ob = "http://localhost/occitanieboissons/catalogue";
+	var urlFromDom = $("body").attr("data-catalogue-url");
+	if(urlFromDom) {
+		url_ob = urlFromDom;
+	}
+	var baseFromDom = $("body").attr("data-catalogue-base");
+	var universFromDom = $("body").attr("data-catalogue-univers") || "bieres";
 
 	/* MESSAGE */
 		// CREATION DU MESSAGE
@@ -435,6 +441,41 @@ $(function() {
 	});
 
 	/* BRASSERIES */
+		// Mega-menu (tabs -> panels) : activation au survol
+		function setActiveMenuDim(panel, dim) {
+			if(!panel || !dim) return;
+			var $panel = $(panel);
+			$panel.attr("data-active-dim", dim);
+			$(".menu-dim-btn", $panel).removeClass("is-active");
+			$(".menu-dim-btn[data-dim='"+dim+"']", $panel).addClass("is-active");
+			$(".menu-dim-panel", $panel).removeClass("is-active");
+			$(".menu-dim-panel[data-dim='"+dim+"']", $panel).addClass("is-active");
+		}
+		function setActiveUnivers(univers) {
+			if(!univers) return;
+			universFromDom = univers;
+			$(".catalogue-tab").removeClass("is-active");
+			$(".catalogue-tab[data-univers='"+univers+"']").addClass("is-active");
+			$(".catalogue-panel").removeClass("is-active");
+			var $panel = $(".catalogue-panel[data-panel='"+univers+"']").addClass("is-active");
+			setActiveMenuDim($panel, "categories");
+		}
+		$(document).on("mouseenter focus", ".catalogue-tab", function() {
+			setActiveUnivers($(this).data("univers"));
+		});
+		$(document).on("click", ".catalogue-tab", function(e) {
+			var u = $(this).data("univers");
+			if(!u) return;
+			window.location.href = url_ob + "/univers/" + u;
+			e.preventDefault();
+		});
+		$(document).on("mouseenter focus", ".catalogue-panel.is-active .menu-dim-btn", function() {
+			setActiveMenuDim($(this).closest(".catalogue-panel"), $(this).data("dim"));
+		});
+		$(document).on("click", ".menu-dim-btn", function(e) {
+			setActiveMenuDim($(this).closest(".catalogue-panel"), $(this).data("dim"));
+			e.preventDefault();
+		});
 		// RECHERCHE BRASSERIES
 		$('form#recherche_bc input[type="text"]').autocomplete({
 			source: function(request, response) {
@@ -522,24 +563,48 @@ $(function() {
 		});
 		// TRIER PAR PRIX
 		$("select#tri-prix").on('change',function() {
+			var base = $(this).data("base") || baseFromDom || url_ob;
 			var nom = $(this).data("titre")+"-"+$(this).data("id");
 			var nom = nom.replace(/ /g, "-");
 			var nom = nom.replace("&", "-");
 			var type = $(this).val();
 			if(type == "aucun") {
-				window.location.href = url_ob+"/"+nom;
+				window.location.href = base+"/"+nom;
 			} else {
-				window.location.href = url_ob+"/"+nom+"/trier-prix/"+type;
+				window.location.href = base+"/"+nom+"/trier-prix/"+type;
 			}
 		});
 		// TRIER PAR PRIX - CATEGORIE
 		$("select#tri-prix-categorie").on('change',function() {
+			var base = $(this).data("base") || baseFromDom || url_ob;
 			var categorie = $(this).data("categorie");
 			var type = $(this).val();
 			if(type == "aucun") {
-				window.location.href = url_ob+"/categorie/"+categorie;
+				window.location.href = base+"/categorie/"+categorie;
 			} else {
-				window.location.href = url_ob+"/categorie/"+categorie+"/trier-prix/"+type;
+				window.location.href = base+"/categorie/"+categorie+"/trier-prix/"+type;
+			}
+		});
+		// TRIER PAR PRIX - DEGRE
+		$("select#tri-prix-degre").on('change',function() {
+			var base = $(this).data("base") || baseFromDom || url_ob;
+			var degre = $(this).data("degre");
+			var type = $(this).val();
+			if(type == "aucun") {
+				window.location.href = base+"/degre/"+degre;
+			} else {
+				window.location.href = base+"/degre/"+degre+"/trier-prix/"+type;
+			}
+		});
+		// TRIER PAR PRIX - CONTENANCE
+		$("select#tri-prix-contenance").on('change',function() {
+			var base = $(this).data("base") || baseFromDom || url_ob;
+			var contenance = $(this).data("contenance");
+			var type = $(this).val();
+			if(type == "aucun") {
+				window.location.href = base+"/contenance/"+contenance;
+			} else {
+				window.location.href = base+"/contenance/"+contenance+"/trier-prix/"+type;
 			}
 		});
 	/* CONSIGNE */
