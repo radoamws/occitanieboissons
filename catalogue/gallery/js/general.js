@@ -638,10 +638,14 @@ $(function() {
 	/* PANIER */
 		// Listing produits (cartes) : +/- et ajout au panier via bouton
 		$(document).on('click', '.produit-qty-btn', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
 			var btn = $(this);
-			var card = btn.closest('.produit-card-inner');
-			var input = $('.produit-qty-input', card);
-			if(input.length < 1) return;
+			var wrap = btn.closest('.produit-qty');
+			var input = $('.produit-qty-input', wrap);
+			if(input.length < 1) {
+				return;
+			}
 			var step = parseInt(btn.data('step'), 10);
 			if(isNaN(step) || step === 0) step = 1;
 			var min = parseInt(input.attr('min'), 10);
@@ -653,7 +657,7 @@ $(function() {
 			if(val < min) val = min;
 			if(!isNaN(max) && val > max) val = max;
 			input.val(val);
-			e.preventDefault();
+			input.trigger('change');
 		});
 		$(document).on('click', '.produit-add-to-cart', function(e) {
 			var button = $(this);

@@ -288,9 +288,6 @@
 
 			echo '<div class="produit-card">';
 			echo '<article class="produit-card-inner" data-id="'.(int) $e->id.'" data-cart-qte="'.$cart_qte.'">';
-			echo '<div class="produit-image">';
-			echo '<div class="produit-image-placeholder">Image bientôt disponible</div>';
-			echo '</div>';
 			echo '<div class="produit-body">';
 			echo '<div class="produit-title">';
 			if($e->marque == 2) {
@@ -298,8 +295,8 @@
 			}
 			if($is_admin) {
 				echo '<div class="btn-content">';
-				echo '<input type="text" data-id="'.(int) $e->id.'" data-type="nom" class="libelle" value="'.htmlspecialchars($e->nom, ENT_QUOTES, 'UTF-8').'"/>';
-				echo '<input type="text" data-id="'.(int) $e->id.'" data-type="sup" class="libelle" value="'.htmlspecialchars($e->nom_sup, ENT_QUOTES, 'UTF-8').'"/>';
+				echo '<input type="text" readonly data-id="'.(int) $e->id.'" data-type="nom" class="libelle" value="'.htmlspecialchars($e->nom, ENT_QUOTES, 'UTF-8').'"/>';
+				echo '<input type="text" readonly data-id="'.(int) $e->id.'" data-type="sup" class="libelle" value="'.htmlspecialchars($e->nom_sup, ENT_QUOTES, 'UTF-8').'"/>';
 				echo '</div>';
 			} else {
 				echo htmlspecialchars($e->nom, ENT_QUOTES, 'UTF-8');
@@ -345,7 +342,7 @@
 
 		<!-- CSS -->
 		<link rel="stylesheet" href="<?php echo $gallery; ?>/css/style.css" type="text/css">
-		<link rel="stylesheet" href="<?php echo $gallery; ?>/css/catalogue.css" type="text/css">
+		<link rel="stylesheet" href="<?php echo $gallery; ?>/css/catalogue.css?v=<?php echo @filemtime(__DIR__."/gallery/css/catalogue.css"); ?>" type="text/css">
 		<link rel="stylesheet" href="<?php echo $gallery; ?>/css/screen.css" type="text/css">
 	</head>
 	<body data-catalogue-url="<?php echo $url; ?>" data-catalogue-base="<?php echo $base_catalogue_url; ?>" data-catalogue-univers="<?php echo $univers; ?>">
@@ -638,6 +635,6 @@
 		<!-- JAVASCRIPT -->
 		<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
 		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-		<script src="<?php echo $gallery; ?>/js/general.js"></script>
+		<script src="<?php echo $gallery; ?>/js/general.js?v=<?php echo @filemtime(__DIR__."/gallery/js/general.js"); ?>"></script>
 	</body>
 </html>
