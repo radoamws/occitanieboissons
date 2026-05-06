@@ -1,0 +1,45 @@
+Options +FollowSymlinks
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME}.php -f 
+RewriteRule ^(.*)$ $1.php [L]
+
+# ACCUEIL #
+RewriteRule accueil/ accueil_.php [L]
+
+# LOGIN #
+RewriteRule ^deconnexion/$ deconnexion_.php [L]
+RewriteRule ^connexion/redirection/(.*)$ index.php?redirect=$1 [QSA]
+RewriteRule ^connexion/$ index.php [L]
+RewriteRule ^inscription/redirection/(.*)$ inscription_.php?redirect=$1 [QSA]
+RewriteRule ^inscription/$ inscription_.php [L]
+
+# MOT DE PASSE
+RewriteRule ^mot-de-passe/modification/(.*)/token/(.*)/redirection/(.*)$ mot-de-passe_.php?email=$1&token=$2&redirect=$3 [L,B]
+RewriteRule ^mot-de-passe/modification/(.*)/token/(.*)$ mot-de-passe_.php?email=$1&token=$2 [L,B]
+RewriteRule ^mot-de-passe/modification/(.*)/redirection/(.*)$ mot-de-passe_.php?email=$1&redirect=$2 [L,B]
+RewriteRule ^mot-de-passe/modification/(.*)$ mot-de-passe_.php?email=$1 [L,B]
+RewriteRule ^mot-de-passe/redirection/(.*)$ mot-de-passe_.php?redirect=$1 [L,B]
+RewriteRule mot-de-passe/ mot-de-passe_.php [L]
+
+# INFORMATIONS UTILISATEUR #
+RewriteRule ^informations-personnelles/$ informations-personnelles_.php [L]
+
+# EMPLACEMENTS #
+RewriteRule ^emplacements/$ emplacements_.php [L]
+
+# INTROUVABLE #
+RewriteRule ^erreur/([0-9]+)\.html$ introuvable.php?erreur=$1 [L,B]
+ErrorDocument 403 https://logistique.occitanieboissons.com/erreur/403.html
+ErrorDocument 404 https://logistique.occitanieboissons.com/erreur/404.html
+
+# BOT #
+RewriteCond  %{HTTP_USER_AGENT}  wget [NC,OR]
+RewriteCond  %{HTTP_USER_AGENT}  Gigabot [NC,OR]
+RewriteCond  %{HTTP_USER_AGENT}  Xenu\ Link\ Sleuth [NC,OR]
+RewriteCond  %{HTTP_USER_AGENT}  larbin [NC,OR]
+RewriteCond  %{HTTP_USER_AGENT}  HTTrack [NC,OR]
+RewriteCond  %{HTTP_USER_AGENT}  PhpDig [NC,OR]
+RewriteCond  %{HTTP_USER_AGENT}  WebCopier [NC,OR]
+RewriteCond  %{HTTP_USER_AGENT}  LWP::Simple [NC,OR]
+RewriteCond  %{HTTP_USER_AGENT}  libwww [NC,OR]
+RewriteCond  %{HTTP_USER_AGENT}  lwp-trivial [NC,OR]
