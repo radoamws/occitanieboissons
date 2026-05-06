@@ -247,6 +247,91 @@
 			$contenance_value = (float) $slug;
 		}
 	}
+
+	function ObPanierMap() {
+		$panier_map = [];
+		$panier = [];
+		if(isset($_SESSION['site']) && isset($GLOBALS['u']) && isset($GLOBALS['u']->panier)) {
+			$panier = json_decode($GLOBALS['u']->panier, true);
+		} elseif(isset($_COOKIE['panier'])) {
+			$panier = json_decode($_COOKIE['panier'], true);
+		}
+		if(!is_array($panier)) {
+			return $panier_map;
+		}
+		foreach($panier as $p) {
+			if(!is_array($p)) {
+				continue;
+			}
+			foreach($p as $id => $qte) {
+				$panier_map[(int) $id] = (int) $qte;
+			}
+		}
+		return $panier_map;
+	}
+
+	function ObRenderProduitsGrid($elements, $consigne) {
+		$panier_map = ObPanierMap();
+		$u = isset($GLOBALS['u']) ? $GLOBALS['u'] : null;
+		$is_admin = ($u && isset($u->admin) && (int) $u->admin === 1);
+
+		echo '<div class="produits-grid">';
+		while($e = $elements->fetch(PDO::FETCH_OBJ)) {
+			if(!(floor($e->stock/$e->uv_caisse) > 0 || $e->marque == 2)) {
+				continue;
+			}
+			$cart_qte = isset($panier_map[(int) $e->id]) ? (int) $panier_map[(int) $e->id] : 0;
+			$max_qte = null;
+			if($e->marque == 1) {
+				$max_qte = (int) floor($e->stock/$e->uv_caisse);
+			}
+
+			echo '<div class="produit-card">';
+			echo '<article class="produit-card-inner" data-id="'.(int) $e->id.'" data-cart-qte="'.$cart_qte.'">';
+			echo '<div class="produit-image">';
+			echo '<div class="produit-image-placeholder">Image bientôt disponible</div>';
+			echo '</div>';
+			echo '<div class="produit-body">';
+			echo '<div class="produit-title">';
+			if($e->marque == 2) {
+				echo '<div class="produit-badge">Précommande</div>';
+			}
+			if($is_admin) {
+				echo '<div class="btn-content">';
+				echo '<input type="text" data-id="'.(int) $e->id.'" data-type="nom" class="libelle" value="'.htmlspecialchars($e->nom, ENT_QUOTES, 'UTF-8').'"/>';
+				echo '<input type="text" data-id="'.(int) $e->id.'" data-type="sup" class="libelle" value="'.htmlspecialchars($e->nom_sup, ENT_QUOTES, 'UTF-8').'"/>';
+				echo '</div>';
+			} else {
+				echo htmlspecialchars($e->nom, ENT_QUOTES, 'UTF-8');
+				if(!empty($e->nom_sup)) {
+					echo '<div class="produit-subtitle">'.htmlspecialchars($e->nom_sup, ENT_QUOTES, 'UTF-8').'</div>';
+				}
+			}
+			echo '</div>';
+			echo '<div class="produit-meta">';
+			echo '<div class="produit-meta-row"><span>Conditionnement</span><span>'.htmlspecialchars(Conditionnement($e->condition_vente, $e->uv_caisse, $e->contenance), ENT_QUOTES, 'UTF-8').'</span></div>';
+			echo '<div class="produit-meta-row"><span>% Alcool</span><span>'.number_format($e->degre, 1, ',', ' ').'°</span></div>';
+			echo '<div class="produit-meta-row"><span>Prix HT HD</span><span>'.number_format($e->prix_ht, 2, ',', ' ').'€</span></div>';
+			echo '<div class="produit-meta-row"><span>Droits accise</span><span>'.number_format($e->droits, 2, ',', ' ').'€</span></div>';
+			echo '<div class="produit-meta-row produit-meta-total"><span>Prix HT DC</span><span>'.number_format($e->prix_ht + $e->droits, 2, ',', ' ').'€</span></div>';
+			if($consigne && (float) $e->consigne_caisse != 0.0) {
+				echo '<div class="produit-meta-row"><span>Consigne</span><span>'.number_format($e->consigne_caisse, 2, ',', ' ').'€</span></div>';
+			}
+			echo '</div>';
+			echo '<div class="produit-actions">';
+			echo '<div class="produit-qty">';
+			echo '<button type="button" class="produit-qty-btn" data-step="-1">-</button>';
+			echo '<input type="number" class="produit-qty-input" value="1" min="1" '.(!is_null($max_qte) ? 'max="'.$max_qte.'"' : '').' step="1" />';
+			echo '<button type="button" class="produit-qty-btn" data-step="1">+</button>';
+			echo '</div>';
+			echo '<button type="button" class="btn produit-add-to-cart" data-id="'.(int) $e->id.'">Ajouter au panier</button>';
+			echo '</div>';
+			echo '</div>';
+			echo '</article>';
+			echo '</div>';
+		}
+		echo '</div>';
+	}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -410,69 +495,7 @@
 							$elements = $bdd->query($sql);
 							if($elements->rowCount() > 0) {					
 						?>
-							<table class="boutique-table" style="width: 100%;margin-top: 10px;">
-								<thead>
-									<?php if($consigne) { ?>
-										<tr>
-											<th width="25%">Produit</th>
-											<th width="15%">Contenance</th>
-											<th width="8%">% Alcool</th>
-											<th width="10.5%">Prix HT HD</th>
-											<th width="10%">Droits accise</th>
-											<th width="10.5%">Prix HT DC</th>
-											<th width="10%">Consigne</th>
-											<th width="11%">Quantité</th>
-										</tr>
-									<?php } else { ?>
-										<tr>
-											<th width="25%">Produit</th>
-											<th width="15%">Contenance</th>
-											<th width="10%">% Alcool</th>
-											<th width="12.5%">Prix HT HD</th>
-											<th width="10%">Droits accise</th>
-											<th width="12.5%">Prix HT DC</th>
-											<th width="15%">Quantité</th>
-										</tr>
-									<?php } ?>
-								</thead>
-								<tbody>
-									<?php
-										if(isset($_SESSION['site'])) {
-											$panier = json_decode($u->panier, true);
-										} else {
-											if(isset($_COOKIE['panier'])) {$panier = json_decode($_COOKIE['panier'], true);} else {$panier = array();}
-										}
-										while($e = $elements->fetch(PDO::FETCH_OBJ)) {
-											if(floor($e->stock/$e->uv_caisse) > 0 || $e->marque == 2) {
-												$quantite = 0;
-												foreach($panier as $p) {
-													foreach($p as $p2 => $qte) {
-														if($p2 == $e->id) {$quantite = $qte;}
-													}
-												}
-									?>
-										<tr>
-											<td class="nom"><?php if($e->marque == 2) { ?><span style="color: red;text-transform: uppercase;">Précommande</span><br class='no-margin'/><?php } ?>
-												<?php if($u->admin == 1) { ?>
-													<div class="btn-content">
-														<input type="text" data-id="<?php echo $e->id; ?>" data-type="nom" class="libelle" value="<?php echo $e->nom; ?>"/>
-														<input type="text" data-id="<?php echo $e->id; ?>" data-type="sup" class="libelle" value="<?php echo $e->nom_sup; ?>"/>
-													</div>
-												<?php } else { ?>
-													<?php echo $e->nom."<br class='no-margin'/>".$e->nom_sup; ?>
-												<?php } ?>
-											</td>
-											<td data-label="Contenance"><?php echo Conditionnement($e->condition_vente,$e->uv_caisse,$e->contenance); ?></td>
-											<td data-label="% Alcool"><?php echo number_format($e->degre, 1, ',', ' '); ?>°</td>
-											<td data-label="Prix UV HT HD"><?php echo number_format($e->prix_ht, 2, ',', ' '); ?>€</td>
-											<td data-label="Droits accise UV"><?php echo number_format($e->droits, 2, ',', ' '); ?>€</td>
-											<td data-label="Prix UV HT DC"><?php echo number_format($e->prix_ht+$e->droits, 2, ',', ' '); ?>€</td>
-											<?php if($consigne) { ?><td data-label="Consigne"><?php echo number_format($e->consigne_caisse, 2, ',', ' '); ?>€</td><?php } ?>
-											<td data-label="Quantité"><input type="number" value="<?php echo $quantite; ?>" <?php if($e->marque == 1) { ?>max="<?php echo floor($e->stock/$e->uv_caisse); ?>"<?php } ?> class="ajouter-panier" data-id="<?php echo $e->id; ?>" min="0"></td>
-										</tr>
-									<?php } } ?>
-								</tbody>
-							</table>
+							<?php ObRenderProduitsGrid($elements, $consigne); ?>
 						<?php } ?>
 					<?php } elseif($select_categorie) { ?>
 						<?php
@@ -497,69 +520,7 @@
 							$elements = $bdd->query($sql);
 							if($elements->rowCount() > 0) {					
 						?>
-							<table class="boutique-table" style="width: 100%;margin-top: 10px;">
-								<thead>
-									<?php if($consigne) { ?>
-										<tr>
-											<th width="25%">Produit</th>
-											<th width="15%">Contenance</th>
-											<th width="8%">% Alcool</th>
-											<th width="10.5%">Prix HT HD</th>
-											<th width="10%">Droits accise</th>
-											<th width="10.5%">Prix HT DC</th>
-											<th width="10%">Consigne</th>
-											<th width="11%">Quantité</th>
-										</tr>
-									<?php } else { ?>
-										<tr>
-											<th width="25%">Produit</th>
-											<th width="15%">Contenance</th>
-											<th width="10%">% Alcool</th>
-											<th width="12.5%">Prix HT HD</th>
-											<th width="10%">Droits accise</th>
-											<th width="12.5%">Prix HT DC</th>
-											<th width="15%">Quantité</th>
-										</tr>
-									<?php } ?>
-								</thead>
-								<tbody>
-									<?php
-										if(isset($_SESSION['site'])) {
-											$panier = json_decode($u->panier, true);
-										} else {
-											if(isset($_COOKIE['panier'])) {$panier = json_decode($_COOKIE['panier'], true);} else {$panier = array();}
-										}
-										while($e = $elements->fetch(PDO::FETCH_OBJ)) {
-											if(floor($e->stock/$e->uv_caisse) > 0 || $e->marque == 2) {
-												$quantite = 0;
-												foreach($panier as $p) {
-													foreach($p as $p2 => $qte) {
-														if($p2 == $e->id) {$quantite = $qte;}
-													}
-												}
-									?>
-										<tr>
-											<td class="nom"><?php if($e->marque == 2) { ?><span style="color: red;text-transform: uppercase;">Précommande</span><br class='no-margin'/><?php } ?>
-												<?php if($u->admin == 1) { ?>
-													<div class="btn-content">
-														<input type="text" data-id="<?php echo $e->id; ?>" data-type="nom" class="libelle" value="<?php echo $e->nom; ?>"/>
-														<input type="text" data-id="<?php echo $e->id; ?>" data-type="sup" class="libelle" value="<?php echo $e->nom_sup; ?>"/>
-													</div>
-												<?php } else { ?>
-													<?php echo $e->nom."<br class='no-margin'/>".$e->nom_sup; ?>
-												<?php } ?>
-											</td>
-											<td data-label="Contenance"><?php echo Conditionnement($e->condition_vente,$e->uv_caisse,$e->contenance); ?></td>
-											<td data-label="% Alcool"><?php echo number_format($e->degre, 1, ',', ' '); ?>°</td>
-											<td data-label="Prix UV HT HD"><?php echo number_format($e->prix_ht, 2, ',', ' '); ?>€</td>
-											<td data-label="Droits accise UV"><?php echo number_format($e->droits, 2, ',', ' '); ?>€</td>
-											<td data-label="Prix UV HT DC"><?php echo number_format($e->prix_ht+$e->droits, 2, ',', ' '); ?>€</td>
-											<?php if($consigne) { ?><td data-label="Consigne"><?php echo number_format($e->consigne_caisse, 2, ',', ' '); ?>€</td><?php } ?>
-											<td data-label="Quantité"><input type="number" value="<?php echo $quantite; ?>" <?php if($e->marque == 1) { ?>max="<?php echo floor($e->stock/$e->uv_caisse); ?>"<?php } ?> class="ajouter-panier" data-id="<?php echo $e->id; ?>" min="0"></td>
-										</tr>
-									<?php } } ?>
-								</tbody>
-							</table>
+							<?php ObRenderProduitsGrid($elements, $consigne); ?>
 						<?php } ?>
 					<?php } elseif($select_degre && $degre_bucket && !empty($univers_definitions[$univers]['categorie_ids'])) { ?>
 						<?php
@@ -597,69 +558,7 @@
 							$elements = $bdd->query($sql);
 							if($elements->rowCount() > 0) {
 						?>
-							<table class="boutique-table" style="width: 100%;margin-top: 10px;">
-								<thead>
-									<?php if($consigne) { ?>
-										<tr>
-											<th width="25%">Produit</th>
-											<th width="15%">Contenance</th>
-											<th width="8%">% Alcool</th>
-											<th width="10.5%">Prix HT HD</th>
-											<th width="10%">Droits accise</th>
-											<th width="10.5%">Prix HT DC</th>
-											<th width="10%">Consigne</th>
-											<th width="11%">Quantité</th>
-										</tr>
-									<?php } else { ?>
-										<tr>
-											<th width="25%">Produit</th>
-											<th width="15%">Contenance</th>
-											<th width="10%">% Alcool</th>
-											<th width="12.5%">Prix HT HD</th>
-											<th width="10%">Droits accise</th>
-											<th width="12.5%">Prix HT DC</th>
-											<th width="15%">Quantité</th>
-										</tr>
-									<?php } ?>
-								</thead>
-								<tbody>
-									<?php
-										if(isset($_SESSION['site'])) {
-											$panier = json_decode($u->panier, true);
-										} else {
-											if(isset($_COOKIE['panier'])) {$panier = json_decode($_COOKIE['panier'], true);} else {$panier = array();}
-										}
-										while($e = $elements->fetch(PDO::FETCH_OBJ)) {
-											if(floor($e->stock/$e->uv_caisse) > 0 || $e->marque == 2) {
-												$quantite = 0;
-												foreach($panier as $p) {
-													foreach($p as $p2 => $qte) {
-														if($p2 == $e->id) {$quantite = $qte;}
-													}
-												}
-									?>
-											<tr>
-												<td class="nom"><?php if($e->marque == 2) { ?><span style="color: red;text-transform: uppercase;">Précommande</span><br class='no-margin'/><?php } ?>
-													<?php if($u->admin == 1) { ?>
-														<div class="btn-content">
-															<input type="text" data-id="<?php echo $e->id; ?>" data-type="nom" class="libelle" value="<?php echo $e->nom; ?>"/>
-															<input type="text" data-id="<?php echo $e->id; ?>" data-type="sup" class="libelle" value="<?php echo $e->nom_sup; ?>"/>
-														</div>
-													<?php } else { ?>
-														<?php echo $e->nom."<br class='no-margin'/>".$e->nom_sup; ?>
-													<?php } ?>
-												</td>
-												<td data-label="Contenance"><?php echo Conditionnement($e->condition_vente,$e->uv_caisse,$e->contenance); ?></td>
-												<td data-label="% Alcool"><?php echo number_format($e->degre, 1, ',', ' '); ?>°</td>
-												<td data-label="Prix UV HT HD"><?php echo number_format($e->prix_ht, 2, ',', ' '); ?>€</td>
-												<td data-label="Droits accise UV"><?php echo number_format($e->droits, 2, ',', ' '); ?>€</td>
-												<td data-label="Prix UV HT DC"><?php echo number_format($e->prix_ht+$e->droits, 2, ',', ' '); ?>€</td>
-												<?php if($consigne) { ?><td data-label="Consigne"><?php echo number_format($e->consigne_caisse, 2, ',', ' '); ?>€</td><?php } ?>
-												<td data-label="Quantité"><input type="number" value="<?php echo $quantite; ?>" <?php if($e->marque == 1) { ?>max="<?php echo floor($e->stock/$e->uv_caisse); ?>"<?php } ?> class="ajouter-panier" data-id="<?php echo $e->id; ?>" min="0"></td>
-											</tr>
-									<?php } } ?>
-								</tbody>
-							</table>
+							<?php ObRenderProduitsGrid($elements, $consigne); ?>
 						<?php } ?>
 					<?php } elseif($select_contenance && $contenance_value !== null && !empty($univers_definitions[$univers]['categorie_ids'])) { ?>
 						<?php
@@ -683,69 +582,7 @@
 							$elements = $bdd->query($sql);
 							if($elements->rowCount() > 0) {
 						?>
-							<table class="boutique-table" style="width: 100%;margin-top: 10px;">
-								<thead>
-									<?php if($consigne) { ?>
-										<tr>
-											<th width="25%">Produit</th>
-											<th width="15%">Contenance</th>
-											<th width="8%">% Alcool</th>
-											<th width="10.5%">Prix HT HD</th>
-											<th width="10%">Droits accise</th>
-											<th width="10.5%">Prix HT DC</th>
-											<th width="10%">Consigne</th>
-											<th width="11%">Quantité</th>
-										</tr>
-									<?php } else { ?>
-										<tr>
-											<th width="25%">Produit</th>
-											<th width="15%">Contenance</th>
-											<th width="10%">% Alcool</th>
-											<th width="12.5%">Prix HT HD</th>
-											<th width="10%">Droits accise</th>
-											<th width="12.5%">Prix HT DC</th>
-											<th width="15%">Quantité</th>
-										</tr>
-									<?php } ?>
-								</thead>
-								<tbody>
-									<?php
-										if(isset($_SESSION['site'])) {
-											$panier = json_decode($u->panier, true);
-										} else {
-											if(isset($_COOKIE['panier'])) {$panier = json_decode($_COOKIE['panier'], true);} else {$panier = array();}
-										}
-										while($e = $elements->fetch(PDO::FETCH_OBJ)) {
-											if(floor($e->stock/$e->uv_caisse) > 0 || $e->marque == 2) {
-												$quantite = 0;
-												foreach($panier as $p) {
-													foreach($p as $p2 => $qte) {
-														if($p2 == $e->id) {$quantite = $qte;}
-													}
-												}
-									?>
-											<tr>
-												<td class="nom"><?php if($e->marque == 2) { ?><span style="color: red;text-transform: uppercase;">Précommande</span><br class='no-margin'/><?php } ?>
-													<?php if($u->admin == 1) { ?>
-														<div class="btn-content">
-															<input type="text" data-id="<?php echo $e->id; ?>" data-type="nom" class="libelle" value="<?php echo $e->nom; ?>"/>
-															<input type="text" data-id="<?php echo $e->id; ?>" data-type="sup" class="libelle" value="<?php echo $e->nom_sup; ?>"/>
-														</div>
-													<?php } else { ?>
-														<?php echo $e->nom."<br class='no-margin'/>".$e->nom_sup; ?>
-													<?php } ?>
-												</td>
-												<td data-label="Contenance"><?php echo Conditionnement($e->condition_vente,$e->uv_caisse,$e->contenance); ?></td>
-												<td data-label="% Alcool"><?php echo number_format($e->degre, 1, ',', ' '); ?>°</td>
-												<td data-label="Prix UV HT HD"><?php echo number_format($e->prix_ht, 2, ',', ' '); ?>€</td>
-												<td data-label="Droits accise UV"><?php echo number_format($e->droits, 2, ',', ' '); ?>€</td>
-												<td data-label="Prix UV HT DC"><?php echo number_format($e->prix_ht+$e->droits, 2, ',', ' '); ?>€</td>
-												<?php if($consigne) { ?><td data-label="Consigne"><?php echo number_format($e->consigne_caisse, 2, ',', ' '); ?>€</td><?php } ?>
-												<td data-label="Quantité"><input type="number" value="<?php echo $quantite; ?>" <?php if($e->marque == 1) { ?>max="<?php echo floor($e->stock/$e->uv_caisse); ?>"<?php } ?> class="ajouter-panier" data-id="<?php echo $e->id; ?>" min="0"></td>
-											</tr>
-									<?php } } ?>
-								</tbody>
-							</table>
+							<?php ObRenderProduitsGrid($elements, $consigne); ?>
 						<?php } ?>
 					<?php } else { ?>
 						<!-- PANNEL FABRICANTS -->

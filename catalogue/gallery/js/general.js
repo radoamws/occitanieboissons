@@ -636,6 +636,72 @@ $(function() {
 			e.preventDefault();
 		});
 	/* PANIER */
+		// Listing produits (cartes) : +/- et ajout au panier via bouton
+		$(document).on('click', '.produit-qty-btn', function(e) {
+			var btn = $(this);
+			var card = btn.closest('.produit-card-inner');
+			var input = $('.produit-qty-input', card);
+			if(input.length < 1) return;
+			var step = parseInt(btn.data('step'), 10);
+			if(isNaN(step) || step === 0) step = 1;
+			var min = parseInt(input.attr('min'), 10);
+			if(isNaN(min)) min = 1;
+			var max = parseInt(input.attr('max'), 10);
+			var val = parseInt(input.val(), 10);
+			if(isNaN(val)) val = min;
+			val = val + step;
+			if(val < min) val = min;
+			if(!isNaN(max) && val > max) val = max;
+			input.val(val);
+			e.preventDefault();
+		});
+		$(document).on('click', '.produit-add-to-cart', function(e) {
+			var button = $(this);
+			var card = button.closest('.produit-card-inner');
+			var input = $('.produit-qty-input', card);
+			var id = button.data('id') || card.data('id');
+			if(!id) return;
+			var qtyToAdd = parseInt(input.val(), 10);
+			if(isNaN(qtyToAdd) || qtyToAdd < 1) {
+				addMessage("Veuillez saisir une quantité valide.", "rouge");
+				e.preventDefault();
+				return;
+			}
+			var currentInCart = parseInt(card.attr('data-cart-qte'), 10);
+			if(isNaN(currentInCart) || currentInCart < 0) currentInCart = 0;
+			var newQty = currentInCart + qtyToAdd;
+			var max = parseInt(input.attr('max'), 10);
+			if(!isNaN(max) && newQty > max) newQty = max;
+
+			button.prop('disabled', true);
+			$.ajax({
+				url: url_ob + "/gallery/ajax/panier.php",
+				type: "POST",
+				dataType: 'json',
+				data: {"id": id, "quantite": newQty},
+				success: function(json) {
+					if(json && json.couleur == "rouge") {
+						addMessage(json.message || "Une erreur est survenue.", "rouge");
+					} else {
+						card.attr('data-cart-qte', json && json.qte ? json.qte : newQty);
+						input.val(1);
+						UpdatePanier();
+						UpdateLivraison();
+						UpdateConsigne();
+					}
+					if(json && json.redirect) {
+						window.location.href = json.redirect;
+					}
+					button.prop('disabled', false);
+				},
+				error: function() {
+					button.prop('disabled', false);
+					addMessage("Une erreur est survenue.", "rouge");
+				}
+			});
+			e.preventDefault();
+		});
+
 		$(".ajouter-panier").on('change', function() {
 			var input = $(this);
 			var id = $(this).data("id");

@@ -304,6 +304,169 @@ header .btn-header {
 	    margin: 5px -15px -15px -15px;
 	    overflow: hidden;
 	}
+	/* PRODUITS (cartes) */
+	.catalogue .produits-grid {
+		display: -webkit-box;
+		display: -webkit-flex;
+		display: -moz-box;
+		display: -ms-flexbox;
+		display: flex;
+		flex-flow: row wrap;
+		align-items: stretch;
+		margin: 5px -10px 0 -10px;
+	}
+	.catalogue .produit-card {
+		flex: 0 0 25%;
+		padding: 10px;
+		box-sizing: border-box;
+	}
+	@media screen and (max-width: 1225px) {
+		.catalogue .produit-card {
+			flex: 0 0 calc(100% / 3);
+		}
+	}
+	@media screen and (max-width: 961px) {
+		.catalogue .produit-card {
+			flex: 0 0 50%;
+		}
+	}
+	@media screen and (max-width: 560px) {
+		.catalogue .produit-card {
+			flex: 0 0 100%;
+		}
+	}
+	.catalogue .produit-card-inner {
+		background: #fff;
+		border: 1px solid #eee;
+		border-radius: 6px;
+		overflow: hidden;
+		display: -webkit-box;
+		display: -webkit-flex;
+		display: -moz-box;
+		display: -ms-flexbox;
+		display: flex;
+		flex-flow: column nowrap;
+		height: 100%;
+	}
+	.catalogue .produit-image {
+		background: #f5f5f5;
+		padding: 12px;
+		box-sizing: border-box;
+	}
+	.catalogue .produit-image-placeholder {
+		height: 120px;
+		display: -webkit-box;
+		display: -webkit-flex;
+		display: -moz-box;
+		display: -ms-flexbox;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #505050;
+		font-family: "GothamBook";
+		font-size: 0.9em;
+		text-align: center;
+	}
+	.catalogue .produit-body {
+		padding: 12px;
+		box-sizing: border-box;
+		display: -webkit-box;
+		display: -webkit-flex;
+		display: -moz-box;
+		display: -ms-flexbox;
+		display: flex;
+		flex-flow: column nowrap;
+		gap: 10px;
+		flex: 1 1 auto;
+	}
+	.catalogue .produit-title {
+		font-family: "GothamBook";
+		color: #202020;
+		font-size: 1em;
+		line-height: 1.2;
+	}
+	.catalogue .produit-subtitle {
+		margin-top: 4px;
+		color: #505050;
+		font-size: 0.9em;
+	}
+	.catalogue .produit-badge {
+		display: inline-block;
+		background: #C32E1C;
+		color: #fff;
+		padding: 3px 8px;
+		border-radius: 12px;
+		font-size: 0.75em;
+		text-transform: uppercase;
+		margin-bottom: 6px;
+	}
+	.catalogue .produit-meta {
+		font-size: 0.9em;
+		color: #202020;
+	}
+	.catalogue .produit-meta-row {
+		display: -webkit-box;
+		display: -webkit-flex;
+		display: -moz-box;
+		display: -ms-flexbox;
+		display: flex;
+		justify-content: space-between;
+		gap: 10px;
+		padding: 2px 0;
+	}
+	.catalogue .produit-meta-row span:first-child {
+		color: #505050;
+	}
+	.catalogue .produit-meta-total span:last-child {
+		font-family: "GothamBook";
+		color: #C32E1C;
+	}
+	.catalogue .produit-actions {
+		display: -webkit-box;
+		display: -webkit-flex;
+		display: -moz-box;
+		display: -ms-flexbox;
+		display: flex;
+		flex-flow: row nowrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		margin-top: auto;
+	}
+	.catalogue .produit-qty {
+		display: -webkit-box;
+		display: -webkit-flex;
+		display: -moz-box;
+		display: -ms-flexbox;
+		display: flex;
+		flex-flow: row nowrap;
+		align-items: center;
+		gap: 0;
+		border: 1px solid #eee;
+		border-radius: 6px;
+		overflow: hidden;
+	}
+	.catalogue .produit-qty-btn {
+		background: #f5f5f5;
+		border: none;
+		width: 34px;
+		height: 34px;
+		cursor: pointer;
+		color: #202020;
+		font-size: 18px;
+		line-height: 34px;
+	}
+	.catalogue .produit-qty-input {
+		width: 54px;
+		height: 34px;
+		border: none;
+		text-align: center;
+		outline: none;
+		font-family: "GothamBook";
+	}
+	.catalogue .produit-add-to-cart {
+		padding: 8px 12px;
+	}
 	@media screen and (max-width: 961px) {
 		.catalogue #brasseries-pannel .brasseriesc-boxe {
 		    flex: 0 0 calc(100% / 3);
