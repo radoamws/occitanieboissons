@@ -23,10 +23,23 @@
 	################################
  	#     CONFIGURATION DU CMS     # 
  	################################
+	// Environnement: basculer sur "production" lors de la mise en prod
+	// Valeurs possibles: "development" | "production"
+	$env = "development";
+	$envFromServer = getenv('OB_ENV');
+	if($envFromServer) {
+		$env = $envFromServer;
+	}
+	$baseUrls = array(
+		"development" => "http://localhost/occitanieboissons/catalogue",
+		"production"  => "https://catalogue.occitanieboissons.com"
+	);
+	$baseUrl = isset($baseUrls[$env]) ? $baseUrls[$env] : $baseUrls["development"];
+
 	$sitename = "Occitanie Boissons";
 	//$url = "//".$_SERVER["HTTP_HOST"];
-	$url = "http://localhost/occitanieboissons/catalogue";
-	$image_url = "http://localhost/occitanieboissons/catalogue";
+	$url = $baseUrl;
+	$image_url = $baseUrl;
 	$gallery = $url."/gallery";
 	$galleryimage = str_replace("catalogue.", "", $gallery);
 	$urlupload = $gallery."/upload/";

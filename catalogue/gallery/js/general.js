@@ -1,8 +1,24 @@
 $(function() {
-	url_ob = "http://localhost/occitanieboissons/catalogue";
-	var urlFromDom = $("body").attr("data-catalogue-url");
-	if(urlFromDom) {
-		url_ob = urlFromDom;
+	function ObDeriveBaseUrl() {
+		var urlFromDom = $("body").attr("data-catalogue-url");
+		if(urlFromDom) {
+			return urlFromDom;
+		}
+		var scriptSrc = $("script[src*='/gallery/js/general.js']").last().attr('src');
+		if(!scriptSrc) {
+			return null;
+		}
+		scriptSrc = scriptSrc.split('?')[0];
+		var marker = "/gallery/js/general.js";
+		var idx = scriptSrc.indexOf(marker);
+		if(idx < 0) {
+			return null;
+		}
+		return scriptSrc.substring(0, idx);
+	}
+	url_ob = ObDeriveBaseUrl() || "";
+	if(url_ob && url_ob.charAt(url_ob.length - 1) === '/') {
+		url_ob = url_ob.substring(0, url_ob.length - 1);
 	}
 	var baseFromDom = $("body").attr("data-catalogue-base");
 	var universFromDom = $("body").attr("data-catalogue-univers") || "bieres";

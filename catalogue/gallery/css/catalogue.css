@@ -403,9 +403,10 @@ header .btn-header {
 		margin-bottom: 6px;
 	}
 	.catalogue .produit-meta {
-		font-size: 0.9em;
+		font-size: 0.75em;
 		color: #202020;
 		font-weight: normal;
+		font-family: "GothamBook";
 	}
 	.catalogue .produit-meta-row {
 		display: -webkit-box;
