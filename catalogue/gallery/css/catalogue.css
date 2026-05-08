@@ -280,6 +280,95 @@ header .btn-header {
 	.catalogue .catalogue-panel .menu-link:active {
 		color: #C32E1C;
 	}
+	.catalogue .catalogue-panel .menu-family-title {
+		font-family: "GothamBook";
+		font-weight: bold;
+		margin: 0 0 8px 0;
+	}
+	.catalogue .catalogue-panel .menu-columns {
+		display: -webkit-box;
+		display: -webkit-flex;
+		display: -moz-box;
+		display: -ms-flexbox;
+		display: flex;
+		flex-flow: row nowrap;
+		gap: 30px;
+	}
+	.catalogue .catalogue-panel .menu-columns .menu-col {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+	.catalogue .catalogue-panel .menu-grid {
+		display: -webkit-box;
+		display: -webkit-flex;
+		display: -moz-box;
+		display: -ms-flexbox;
+		display: flex;
+		flex-flow: row nowrap;
+		align-items: flex-start;
+		gap: 30px;
+		flex: 1 1 auto;
+		width: 100%;
+	}
+	.catalogue .catalogue-panel .menu-grid .menu-col {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+	.catalogue .catalogue-panel .menu-block-head {
+		font-family: "GothamBook";
+		font-size: 0.85em;
+		text-transform: uppercase;
+		margin: 0 0 10px 0;
+		color: #202020;
+	}
+	.catalogue .catalogue-panel .menu-section-title {
+		font-family: "GothamBook";
+		font-weight: bold;
+		text-decoration: underline;
+		margin: 0 0 8px 0;
+		color: #202020;
+	}
+	.catalogue .catalogue-panel .menu-link-primary {
+		font-weight: bold;
+		margin-bottom: 10px;
+	}
+	.catalogue .catalogue-panel .menu-pill {
+		display: inline-block;
+		padding: 8px 12px;
+		margin: 0 8px 10px 0;
+		border: 1px solid #202020;
+		border-radius: 18px;
+		color: #202020;
+		text-decoration: none;
+		font-family: "GothamBook";
+		font-size: 0.95em;
+	}
+	.catalogue .catalogue-panel .menu-pill:hover,
+	.catalogue .catalogue-panel .menu-pill:active {
+		border-color: #C32E1C;
+		color: #C32E1C;
+	}
+	.catalogue .catalogue-panel .menu-etc {
+		display: block;
+		margin-top: 6px;
+		color: #505050;
+		opacity: .85;
+	}
+	.catalogue .catalogue-panel .menu-text {
+		display: block;
+		padding: 3px 0;
+		color: #202020;
+	}
+	@media screen and (max-width: 961px) {
+		.catalogue .catalogue-panel .menu-columns {
+			flex-flow: column nowrap;
+			gap: 10px;
+		}
+		.catalogue .catalogue-panel .menu-grid {
+			flex-flow: column nowrap;
+			gap: 12px;
+		}
+	}
 	.catalogue .catalogue-panel .menu-more {
 		display: inline-block;
 		margin-top: 10px;

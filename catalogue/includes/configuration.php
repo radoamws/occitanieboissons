@@ -62,7 +62,135 @@
 	}
 	
 	#### MODIFICATION DU CATALOGUE AUTOMATIQUE
-	$file = "./transfert/produits/TARIFINTERNET_COMPLET.CSV";
+	// Complément de données pour le menu (famille / sous-famille)
+	// Source: ART_PRIX_STO.CSV à la racine du projet (occitanieboissons/)
+	function ob_slugify($value) {
+		$value = trim((string) $value);
+		if($value === '') {
+			return '';
+		}
+		if(function_exists('iconv')) {
+			$converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+			if($converted !== false) {
+				$value = $converted;
+			}
+		}
+		$value = strtolower($value);
+		$value = preg_replace('/[^a-z0-9]+/', '-', $value);
+		$value = trim($value, '-');
+		return $value;
+	}
+	function ob_get_or_create_famille_id($bdd, $nom, &$cacheBySlug) {
+		$nom = trim((string) $nom);
+		if($nom === '') {
+			return null;
+		}
+		$slug = ob_slugify($nom);
+		if($slug === '') {
+			return null;
+		}
+		if(isset($cacheBySlug[$slug])) {
+			return (int) $cacheBySlug[$slug];
+		}
+		$sel = $bdd->prepare("SELECT id FROM ob_catalogue_familles WHERE slug = :slug LIMIT 1");
+		$sel->bindParam(':slug', $slug);
+		$sel->execute();
+		$found = $sel->fetch(PDO::FETCH_OBJ);
+		if($found && isset($found->id)) {
+			$cacheBySlug[$slug] = (int) $found->id;
+			return (int) $found->id;
+		}
+		$ins = $bdd->prepare("INSERT INTO ob_catalogue_familles (nom, slug) VALUES (:nom, :slug)");
+		$ins->bindParam(':nom', $nom);
+		$ins->bindParam(':slug', $slug);
+		$ins->execute();
+		$id = (int) $bdd->lastInsertId();
+		$cacheBySlug[$slug] = $id;
+		return $id;
+	}
+	function ob_get_or_create_sous_famille_id($bdd, $familleId, $nom, &$cacheByFamilleAndSlug) {
+		$nom = trim((string) $nom);
+		if($nom === '' || !$familleId) {
+			return null;
+		}
+		$slug = ob_slugify($nom);
+		if($slug === '') {
+			return null;
+		}
+		$key = (int) $familleId . ':' . $slug;
+		if(isset($cacheByFamilleAndSlug[$key])) {
+			return (int) $cacheByFamilleAndSlug[$key];
+		}
+		$sel = $bdd->prepare("SELECT id FROM ob_catalogue_sous_familles WHERE famille_id = :fid AND slug = :slug LIMIT 1");
+		$sel->bindParam(':fid', $familleId, PDO::PARAM_INT);
+		$sel->bindParam(':slug', $slug);
+		$sel->execute();
+		$found = $sel->fetch(PDO::FETCH_OBJ);
+		if($found && isset($found->id)) {
+			$cacheByFamilleAndSlug[$key] = (int) $found->id;
+			return (int) $found->id;
+		}
+		$ins = $bdd->prepare("INSERT INTO ob_catalogue_sous_familles (famille_id, nom, slug) VALUES (:fid, :nom, :slug)");
+		$ins->bindParam(':fid', $familleId, PDO::PARAM_INT);
+		$ins->bindParam(':nom', $nom);
+		$ins->bindParam(':slug', $slug);
+		$ins->execute();
+		$id = (int) $bdd->lastInsertId();
+		$cacheByFamilleAndSlug[$key] = $id;
+		return $id;
+	}
+
+	$taxonomyByCodeProduit = array();
+	$projectRoot = @realpath(__DIR__ . '/../../..');
+	$artFile = $projectRoot ? ($projectRoot . '/ART_PRIX_STO.CSV') : null;
+	if(!$artFile || !file_exists($artFile)) {
+		$artFile = __DIR__ . '/../transfert/produits/ART_PRIX_STO.CSV';
+	}
+	if($artFile && file_exists($artFile) && is_readable($artFile)) {
+		$headerArt = NULL;
+		$delimiterArt = ';';
+		if(($handleArt = fopen($artFile, 'r')) !== FALSE) {
+			$headerLineArt = fgets($handleArt);
+			if($headerLineArt !== false) {
+				$headerArt = str_getcsv($headerLineArt, ';');
+				if(is_array($headerArt) && count($headerArt) === 1 && strpos($headerLineArt, "\t") !== false) {
+					$headerArt = str_getcsv($headerLineArt, "\t");
+					$delimiterArt = "\t";
+				}
+			}
+			if(is_array($headerArt) && count($headerArt) > 1) {
+				while(($lineArt = fgets($handleArt)) !== FALSE) {
+					$rowArt = str_getcsv($lineArt, $delimiterArt);
+					if(!is_array($rowArt) || count($rowArt) !== count($headerArt)) {
+						$tryDelimiter = ($delimiterArt === ';') ? "\t" : ';';
+						$rowTry = str_getcsv($lineArt, $tryDelimiter);
+						if(is_array($rowTry) && count($rowTry) === count($headerArt)) {
+							$rowArt = $rowTry;
+							$delimiterArt = $tryDelimiter;
+						} else {
+							continue;
+						}
+					}
+					$assocArt = array_combine($headerArt, $rowArt);
+				if(!is_array($assocArt) || !isset($assocArt['Article'])) {
+					continue;
+				}
+				$code = (int) preg_replace('/[^\d]/', '', (string) $assocArt['Article']);
+				if($code <= 0) {
+					continue;
+				}
+				$fam = isset($assocArt['Désignation famille']) ? trim((string) $assocArt['Désignation famille']) : '';
+				$sf = isset($assocArt['Désignation sous famille']) ? trim((string) $assocArt['Désignation sous famille']) : '';
+				$taxonomyByCodeProduit[$code] = array('famille' => $fam, 'sous_famille' => $sf);
+				}
+			}
+			fclose($handleArt);
+		}
+	}
+	$familleIdCache = array();
+	$sousFamilleIdCache = array();
+
+	$file = __DIR__ . "/../transfert/produits/TARIFINTERNET_COMPLET.CSV";
 	if(file_exists($file) && is_readable($file)) {
 		$header = NULL;
 		$data = array();
@@ -71,7 +199,18 @@
 	            if(!$header) {
 	            	$header = $row;
 	            } else {
-	                $data[] = array_combine($header, $row);
+	            		if(!is_array($row) || count($row) !== count($header)) {
+	            			continue;
+	            		}
+	                try {
+	                	$assoc = array_combine($header, $row);
+	                } catch(ValueError $e) {
+	                	continue;
+	                }
+	                if(!is_array($assoc)) {
+	                	continue;
+	                }
+	                $data[] = $assoc;
 	            }
 	        }
 	        fclose($handle);
@@ -84,71 +223,100 @@
 	        }
 
 	        ### ON SELECTIONNE LES ARTICLES
-	        foreach($data as $p1) {
-	        	if(in_array($p1["FABRIQUANT"], $brassieres_active)) {
-		      		$checkExist = $bdd->prepare("SELECT * FROM ob_catalogue_produits WHERE code_produit = :code_produit");
-		      		$checkExist->bindParam(":code_produit", $p1["CODE_PRODUIT"]);
-		      		$checkExist->execute(); 
-					
+		        foreach($data as $p1) {
+		        	$code_produit = (int) preg_replace('/[^\d]/', '', (string) $p1['CODE_PRODUIT']);
+		        	if($code_produit <= 0) {
+		        		continue;
+		        	}
+		        	$fabriquant = (int) trim((string) $p1['FABRIQUANT']);
+		        	$categorie = (int) trim((string) $p1['CATEGORIE']);
+		        	$is_active = in_array($fabriquant, $brassieres_active);
+		        	// Historiquement, l'import est limité aux "brasseries actives".
+		        	// Mais pour VINS (20–26) et SPIRITUEUX (30–31), les fabricants ne sont pas dans ob_brasseries.
+		        	// On autorise donc l'import hors bières, en stockant brasserie=0 pour ne pas les masquer côté catalogue.
+		        	$requiresActiveBrasserie = ($categorie >= 1 && $categorie <= 19) || in_array($categorie, array(28,29,32,33), true);
+		        	$canImport = $is_active || !$requiresActiveBrasserie;
+		        	$brasserieToStore = $is_active ? $fabriquant : 0;
+
+					$famille_id = null;
+					$sous_famille_id = null;
+					if(isset($taxonomyByCodeProduit[$code_produit])) {
+						$famille_id = ob_get_or_create_famille_id($bdd, $taxonomyByCodeProduit[$code_produit]['famille'], $familleIdCache);
+						$sous_famille_id = ob_get_or_create_sous_famille_id($bdd, $famille_id, $taxonomyByCodeProduit[$code_produit]['sous_famille'], $sousFamilleIdCache);
+					}
+
+		      		$checkExist = $bdd->prepare("SELECT id FROM ob_catalogue_produits WHERE code_produit = :code_produit LIMIT 1");
+		      		$checkExist->bindParam(":code_produit", $code_produit, PDO::PARAM_INT);
+		      		$checkExist->execute();
+
 		        	if($checkExist->rowCount() > 0) {
-		        		### MODIFIER LE PRODUIT
-						$prix_ht          = (float) trim($p1['PRIX']);
-						$droits           = (float) trim($p1['ACCISE']);
-						$stock            = (int) trim($p1['STOCK_UV']);
-						$code_tva         = (int) trim($p1['CODE_TVA']);
-						$uv_caisse        = (int) trim($p1['UV_CAISSE']);
-						$brasserie        = (int) trim($p1['FABRIQUANT']);
-						$contenance       = (float) trim($p1['CONTENANCE']);
-						$degre            = (float) trim($p1['DEGRE']);
-						$condition_vente  = (int) trim($p1['CONDITION_VENTE']);
-						$consigne_caisse  = (float) trim($p1['CONSIGNE_PAR_CONDITION_VENTE']);
-						$marque           = trim($p1['MARQUE']); // enum('0','1','2') → laisser en string
-						$categorie        = (int) trim($p1['CATEGORIE']);
-						$code_produit     = preg_replace('/[^\d]/', '', $p1['CODE_PRODUIT']); // int, nettoyé
+		        		if($canImport) {
+		        			### MODIFIER LE PRODUIT
+							$prix_ht          = (float) trim($p1['PRIX']);
+							$droits           = (float) trim($p1['ACCISE']);
+							$stock            = (int) trim($p1['STOCK_UV']);
+							$code_tva         = (int) trim($p1['CODE_TVA']);
+							$uv_caisse        = (int) trim($p1['UV_CAISSE']);
+							$brasserie        = (int) $brasserieToStore;
+							$contenance       = (float) trim($p1['CONTENANCE']);
+							$degre            = (float) trim($p1['DEGRE']);
+							$condition_vente  = (int) trim($p1['CONDITION_VENTE']);
+							$consigne_caisse  = (float) trim($p1['CONSIGNE_PAR_CONDITION_VENTE']);
+							$marque           = trim($p1['MARQUE']); // enum('0','1','2') → laisser en string
+							$categorie        = (int) $categorie;
 
-
-		        		$modifProduit = $bdd->prepare("UPDATE ob_catalogue_produits SET prix_ht = :prix_ht, droits = :droits, stock = :stock, code_tva = :code_tva, uv_caisse = :uv_caisse, brasserie = :brasserie, contenance = :contenance, degre = :degre, condition_vente = :condition_vente, consigne_caisse = :consigne_caisse, marque = :marque, categorie = :categorie WHERE code_produit = :code_produit");
-		        		$modifProduit->bindParam(":prix_ht", $prix_ht, PDO::PARAM_STR);        // FLOAT → PDO::PARAM_STR
-						$modifProduit->bindParam(":droits", $droits, PDO::PARAM_STR);          // FLOAT
-						$modifProduit->bindParam(":stock", $stock, PDO::PARAM_INT);            // INT
-						$modifProduit->bindParam(":code_tva", $code_tva, PDO::PARAM_INT);      // INT
-						$modifProduit->bindParam(":uv_caisse", $uv_caisse, PDO::PARAM_INT);    // INT
-						$modifProduit->bindParam(":brasserie", $brasserie, PDO::PARAM_INT);    // INT
-						$modifProduit->bindParam(":contenance", $contenance, PDO::PARAM_STR);   // FLOAT
-						$modifProduit->bindParam(":degre", $degre, PDO::PARAM_STR);            // FLOAT
-						$modifProduit->bindParam(":condition_vente", $condition_vente, PDO::PARAM_INT); // INT
-						$modifProduit->bindParam(":consigne_caisse", $consigne_caisse, PDO::PARAM_STR);  // FLOAT
-						$modifProduit->bindParam(":marque", $marque, PDO::PARAM_STR);          // ENUM → string
-						$modifProduit->bindParam(":categorie", $categorie, PDO::PARAM_INT);    // INT
-						$modifProduit->bindParam(":code_produit", $code_produit, PDO::PARAM_INT); // INT
-		        		$modifProduit->execute();
-
-						if ($code_produit == "2403") {
-							//echo $modifProduit->rowCount();
-							//$modifProduit->debugDumpParams();
+		        			$modifProduit = $bdd->prepare("UPDATE ob_catalogue_produits SET prix_ht = :prix_ht, droits = :droits, stock = :stock, code_tva = :code_tva, uv_caisse = :uv_caisse, brasserie = :brasserie, contenance = :contenance, degre = :degre, condition_vente = :condition_vente, consigne_caisse = :consigne_caisse, marque = :marque, categorie = :categorie, famille_id = :famille_id, sous_famille_id = :sous_famille_id WHERE code_produit = :code_produit");
+		        			$modifProduit->bindParam(":prix_ht", $prix_ht, PDO::PARAM_STR);        // FLOAT → PDO::PARAM_STR
+							$modifProduit->bindParam(":droits", $droits, PDO::PARAM_STR);          // FLOAT
+							$modifProduit->bindParam(":stock", $stock, PDO::PARAM_INT);            // INT
+							$modifProduit->bindParam(":code_tva", $code_tva, PDO::PARAM_INT);      // INT
+							$modifProduit->bindParam(":uv_caisse", $uv_caisse, PDO::PARAM_INT);    // INT
+							$modifProduit->bindParam(":brasserie", $brasserie, PDO::PARAM_INT);    // INT
+							$modifProduit->bindParam(":contenance", $contenance, PDO::PARAM_STR);   // FLOAT
+							$modifProduit->bindParam(":degre", $degre, PDO::PARAM_STR);            // FLOAT
+							$modifProduit->bindParam(":condition_vente", $condition_vente, PDO::PARAM_INT); // INT
+							$modifProduit->bindParam(":consigne_caisse", $consigne_caisse, PDO::PARAM_STR);  // FLOAT
+							$modifProduit->bindParam(":marque", $marque, PDO::PARAM_STR);          // ENUM → string
+							$modifProduit->bindParam(":categorie", $categorie, PDO::PARAM_INT);    // INT
+							$modifProduit->bindValue(":famille_id", $famille_id, is_null($famille_id) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+							$modifProduit->bindValue(":sous_famille_id", $sous_famille_id, is_null($sous_famille_id) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+							$modifProduit->bindParam(":code_produit", $code_produit, PDO::PARAM_INT); // INT
+		        			$modifProduit->execute();
+		        		} else {
+						// Brasserie non active : on complète uniquement la taxonomie (utile pour le menu)
+						if(!is_null($famille_id) || !is_null($sous_famille_id)) {
+							$taxOnly = $bdd->prepare("UPDATE ob_catalogue_produits SET famille_id = :famille_id, sous_famille_id = :sous_famille_id WHERE code_produit = :code_produit");
+							$taxOnly->bindValue(":famille_id", $famille_id, is_null($famille_id) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+							$taxOnly->bindValue(":sous_famille_id", $sous_famille_id, is_null($sous_famille_id) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+							$taxOnly->bindParam(":code_produit", $code_produit, PDO::PARAM_INT);
+							$taxOnly->execute();
 						}
+		        		}
 		        	} else {
-		        		### CREER LE PRODUIT
-		        		$createProduit = $bdd->prepare("INSERT INTO ob_catalogue_produits (code_produit, prix_ht, stock, code_tva, nom, nom_sup, brasserie, contenance, degre, condition_vente, consigne_caisse, uv_caisse, droits, marque, categorie) VALUES (:code_produit, :prix_ht, :stock, :code_tva, :nom, :nom_sup, :brasserie, :contenance, :degre, :condition_vente, :consigne_caisse, :uv_caisse, :droits, :marque, :categorie)");
-		        		$createProduit->bindParam(":code_produit", $p1['CODE_PRODUIT']);
-		        		$createProduit->bindParam(":prix_ht", $p1['PRIX']);
-		        		$createProduit->bindParam(":stock", $p1['STOCK_UV']);
-		        		$createProduit->bindParam(":code_tva", $p1['CODE_TVA']);
-		        		$createProduit->bindParam(":nom", $p1['LIBELLE']);
-		        		$createProduit->bindParam(":brasserie", $p1['FABRIQUANT']);
-		        		$createProduit->bindParam(":nom_sup", $p1['LIBELLE COMP.']);
-		        		$createProduit->bindParam(":contenance", $p1['CONTENANCE']);
-		        		$createProduit->bindParam(":degre", $p1['DEGRE']);
-		        		$createProduit->bindParam(":condition_vente", $p1['CONDITION_VENTE']);
-		        		$createProduit->bindParam(":consigne_caisse", $p1['CONSIGNE_PAR_CONDITION_VENTE']);
-		        		$createProduit->bindParam(":uv_caisse", $p1['UV_CAISSE']);
-		        		$createProduit->bindParam(":droits", $p1['ACCISE']);
-		        		$createProduit->bindParam(":marque", $p1['MARQUE']);
-		        		$createProduit->bindParam(":categorie", $p1['CATEGORIE']);
-		        		$createProduit->execute();
+		        		if($canImport) {
+		        			### CREER LE PRODUIT
+		        			$createProduit = $bdd->prepare("INSERT INTO ob_catalogue_produits (code_produit, prix_ht, stock, code_tva, nom, nom_sup, brasserie, contenance, degre, condition_vente, consigne_caisse, uv_caisse, droits, marque, categorie, famille_id, sous_famille_id) VALUES (:code_produit, :prix_ht, :stock, :code_tva, :nom, :nom_sup, :brasserie, :contenance, :degre, :condition_vente, :consigne_caisse, :uv_caisse, :droits, :marque, :categorie, :famille_id, :sous_famille_id)");
+		        			$createProduit->bindValue(":code_produit", $code_produit, PDO::PARAM_INT);
+		        			$createProduit->bindParam(":prix_ht", $p1['PRIX']);
+		        			$createProduit->bindParam(":stock", $p1['STOCK_UV']);
+		        			$createProduit->bindParam(":code_tva", $p1['CODE_TVA']);
+		        			$createProduit->bindParam(":nom", $p1['LIBELLE']);
+		        			$createProduit->bindValue(":brasserie", $brasserieToStore, PDO::PARAM_INT);
+		        			$createProduit->bindParam(":nom_sup", $p1['LIBELLE COMP.']);
+		        			$createProduit->bindParam(":contenance", $p1['CONTENANCE']);
+		        			$createProduit->bindParam(":degre", $p1['DEGRE']);
+		        			$createProduit->bindParam(":condition_vente", $p1['CONDITION_VENTE']);
+		        			$createProduit->bindParam(":consigne_caisse", $p1['CONSIGNE_PAR_CONDITION_VENTE']);
+		        			$createProduit->bindParam(":uv_caisse", $p1['UV_CAISSE']);
+		        			$createProduit->bindParam(":droits", $p1['ACCISE']);
+		        			$createProduit->bindParam(":marque", $p1['MARQUE']);
+		        			$createProduit->bindValue(":categorie", $categorie, PDO::PARAM_INT);
+		        			$createProduit->bindValue(":famille_id", $famille_id, is_null($famille_id) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+		        			$createProduit->bindValue(":sous_famille_id", $sous_famille_id, is_null($sous_famille_id) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+		        			$createProduit->execute();
+		        		}
 		        	}
 		        }
-	        }
 	    }
     }
 

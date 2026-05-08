@@ -601,6 +601,28 @@ $(function() {
 				window.location.href = base+"/categorie/"+categorie+"/trier-prix/"+type;
 			}
 		});
+		// TRIER PAR PRIX - FAMILLE
+		$("select#tri-prix-famille").on('change',function() {
+			var base = $(this).data("base") || baseFromDom || url_ob;
+			var famille = $(this).data("famille");
+			var type = $(this).val();
+			if(type == "aucun") {
+				window.location.href = base+"/famille/"+famille;
+			} else {
+				window.location.href = base+"/famille/"+famille+"/trier-prix/"+type;
+			}
+		});
+		// TRIER PAR PRIX - SOUS-FAMILLE
+		$("select#tri-prix-sous-famille").on('change',function() {
+			var base = $(this).data("base") || baseFromDom || url_ob;
+			var sousFamille = $(this).data("sousFamille") || $(this).data("sous-famille");
+			var type = $(this).val();
+			if(type == "aucun") {
+				window.location.href = base+"/sous-famille/"+sousFamille;
+			} else {
+				window.location.href = base+"/sous-famille/"+sousFamille+"/trier-prix/"+type;
+			}
+		});
 		// TRIER PAR PRIX - DEGRE
 		$("select#tri-prix-degre").on('change',function() {
 			var base = $(this).data("base") || baseFromDom || url_ob;
@@ -621,6 +643,17 @@ $(function() {
 				window.location.href = base+"/contenance/"+contenance;
 			} else {
 				window.location.href = base+"/contenance/"+contenance+"/trier-prix/"+type;
+			}
+		});
+		// TRIER PAR PRIX - PACK (bouteilles/futs/bib/...)
+		$("select#tri-prix-pack").on('change',function() {
+			var base = $(this).data("base") || baseFromDom || url_ob;
+			var pack = $(this).data("pack");
+			var type = $(this).val();
+			if(type == "aucun") {
+				window.location.href = base+"/pack/"+pack;
+			} else {
+				window.location.href = base+"/pack/"+pack+"/trier-prix/"+type;
 			}
 		});
 	/* CONSIGNE */
