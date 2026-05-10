@@ -489,7 +489,7 @@
 		return $panier_map;
 	}
 
-	function ObRenderProduitsGrid($elements, $consigne) {
+	function ObRenderProduitsGrid($elements, $consigne = true) {
 		$panier_map = ObPanierMap();
 		$u = isset($GLOBALS['u']) ? $GLOBALS['u'] : null;
 		$is_admin = ($u && isset($u->admin) && (int) $u->admin === 1);
@@ -800,16 +800,9 @@
 								default: $sql = "SELECT * FROM ob_catalogue_produits WHERE brasserie = '".$b->id_fabriquant."' AND marque = '1' OR brasserie = '".$b->id_fabriquant."' AND marque = '2' ORDER by contenance DESC, marque DESC";
 							}
 							$elements = $bdd->query($sql);
-							/* CHECK CONSIGNE */
-							$consigne = FALSE;
-							while($e = $elements->fetch(PDO::FETCH_OBJ)) {
-								if($e->consigne_caisse != 0) {$consigne = TRUE;}
-							}
-
-							$elements = $bdd->query($sql);
 							if($elements->rowCount() > 0) {					
 						?>
-							<?php ObRenderProduitsGrid($elements, $consigne); ?>
+							<?php ObRenderProduitsGrid($elements); ?>
 						<?php } ?>
 					<?php } elseif($select_sous_famille && $sous_famille_id) { ?>
 						<?php
@@ -825,14 +818,9 @@
 									$sql = "SELECT * FROM ob_catalogue_produits WHERE sous_famille_id = ".(int) $sous_famille_id." AND marque IN ('1','2') ORDER BY contenance DESC, marque DESC";
 							}
 							$elements = $bdd->query($sql);
-							$consigne = FALSE;
-							while($e = $elements->fetch(PDO::FETCH_OBJ)) {
-								if($e->consigne_caisse != 0) {$consigne = TRUE;}
-							}
-							$elements = $bdd->query($sql);
 							if($elements->rowCount() > 0) {
 						?>
-							<?php ObRenderProduitsGrid($elements, $consigne); ?>
+							<?php ObRenderProduitsGrid($elements); ?>
 						<?php } ?>
 					<?php } elseif($select_famille && $famille_id) { ?>
 						<?php
@@ -848,14 +836,9 @@
 									$sql = "SELECT * FROM ob_catalogue_produits WHERE famille_id = ".(int) $famille_id." AND marque IN ('1','2') ORDER BY contenance DESC, marque DESC";
 							}
 							$elements = $bdd->query($sql);
-							$consigne = FALSE;
-							while($e = $elements->fetch(PDO::FETCH_OBJ)) {
-								if($e->consigne_caisse != 0) {$consigne = TRUE;}
-							}
-							$elements = $bdd->query($sql);
 							if($elements->rowCount() > 0) {
 						?>
-							<?php ObRenderProduitsGrid($elements, $consigne); ?>
+							<?php ObRenderProduitsGrid($elements); ?>
 						<?php } ?>
 					<?php } elseif($select_categorie) { ?>
 						<?php
@@ -871,16 +854,9 @@
 								default: $sql = "SELECT * FROM ob_catalogue_produits WHERE categorie = '".$categorie."' AND marque = '1' OR categorie = '".$categorie."' AND marque = '2' ORDER by contenance DESC, marque DESC";
 							}
 							$elements = $bdd->query($sql);
-							/* CHECK CONSIGNE */
-							$consigne = FALSE;
-							while($e = $elements->fetch(PDO::FETCH_OBJ)) {
-								if($e->consigne_caisse != 0) {$consigne = TRUE;}
-							}
-
-							$elements = $bdd->query($sql);
 							if($elements->rowCount() > 0) {					
 						?>
-							<?php ObRenderProduitsGrid($elements, $consigne); ?>
+							<?php ObRenderProduitsGrid($elements); ?>
 						<?php } ?>
 					<?php } elseif($select_degre && $degre_bucket && !empty($univers_definitions[$univers]['categorie_ids'])) { ?>
 						<?php
@@ -919,14 +895,9 @@
 									}
 							}
 							$elements = $bdd->query($sql);
-							$consigne = FALSE;
-							while($e = $elements->fetch(PDO::FETCH_OBJ)) {
-								if($e->consigne_caisse != 0) {$consigne = TRUE;}
-							}
-							$elements = $bdd->query($sql);
 							if($elements->rowCount() > 0) {
 						?>
-							<?php ObRenderProduitsGrid($elements, $consigne); ?>
+							<?php ObRenderProduitsGrid($elements); ?>
 						<?php } ?>
 					<?php } elseif($select_contenance && $contenance_value !== null && !empty($univers_definitions[$univers]['categorie_ids'])) { ?>
 						<?php
@@ -951,14 +922,9 @@
 									$sql = "SELECT * FROM ob_catalogue_produits WHERE $universeWhere AND contenance = $contenance AND marque IN ('1','2') ORDER by contenance DESC, marque DESC";
 							}
 							$elements = $bdd->query($sql);
-							$consigne = FALSE;
-							while($e = $elements->fetch(PDO::FETCH_OBJ)) {
-								if($e->consigne_caisse != 0) {$consigne = TRUE;}
-							}
-							$elements = $bdd->query($sql);
 							if($elements->rowCount() > 0) {
 						?>
-							<?php ObRenderProduitsGrid($elements, $consigne); ?>
+							<?php ObRenderProduitsGrid($elements); ?>
 						<?php } ?>
 					<?php } else { ?>
 										<?php if($select_pack) { ?>
@@ -1043,14 +1009,9 @@
 												}
 												$sql = "SELECT p.* FROM ob_catalogue_produits p $joins WHERE $where $order";
 												$elements = $bdd->query($sql);
-												$consigne = FALSE;
-												while($e = $elements->fetch(PDO::FETCH_OBJ)) {
-													if($e->consigne_caisse != 0) {$consigne = TRUE;}
-												}
-												$elements = $bdd->query($sql);
 												if($elements->rowCount() > 0) {
 											?>
-												<?php ObRenderProduitsGrid($elements, $consigne); ?>
+												<?php ObRenderProduitsGrid($elements); ?>
 											<?php } ?>
 										<?php } else { ?>
 											<?php if($univers === 'bieres') { ?>
@@ -1148,14 +1109,9 @@
 													}
 													$sql = "SELECT p.* FROM ob_catalogue_produits p WHERE $where $order";
 													$elements = $bdd->query($sql);
-													$consigne = FALSE;
-													while($e = $elements->fetch(PDO::FETCH_OBJ)) {
-														if($e->consigne_caisse != 0) {$consigne = TRUE;}
-													}
-													$elements = $bdd->query($sql);
 													if($elements->rowCount() > 0) {
 												?>
-													<?php ObRenderProduitsGrid($elements, $consigne); ?>
+													<?php ObRenderProduitsGrid($elements); ?>
 												<?php } ?>
 											<?php } ?>
 										<?php } ?>

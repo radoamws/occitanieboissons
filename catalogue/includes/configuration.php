@@ -139,186 +139,250 @@
 		$cacheByFamilleAndSlug[$key] = $id;
 		return $id;
 	}
+	function ob_file_signature($path) {
+		if(!$path || !file_exists($path) || !is_readable($path)) {
+			return null;
+		}
+		$mtime = @filemtime($path);
+		$size = @filesize($path);
+		return array(
+			'path' => (string) $path,
+			'mtime' => ($mtime === false) ? null : (int) $mtime,
+			'size' => ($size === false) ? null : (int) $size,
+		);
+	}
+	function ob_should_run_import($stateFile, $nextState, $force = false) {
+		if($force) {
+			return true;
+		}
+		$prevRaw = @file_get_contents($stateFile);
+		if($prevRaw === false || $prevRaw === '') {
+			return true;
+		}
+		$prev = json_decode($prevRaw, true);
+		if(!is_array($prev)) {
+			return true;
+		}
+		if(!isset($prev['version']) || (int) $prev['version'] !== (int) $nextState['version']) {
+			return true;
+		}
+		if(!isset($prev['tarif']) || !isset($prev['art'])) {
+			return true;
+		}
+		return !($prev['tarif'] == $nextState['tarif'] && $prev['art'] == $nextState['art']);
+	}
 
-	$taxonomyByCodeProduit = array();
+	// Import CSV → tables (ne doit pas tourner à chaque page)
 	$projectRoot = @realpath(__DIR__ . '/../../..');
 	$artFile = $projectRoot ? ($projectRoot . '/ART_PRIX_STO.CSV') : null;
 	if(!$artFile || !file_exists($artFile)) {
 		$artFile = __DIR__ . '/../transfert/produits/ART_PRIX_STO.CSV';
 	}
-	if($artFile && file_exists($artFile) && is_readable($artFile)) {
-		$headerArt = NULL;
-		$delimiterArt = ';';
-		if(($handleArt = fopen($artFile, 'r')) !== FALSE) {
-			$headerLineArt = fgets($handleArt);
-			if($headerLineArt !== false) {
-				$headerArt = str_getcsv($headerLineArt, ';');
-				if(is_array($headerArt) && count($headerArt) === 1 && strpos($headerLineArt, "\t") !== false) {
-					$headerArt = str_getcsv($headerLineArt, "\t");
-					$delimiterArt = "\t";
-				}
-			}
-			if(is_array($headerArt) && count($headerArt) > 1) {
-				while(($lineArt = fgets($handleArt)) !== FALSE) {
-					$rowArt = str_getcsv($lineArt, $delimiterArt);
-					if(!is_array($rowArt) || count($rowArt) !== count($headerArt)) {
-						$tryDelimiter = ($delimiterArt === ';') ? "\t" : ';';
-						$rowTry = str_getcsv($lineArt, $tryDelimiter);
-						if(is_array($rowTry) && count($rowTry) === count($headerArt)) {
-							$rowArt = $rowTry;
-							$delimiterArt = $tryDelimiter;
-						} else {
-							continue;
+	$tarifFile = __DIR__ . "/../transfert/produits/TARIFINTERNET_COMPLET.CSV";
+	$importStateFile = __DIR__ . "/../transfert/produits/.ob_import_state.json";
+	$importLockFile = __DIR__ . "/../transfert/produits/.ob_import_lock";
+	$forceImport = (isset($_GET['ob_import']) && $_GET['ob_import'] == '1') || (getenv('OB_FORCE_IMPORT') === '1');
+	$nextState = array(
+		'version' => 1,
+		'tarif' => ob_file_signature($tarifFile),
+		'art' => ob_file_signature($artFile),
+	);
+	$shouldImport = $nextState['tarif'] !== null && ob_should_run_import($importStateFile, $nextState, $forceImport);
+	if($shouldImport) {
+		$lockHandle = @fopen($importLockFile, 'c');
+		$locked = false;
+		if($lockHandle) {
+			$locked = @flock($lockHandle, LOCK_EX | LOCK_NB);
+		}
+		// Si un autre process importe déjà, on ne bloque pas la navigation.
+		if($lockHandle && !$locked) {
+			@fclose($lockHandle);
+		} else {
+			// Double-check sous lock (un autre process a pu finir pendant qu'on attendait)
+			$shouldImport = $nextState['tarif'] !== null && ob_should_run_import($importStateFile, $nextState, $forceImport);
+			if($shouldImport) {
+				$taxonomyByCodeProduit = array();
+				$familleIdCache = array();
+				$sousFamilleIdCache = array();
+
+				// ART_PRIX_STO.CSV (taxonomie)
+				if($artFile && file_exists($artFile) && is_readable($artFile)) {
+					$headerArt = NULL;
+					$delimiterArt = ';';
+					if(($handleArt = fopen($artFile, 'r')) !== FALSE) {
+						$headerLineArt = fgets($handleArt);
+						if($headerLineArt !== false) {
+							$headerArt = str_getcsv($headerLineArt, ';');
+							if(is_array($headerArt) && count($headerArt) === 1 && strpos($headerLineArt, "\t") !== false) {
+								$headerArt = str_getcsv($headerLineArt, "\t");
+								$delimiterArt = "\t";
+							}
 						}
+						if(is_array($headerArt) && count($headerArt) > 1) {
+							while(($lineArt = fgets($handleArt)) !== FALSE) {
+								$rowArt = str_getcsv($lineArt, $delimiterArt);
+								if(!is_array($rowArt) || count($rowArt) !== count($headerArt)) {
+									$tryDelimiter = ($delimiterArt === ';') ? "\t" : ';';
+									$rowTry = str_getcsv($lineArt, $tryDelimiter);
+									if(is_array($rowTry) && count($rowTry) === count($headerArt)) {
+										$rowArt = $rowTry;
+										$delimiterArt = $tryDelimiter;
+									} else {
+										continue;
+									}
+								}
+								$assocArt = array_combine($headerArt, $rowArt);
+								if(!is_array($assocArt) || !isset($assocArt['Article'])) {
+									continue;
+								}
+								$code = (int) preg_replace('/[^\d]/', '', (string) $assocArt['Article']);
+								if($code <= 0) {
+									continue;
+								}
+								$fam = isset($assocArt['Désignation famille']) ? trim((string) $assocArt['Désignation famille']) : '';
+								$sf = isset($assocArt['Désignation sous famille']) ? trim((string) $assocArt['Désignation sous famille']) : '';
+								$taxonomyByCodeProduit[$code] = array('famille' => $fam, 'sous_famille' => $sf);
+							}
+						}
+						fclose($handleArt);
 					}
-					$assocArt = array_combine($headerArt, $rowArt);
-				if(!is_array($assocArt) || !isset($assocArt['Article'])) {
-					continue;
 				}
-				$code = (int) preg_replace('/[^\d]/', '', (string) $assocArt['Article']);
-				if($code <= 0) {
-					continue;
-				}
-				$fam = isset($assocArt['Désignation famille']) ? trim((string) $assocArt['Désignation famille']) : '';
-				$sf = isset($assocArt['Désignation sous famille']) ? trim((string) $assocArt['Désignation sous famille']) : '';
-				$taxonomyByCodeProduit[$code] = array('famille' => $fam, 'sous_famille' => $sf);
+
+				try {
+					$bdd->beginTransaction();
+
+					### BRASSERIES AUTORISEES
+					$brasseriesCheck = $bdd->query("SELECT id_fabriquant FROM ob_brasseries WHERE hiden = '1'");
+					$brassieres_active = array();
+					while($c = $brasseriesCheck->fetch(PDO::FETCH_OBJ)) {
+						$brassieres_active[] = (int) $c->id_fabriquant;
+					}
+
+					$checkExist = $bdd->prepare("SELECT id FROM ob_catalogue_produits WHERE code_produit = :code_produit LIMIT 1");
+					$modifProduit = $bdd->prepare("UPDATE ob_catalogue_produits SET prix_ht = :prix_ht, droits = :droits, stock = :stock, code_tva = :code_tva, uv_caisse = :uv_caisse, brasserie = :brasserie, contenance = :contenance, degre = :degre, condition_vente = :condition_vente, consigne_caisse = :consigne_caisse, marque = :marque, categorie = :categorie, famille_id = :famille_id, sous_famille_id = :sous_famille_id WHERE code_produit = :code_produit");
+					$taxOnly = $bdd->prepare("UPDATE ob_catalogue_produits SET famille_id = :famille_id, sous_famille_id = :sous_famille_id WHERE code_produit = :code_produit");
+					$createProduit = $bdd->prepare("INSERT INTO ob_catalogue_produits (code_produit, prix_ht, stock, code_tva, nom, nom_sup, brasserie, contenance, degre, condition_vente, consigne_caisse, uv_caisse, droits, marque, categorie, famille_id, sous_famille_id) VALUES (:code_produit, :prix_ht, :stock, :code_tva, :nom, :nom_sup, :brasserie, :contenance, :degre, :condition_vente, :consigne_caisse, :uv_caisse, :droits, :marque, :categorie, :famille_id, :sous_famille_id)");
+
+					if(($handle = fopen($tarifFile, 'r')) !== FALSE) {
+						$header = fgetcsv($handle, 0, ";");
+						if(is_array($header) && count($header) > 1) {
+							while(($row = fgetcsv($handle, 0, ";")) !== FALSE) {
+								if(!is_array($row) || count($row) !== count($header)) {
+									continue;
+								}
+								try {
+									$assoc = array_combine($header, $row);
+									} catch(ValueError $e) {
+										continue;
+									}
+									if(!is_array($assoc) || !isset($assoc['CODE_PRODUIT'])) {
+										continue;
+									}
+
+									$code_produit = (int) preg_replace('/[^\d]/', '', (string) $assoc['CODE_PRODUIT']);
+									if($code_produit <= 0) {
+										continue;
+									}
+									$fabriquant = (int) trim((string) $assoc['FABRIQUANT']);
+									$categorie = (int) trim((string) $assoc['CATEGORIE']);
+									$is_active = in_array($fabriquant, $brassieres_active, true);
+									$requiresActiveBrasserie = ($categorie >= 1 && $categorie <= 19) || in_array($categorie, array(28,29,32,33), true);
+									$canImport = $is_active || !$requiresActiveBrasserie;
+									$brasserieToStore = $is_active ? $fabriquant : 0;
+
+									$famille_id = null;
+									$sous_famille_id = null;
+									if(isset($taxonomyByCodeProduit[$code_produit])) {
+										$famille_id = ob_get_or_create_famille_id($bdd, $taxonomyByCodeProduit[$code_produit]['famille'], $familleIdCache);
+										$sous_famille_id = ob_get_or_create_sous_famille_id($bdd, $famille_id, $taxonomyByCodeProduit[$code_produit]['sous_famille'], $sousFamilleIdCache);
+									}
+
+									$checkExist->execute(array(':code_produit' => $code_produit));
+									$existingId = $checkExist->fetchColumn();
+
+									if($existingId !== false && $existingId !== null) {
+										if($canImport) {
+											$prix_ht          = (float) trim((string) $assoc['PRIX']);
+											$droits           = (float) trim((string) $assoc['ACCISE']);
+											$stock            = (int) trim((string) $assoc['STOCK_UV']);
+											$code_tva         = (int) trim((string) $assoc['CODE_TVA']);
+											$uv_caisse        = (int) trim((string) $assoc['UV_CAISSE']);
+											$contenance       = (float) trim((string) $assoc['CONTENANCE']);
+											$degre            = (float) trim((string) $assoc['DEGRE']);
+											$condition_vente  = (int) trim((string) $assoc['CONDITION_VENTE']);
+											$consigne_caisse  = (float) trim((string) $assoc['CONSIGNE_PAR_CONDITION_VENTE']);
+											$marque           = trim((string) $assoc['MARQUE']);
+
+											$modifProduit->execute(array(
+												':prix_ht' => (string) $prix_ht,
+												':droits' => (string) $droits,
+												':stock' => $stock,
+												':code_tva' => $code_tva,
+												':uv_caisse' => $uv_caisse,
+												':brasserie' => (int) $brasserieToStore,
+												':contenance' => (string) $contenance,
+												':degre' => (string) $degre,
+												':condition_vente' => $condition_vente,
+												':consigne_caisse' => (string) $consigne_caisse,
+												':marque' => $marque,
+												':categorie' => $categorie,
+												':famille_id' => $famille_id,
+												':sous_famille_id' => $sous_famille_id,
+												':code_produit' => $code_produit,
+											));
+										} else {
+											if(!is_null($famille_id) || !is_null($sous_famille_id)) {
+												$taxOnly->execute(array(
+													':famille_id' => $famille_id,
+													':sous_famille_id' => $sous_famille_id,
+													':code_produit' => $code_produit,
+												));
+											}
+										}
+									} else {
+										if($canImport) {
+											$createProduit->execute(array(
+												':code_produit' => $code_produit,
+												':prix_ht' => $assoc['PRIX'],
+												':stock' => $assoc['STOCK_UV'],
+												':code_tva' => $assoc['CODE_TVA'],
+												':nom' => $assoc['LIBELLE'],
+												':nom_sup' => $assoc['LIBELLE COMP.'],
+												':brasserie' => (int) $brasserieToStore,
+												':contenance' => $assoc['CONTENANCE'],
+												':degre' => $assoc['DEGRE'],
+												':condition_vente' => $assoc['CONDITION_VENTE'],
+												':consigne_caisse' => $assoc['CONSIGNE_PAR_CONDITION_VENTE'],
+												':uv_caisse' => $assoc['UV_CAISSE'],
+												':droits' => $assoc['ACCISE'],
+												':marque' => $assoc['MARQUE'],
+												':categorie' => $categorie,
+												':famille_id' => $famille_id,
+												':sous_famille_id' => $sous_famille_id,
+											));
+										}
+									}
+							}
+						}
+						fclose($handle);
+					}
+
+					$bdd->commit();
+					$nextState['generated_at'] = date('c');
+					@file_put_contents($importStateFile, json_encode($nextState));
+				} catch(Exception $e) {
+					if($bdd->inTransaction()) {
+						$bdd->rollBack();
+					}
+					throw $e;
 				}
 			}
-			fclose($handleArt);
+			if($lockHandle) {
+				@flock($lockHandle, LOCK_UN);
+				@fclose($lockHandle);
+			}
 		}
 	}
-	$familleIdCache = array();
-	$sousFamilleIdCache = array();
-
-	$file = __DIR__ . "/../transfert/produits/TARIFINTERNET_COMPLET.CSV";
-	if(file_exists($file) && is_readable($file)) {
-		$header = NULL;
-		$data = array();
-		if(($handle = fopen($file, 'r')) !== FALSE) {
-	        while (($row = fgetcsv($handle, 0, ";")) !== FALSE) {
-	            if(!$header) {
-	            	$header = $row;
-	            } else {
-	            		if(!is_array($row) || count($row) !== count($header)) {
-	            			continue;
-	            		}
-	                try {
-	                	$assoc = array_combine($header, $row);
-	                } catch(ValueError $e) {
-	                	continue;
-	                }
-	                if(!is_array($assoc)) {
-	                	continue;
-	                }
-	                $data[] = $assoc;
-	            }
-	        }
-	        fclose($handle);
-
-	        ### BRASSERIES AUTORISEES
-	        $brasseriesCheck = $bdd->query("SELECT id_fabriquant FROM ob_brasseries WHERE hiden = '1'");
-	        $brassieres_active = array();
-	        while($c = $brasseriesCheck->fetch(PDO::FETCH_OBJ)) {
-	        	$brassieres_active[] = $c->id_fabriquant;
-	        }
-
-	        ### ON SELECTIONNE LES ARTICLES
-		        foreach($data as $p1) {
-		        	$code_produit = (int) preg_replace('/[^\d]/', '', (string) $p1['CODE_PRODUIT']);
-		        	if($code_produit <= 0) {
-		        		continue;
-		        	}
-		        	$fabriquant = (int) trim((string) $p1['FABRIQUANT']);
-		        	$categorie = (int) trim((string) $p1['CATEGORIE']);
-		        	$is_active = in_array($fabriquant, $brassieres_active);
-		        	// Historiquement, l'import est limité aux "brasseries actives".
-		        	// Mais pour VINS (20–26) et SPIRITUEUX (30–31), les fabricants ne sont pas dans ob_brasseries.
-		        	// On autorise donc l'import hors bières, en stockant brasserie=0 pour ne pas les masquer côté catalogue.
-		        	$requiresActiveBrasserie = ($categorie >= 1 && $categorie <= 19) || in_array($categorie, array(28,29,32,33), true);
-		        	$canImport = $is_active || !$requiresActiveBrasserie;
-		        	$brasserieToStore = $is_active ? $fabriquant : 0;
-
-					$famille_id = null;
-					$sous_famille_id = null;
-					if(isset($taxonomyByCodeProduit[$code_produit])) {
-						$famille_id = ob_get_or_create_famille_id($bdd, $taxonomyByCodeProduit[$code_produit]['famille'], $familleIdCache);
-						$sous_famille_id = ob_get_or_create_sous_famille_id($bdd, $famille_id, $taxonomyByCodeProduit[$code_produit]['sous_famille'], $sousFamilleIdCache);
-					}
-
-		      		$checkExist = $bdd->prepare("SELECT id FROM ob_catalogue_produits WHERE code_produit = :code_produit LIMIT 1");
-		      		$checkExist->bindParam(":code_produit", $code_produit, PDO::PARAM_INT);
-		      		$checkExist->execute();
-
-		        	if($checkExist->rowCount() > 0) {
-		        		if($canImport) {
-		        			### MODIFIER LE PRODUIT
-							$prix_ht          = (float) trim($p1['PRIX']);
-							$droits           = (float) trim($p1['ACCISE']);
-							$stock            = (int) trim($p1['STOCK_UV']);
-							$code_tva         = (int) trim($p1['CODE_TVA']);
-							$uv_caisse        = (int) trim($p1['UV_CAISSE']);
-							$brasserie        = (int) $brasserieToStore;
-							$contenance       = (float) trim($p1['CONTENANCE']);
-							$degre            = (float) trim($p1['DEGRE']);
-							$condition_vente  = (int) trim($p1['CONDITION_VENTE']);
-							$consigne_caisse  = (float) trim($p1['CONSIGNE_PAR_CONDITION_VENTE']);
-							$marque           = trim($p1['MARQUE']); // enum('0','1','2') → laisser en string
-							$categorie        = (int) $categorie;
-
-		        			$modifProduit = $bdd->prepare("UPDATE ob_catalogue_produits SET prix_ht = :prix_ht, droits = :droits, stock = :stock, code_tva = :code_tva, uv_caisse = :uv_caisse, brasserie = :brasserie, contenance = :contenance, degre = :degre, condition_vente = :condition_vente, consigne_caisse = :consigne_caisse, marque = :marque, categorie = :categorie, famille_id = :famille_id, sous_famille_id = :sous_famille_id WHERE code_produit = :code_produit");
-		        			$modifProduit->bindParam(":prix_ht", $prix_ht, PDO::PARAM_STR);        // FLOAT → PDO::PARAM_STR
-							$modifProduit->bindParam(":droits", $droits, PDO::PARAM_STR);          // FLOAT
-							$modifProduit->bindParam(":stock", $stock, PDO::PARAM_INT);            // INT
-							$modifProduit->bindParam(":code_tva", $code_tva, PDO::PARAM_INT);      // INT
-							$modifProduit->bindParam(":uv_caisse", $uv_caisse, PDO::PARAM_INT);    // INT
-							$modifProduit->bindParam(":brasserie", $brasserie, PDO::PARAM_INT);    // INT
-							$modifProduit->bindParam(":contenance", $contenance, PDO::PARAM_STR);   // FLOAT
-							$modifProduit->bindParam(":degre", $degre, PDO::PARAM_STR);            // FLOAT
-							$modifProduit->bindParam(":condition_vente", $condition_vente, PDO::PARAM_INT); // INT
-							$modifProduit->bindParam(":consigne_caisse", $consigne_caisse, PDO::PARAM_STR);  // FLOAT
-							$modifProduit->bindParam(":marque", $marque, PDO::PARAM_STR);          // ENUM → string
-							$modifProduit->bindParam(":categorie", $categorie, PDO::PARAM_INT);    // INT
-							$modifProduit->bindValue(":famille_id", $famille_id, is_null($famille_id) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-							$modifProduit->bindValue(":sous_famille_id", $sous_famille_id, is_null($sous_famille_id) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-							$modifProduit->bindParam(":code_produit", $code_produit, PDO::PARAM_INT); // INT
-		        			$modifProduit->execute();
-		        		} else {
-						// Brasserie non active : on complète uniquement la taxonomie (utile pour le menu)
-						if(!is_null($famille_id) || !is_null($sous_famille_id)) {
-							$taxOnly = $bdd->prepare("UPDATE ob_catalogue_produits SET famille_id = :famille_id, sous_famille_id = :sous_famille_id WHERE code_produit = :code_produit");
-							$taxOnly->bindValue(":famille_id", $famille_id, is_null($famille_id) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-							$taxOnly->bindValue(":sous_famille_id", $sous_famille_id, is_null($sous_famille_id) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-							$taxOnly->bindParam(":code_produit", $code_produit, PDO::PARAM_INT);
-							$taxOnly->execute();
-						}
-		        		}
-		        	} else {
-		        		if($canImport) {
-		        			### CREER LE PRODUIT
-		        			$createProduit = $bdd->prepare("INSERT INTO ob_catalogue_produits (code_produit, prix_ht, stock, code_tva, nom, nom_sup, brasserie, contenance, degre, condition_vente, consigne_caisse, uv_caisse, droits, marque, categorie, famille_id, sous_famille_id) VALUES (:code_produit, :prix_ht, :stock, :code_tva, :nom, :nom_sup, :brasserie, :contenance, :degre, :condition_vente, :consigne_caisse, :uv_caisse, :droits, :marque, :categorie, :famille_id, :sous_famille_id)");
-		        			$createProduit->bindValue(":code_produit", $code_produit, PDO::PARAM_INT);
-		        			$createProduit->bindParam(":prix_ht", $p1['PRIX']);
-		        			$createProduit->bindParam(":stock", $p1['STOCK_UV']);
-		        			$createProduit->bindParam(":code_tva", $p1['CODE_TVA']);
-		        			$createProduit->bindParam(":nom", $p1['LIBELLE']);
-		        			$createProduit->bindValue(":brasserie", $brasserieToStore, PDO::PARAM_INT);
-		        			$createProduit->bindParam(":nom_sup", $p1['LIBELLE COMP.']);
-		        			$createProduit->bindParam(":contenance", $p1['CONTENANCE']);
-		        			$createProduit->bindParam(":degre", $p1['DEGRE']);
-		        			$createProduit->bindParam(":condition_vente", $p1['CONDITION_VENTE']);
-		        			$createProduit->bindParam(":consigne_caisse", $p1['CONSIGNE_PAR_CONDITION_VENTE']);
-		        			$createProduit->bindParam(":uv_caisse", $p1['UV_CAISSE']);
-		        			$createProduit->bindParam(":droits", $p1['ACCISE']);
-		        			$createProduit->bindParam(":marque", $p1['MARQUE']);
-		        			$createProduit->bindValue(":categorie", $categorie, PDO::PARAM_INT);
-		        			$createProduit->bindValue(":famille_id", $famille_id, is_null($famille_id) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-		        			$createProduit->bindValue(":sous_famille_id", $sous_famille_id, is_null($sous_famille_id) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-		        			$createProduit->execute();
-		        		}
-		        	}
-		        }
-	    }
-    }
 
     #### GENERATION DU FICHIER BON DE COMMANDE
 
