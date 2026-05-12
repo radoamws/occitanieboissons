@@ -171,6 +171,23 @@
 		}
 		return !($prev['tarif'] == $nextState['tarif'] && $prev['art'] == $nextState['art']);
 	}
+	function ob_delete_missing_catalogue_products($bdd, $retainedCodes) {
+		$retainedMap = array();
+		foreach($retainedCodes as $code) {
+			$code = (int) $code;
+			if($code > 0) {
+				$retainedMap[$code] = true;
+			}
+		}
+		$deleteProduit = $bdd->prepare("DELETE FROM ob_catalogue_produits WHERE code_produit = :code_produit");
+		$existingCodes = $bdd->query("SELECT code_produit FROM ob_catalogue_produits");
+		while($existing = $existingCodes->fetch(PDO::FETCH_OBJ)) {
+			$code = isset($existing->code_produit) ? (int) $existing->code_produit : 0;
+			if($code > 0 && !isset($retainedMap[$code])) {
+				$deleteProduit->execute(array(':code_produit' => $code));
+			}
+		}
+	}
 
 	// Import CSV → tables (ne doit pas tourner à chaque page)
 	$artFile = __DIR__ . '/../transfert/produits/ART_PRIX_STO.CSV';
@@ -179,7 +196,7 @@
 	$importLockFile = __DIR__ . "/../transfert/produits/.ob_import_lock";
 	$forceImport = (isset($_GET['ob_import']) && $_GET['ob_import'] == '1') || (getenv('OB_FORCE_IMPORT') === '1');
 	$nextState = array(
-		'version' => 1,
+		'version' => 2,
 		'tarif' => ob_file_signature($tarifFile),
 		'art' => ob_file_signature($artFile),
 	);
@@ -200,6 +217,8 @@
 				$taxonomyByCodeProduit = array();
 				$familleIdCache = array();
 				$sousFamilleIdCache = array();
+				$retainedCodeProduits = array();
+				$processedTarifRows = 0;
 
 				// ART_PRIX_STO.CSV (taxonomie)
 				if($artFile && file_exists($artFile) && is_readable($artFile)) {
@@ -255,7 +274,7 @@
 					}
 
 					$checkExist = $bdd->prepare("SELECT id FROM ob_catalogue_produits WHERE code_produit = :code_produit LIMIT 1");
-					$modifProduit = $bdd->prepare("UPDATE ob_catalogue_produits SET prix_ht = :prix_ht, droits = :droits, stock = :stock, code_tva = :code_tva, uv_caisse = :uv_caisse, brasserie = :brasserie, contenance = :contenance, degre = :degre, condition_vente = :condition_vente, consigne_caisse = :consigne_caisse, marque = :marque, categorie = :categorie, famille_id = :famille_id, sous_famille_id = :sous_famille_id WHERE code_produit = :code_produit");
+					$modifProduit = $bdd->prepare("UPDATE ob_catalogue_produits SET prix_ht = :prix_ht, droits = :droits, stock = :stock, code_tva = :code_tva, nom = :nom, nom_sup = :nom_sup, uv_caisse = :uv_caisse, brasserie = :brasserie, contenance = :contenance, degre = :degre, condition_vente = :condition_vente, consigne_caisse = :consigne_caisse, marque = :marque, categorie = :categorie, famille_id = :famille_id, sous_famille_id = :sous_famille_id WHERE code_produit = :code_produit");
 					$taxOnly = $bdd->prepare("UPDATE ob_catalogue_produits SET famille_id = :famille_id, sous_famille_id = :sous_famille_id WHERE code_produit = :code_produit");
 					$createProduit = $bdd->prepare("INSERT INTO ob_catalogue_produits (code_produit, prix_ht, stock, code_tva, nom, nom_sup, brasserie, contenance, degre, condition_vente, consigne_caisse, uv_caisse, droits, marque, categorie, famille_id, sous_famille_id) VALUES (:code_produit, :prix_ht, :stock, :code_tva, :nom, :nom_sup, :brasserie, :contenance, :degre, :condition_vente, :consigne_caisse, :uv_caisse, :droits, :marque, :categorie, :famille_id, :sous_famille_id)");
 
@@ -279,12 +298,15 @@
 									if($code_produit <= 0) {
 										continue;
 									}
+									$processedTarifRows++;
 									$fabriquant = (int) trim((string) $assoc['FABRIQUANT']);
 									$categorie = (int) trim((string) $assoc['CATEGORIE']);
 									$is_active = in_array($fabriquant, $brassieres_active, true);
 									$requiresActiveBrasserie = ($categorie >= 1 && $categorie <= 19) || in_array($categorie, array(28,29,32,33), true);
 									$canImport = $is_active || !$requiresActiveBrasserie;
 									$brasserieToStore = $is_active ? $fabriquant : 0;
+									$nom = trim((string) $assoc['LIBELLE']);
+									$nom_sup = trim((string) $assoc['LIBELLE COMP.']);
 
 									$famille_id = null;
 									$sous_famille_id = null;
@@ -298,6 +320,7 @@
 
 									if($existingId !== false && $existingId !== null) {
 										if($canImport) {
+											$retainedCodeProduits[$code_produit] = true;
 											$prix_ht          = (float) trim((string) $assoc['PRIX']);
 											$droits           = (float) trim((string) $assoc['ACCISE']);
 											$stock            = (int) trim((string) $assoc['STOCK_UV']);
@@ -314,6 +337,8 @@
 												':droits' => (string) $droits,
 												':stock' => $stock,
 												':code_tva' => $code_tva,
+												':nom' => $nom,
+												':nom_sup' => $nom_sup,
 												':uv_caisse' => $uv_caisse,
 												':brasserie' => (int) $brasserieToStore,
 												':contenance' => (string) $contenance,
@@ -337,13 +362,14 @@
 										}
 									} else {
 										if($canImport) {
+											$retainedCodeProduits[$code_produit] = true;
 											$createProduit->execute(array(
 												':code_produit' => $code_produit,
 												':prix_ht' => $assoc['PRIX'],
 												':stock' => $assoc['STOCK_UV'],
 												':code_tva' => $assoc['CODE_TVA'],
-												':nom' => $assoc['LIBELLE'],
-												':nom_sup' => $assoc['LIBELLE COMP.'],
+												':nom' => $nom,
+												':nom_sup' => $nom_sup,
 												':brasserie' => (int) $brasserieToStore,
 												':contenance' => $assoc['CONTENANCE'],
 												':degre' => $assoc['DEGRE'],
@@ -361,6 +387,10 @@
 							}
 						}
 						fclose($handle);
+					}
+
+					if($processedTarifRows > 0) {
+						ob_delete_missing_catalogue_products($bdd, array_keys($retainedCodeProduits));
 					}
 
 					$bdd->commit();
