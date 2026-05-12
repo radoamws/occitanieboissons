@@ -221,6 +221,7 @@
 	};
 
 	$base_catalogue_url = $url."/univers/".$univers;
+	$show_univers_products = (isset($_GET['listing']) && $_GET['listing'] === 'produits');
 
 	// Pré-calcul des données de menu (catégories, fabricants, pays) par univers
 	$univers_menu = [];
@@ -641,7 +642,7 @@
 											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/7">Blonde</a>
 											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/4">Ambrée</a>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/bieres">Voir tout</a>
+											<a class="menu-more" href="<?php echo $url; ?>/univers/bieres/produits">Voir tout</a>
 										</div>
 										<div class="menu-col">
 											<div class="menu-block-head">Catégorie > 1 à 15 + 33</div>
@@ -650,7 +651,7 @@
 											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/7">Lager</a>
 											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/5">Stout</a>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/bieres">Voir tout</a>
+											<a class="menu-more" href="<?php echo $url; ?>/univers/bieres/produits">Voir tout</a>
 										</div>
 										<div class="menu-col">
 											<div class="menu-block-head">Fabricant (à trier)</div>
@@ -659,7 +660,7 @@
 												<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/<?php echo filterNom($fab->name)."-".$fab->id; ?>"><?php echo htmlspecialchars($fab->name, ENT_QUOTES, 'UTF-8'); ?></a>
 											<?php } } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/bieres">Voir tout</a>
+											<a class="menu-more" href="<?php echo $url; ?>/univers/bieres/produits">Voir tout</a>
 										</div>
 										<div class="menu-col">
 											<div class="menu-block-head">Pays</div>
@@ -668,7 +669,7 @@
 												<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/pays/<?php echo rawurlencode($pays); ?>"><?php echo htmlspecialchars($pays, ENT_QUOTES, 'UTF-8'); ?></a>
 											<?php } } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/bieres">Voir tout</a>
+											<a class="menu-more" href="<?php echo $url; ?>/univers/bieres/produits">Voir tout</a>
 										</div>
 									<?php } elseif($ukey === 'vins') { ?>
 										<div class="menu-col">
@@ -1014,7 +1015,7 @@
 												<?php ObRenderProduitsGrid($elements); ?>
 											<?php } ?>
 										<?php } else { ?>
-											<?php if($univers === 'bieres') { ?>
+											<?php if($univers === 'bieres' && !$show_univers_products) { ?>
 							<!-- PANNEL FABRICANTS -->
 							<section id="brasseries-pannel">
 								<?php

@@ -23,6 +23,8 @@ RewriteRule conditions-generales-de-vente/ cgv.php [L]
 
 # CATALOGUE #
 RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/?$ index.php?univers=$1 [L,B]
+RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/produits/?$ index.php?univers=$1&listing=produits [L,B]
+RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/produits/trier-prix/(.*)$ index.php?univers=$1&listing=produits&trier_prix=$2 [L,B]
 RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/pack/([A-Za-z0-9\-]+)/?$ index.php?univers=$1&pack=$2 [L,B]
 RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/pack/([A-Za-z0-9\-]+)/trier-prix/(.*)$ index.php?univers=$1&pack=$2&trier_prix=$3 [L,B]
 RewriteRule ^univers/(bieres|vins|spiritueux|softs|promotions)/pays/(.*)$ index.php?univers=$1&pays=$2 [L,B]

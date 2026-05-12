@@ -63,7 +63,7 @@
 	
 	#### MODIFICATION DU CATALOGUE AUTOMATIQUE
 	// Complément de données pour le menu (famille / sous-famille)
-	// Source: ART_PRIX_STO.CSV à la racine du projet (occitanieboissons/)
+	// Source: catalogue/transfert/produits/ART_PRIX_STO.CSV
 	function ob_slugify($value) {
 		$value = trim((string) $value);
 		if($value === '') {
@@ -173,11 +173,7 @@
 	}
 
 	// Import CSV → tables (ne doit pas tourner à chaque page)
-	$projectRoot = @realpath(__DIR__ . '/../../..');
-	$artFile = $projectRoot ? ($projectRoot . '/ART_PRIX_STO.CSV') : null;
-	if(!$artFile || !file_exists($artFile)) {
-		$artFile = __DIR__ . '/../transfert/produits/ART_PRIX_STO.CSV';
-	}
+	$artFile = __DIR__ . '/../transfert/produits/ART_PRIX_STO.CSV';
 	$tarifFile = __DIR__ . "/../transfert/produits/TARIFINTERNET_COMPLET.CSV";
 	$importStateFile = __DIR__ . "/../transfert/produits/.ob_import_state.json";
 	$importLockFile = __DIR__ . "/../transfert/produits/.ob_import_lock";
