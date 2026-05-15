@@ -106,68 +106,67 @@ header .btn-header {
 	/* RECHERCHER */
 		/* PANNEL RECHERCHER */
 		.catalogue .rechercher {
-			display: -webkit-box;
-			display: -webkit-flex;
-			display: -moz-box;
-			display: -ms-flexbox;
 			display: flex;
 			flex-flow: row wrap;
-			align-items: center;
-			-webkit-align-items: center;
-			gap: 10px;
+			align-items: flex-end;
+			gap: 0 12px;
 			position: relative;
+			border-bottom: 2px solid #e8e8e8;
 		}
 			.catalogue .rechercher .catalogue-tabs {
-				display: -webkit-box;
-				display: -webkit-flex;
-				display: -moz-box;
-				display: -ms-flexbox;
 				display: flex;
 				flex-flow: row wrap;
 				gap: 0;
 			}
 			.catalogue .rechercher .catalogue-tab {
 				display: inline-block;
-				background-color: #505050;
-				color: #fff;
-				padding: 8px 15px;
+				background-color: transparent;
+				color: #404040;
+				padding: 13px 22px;
 				border-radius: 0;
 				box-sizing: border-box;
-				font-size: 0.95em;
+				font-size: 0.8em;
+				font-weight: 700;
+				letter-spacing: 0.07em;
+				text-transform: uppercase;
 				cursor: pointer;
 				border: none;
+				border-bottom: 3px solid transparent;
 				outline: none;
 				font-family: "GothamBook";
-				-webkit-transition: background-color 0.2s ease-in-out;
-				-moz-transition: background-color 0.2s ease-in-out;
-				-ms-transition: background-color 0.2s ease-in-out;
-				-o-transition: background-color 0.2s ease-in-out;
-				transition: background-color 0.2s ease-in-out;
+				-webkit-transition: color 0.18s ease, border-color 0.18s ease;
+				transition: color 0.18s ease, border-color 0.18s ease;
 			}
 			.catalogue .rechercher .catalogue-tab + .catalogue-tab {
-				border-left: 1px solid #fff;
+				border-left: none;
 			}
 			.catalogue .rechercher .catalogue-tab:hover,
 			.catalogue .rechercher .catalogue-tab:active,
 			.catalogue .rechercher .catalogue-tab.is-active {
-				background-color: #C32E1C;
+				background-color: transparent;
+				color: #C32E1C;
+				border-bottom-color: #C32E1C;
 			}
 			.catalogue .rechercher .catalogue-sort {
 				margin-left: auto;
+				padding-bottom: 6px;
 			}
 			.catalogue .rechercher .catalogue-sort select {
 				background-color: #fff;
-				padding: 8px;
+				padding: 7px 10px;
 				box-sizing: border-box;
 				font-family: "GothamBook";
 				outline: none;
-				border: none;
+				border: 1px solid #e0e0e0;
+				border-radius: 4px;
+				font-size: 0.85em;
+				color: #404040;
 			}
 	/* MOT-CLE */
 	.catalogue .mot-cle.catalogue-megamenu {
 		width: 100%;
 		background-color: #fff;
-		padding: 15px;
+		padding: 24px 28px 28px 28px;
 		box-sizing: border-box;
 		position: absolute;
 		left: 0;
@@ -176,15 +175,18 @@ header .btn-header {
 		margin-top: 0;
 		z-index: 1000;
 		display: none;
-		border: 1px solid #eee;
+		border: 1px solid #e4e4e4;
+		border-top: none;
+		border-radius: 0 0 10px 10px;
+		box-shadow: 0 16px 48px rgba(0,0,0,0.10);
 	}
 	.catalogue .mot-cle.catalogue-megamenu:before {
 		content: "";
 		position: absolute;
 		left: 0;
 		right: 0;
-		top: -12px;
-		height: 12px;
+		top: -14px;
+		height: 14px;
 		background: transparent;
 	}
 	.catalogue .rechercher:hover .mot-cle.catalogue-megamenu,
@@ -272,9 +274,12 @@ header .btn-header {
 	}
 	.catalogue .catalogue-panel .menu-link {
 		display: block;
-		color: #202020;
+		color: #303030;
 		text-decoration: none;
-		padding: 3px 0;
+		padding: 5px 0;
+		font-size: 0.9em;
+		-webkit-transition: color 0.15s ease;
+		transition: color 0.15s ease;
 	}
 	.catalogue .catalogue-panel .menu-link:hover,
 	.catalogue .catalogue-panel .menu-link:active {
@@ -299,20 +304,30 @@ header .btn-header {
 		min-width: 0;
 	}
 	.catalogue .catalogue-panel .menu-grid {
-		display: -webkit-box;
-		display: -webkit-flex;
-		display: -moz-box;
-		display: -ms-flexbox;
 		display: flex;
 		flex-flow: row nowrap;
 		align-items: flex-start;
-		gap: 30px;
+		gap: 0;
 		flex: 1 1 auto;
 		width: 100%;
 	}
-	.catalogue .catalogue-panel .menu-grid .menu-col {
-		flex: 1 1 0;
+	/* Intro col: "Toutes les X" + format pills */
+	.catalogue .catalogue-panel .menu-grid .menu-col:first-child {
+		flex: 0 0 200px;
+		max-width: 200px;
 		min-width: 0;
+		background-color: #f7f7f7;
+		border-radius: 8px;
+		padding: 18px 16px;
+		box-sizing: border-box;
+		margin-right: 28px;
+	}
+	/* Filter cols */
+	.catalogue .catalogue-panel .menu-grid .menu-col:not(:first-child) {
+		flex: 1 1 0;
+		min-width: 110px;
+		padding: 4px 12px 4px 0;
+		box-sizing: border-box;
 	}
 	.catalogue .catalogue-panel .menu-block-head {
 		font-family: "GothamBook";
@@ -323,36 +338,54 @@ header .btn-header {
 	}
 	.catalogue .catalogue-panel .menu-section-title {
 		font-family: "GothamBook";
-		font-weight: bold;
-		text-decoration: underline;
-		margin: 0 0 8px 0;
+		font-size: 0.7em;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.09em;
+		text-decoration: none;
+		margin: 0 0 12px 0;
+		padding: 0 0 6px 10px;
+		border-left: 3px solid #C32E1C;
 		color: #202020;
+		display: block;
 	}
 	.catalogue .catalogue-panel .menu-link-primary {
-		font-weight: bold;
-		margin-bottom: 10px;
-	}
-	.catalogue .catalogue-panel .menu-pill {
-		display: inline-block;
-		padding: 8px 12px;
-		margin: 0 8px 10px 0;
-		border: 1px solid #202020;
-		border-radius: 18px;
+		font-size: 1.05em;
+		font-weight: 700;
 		color: #202020;
 		text-decoration: none;
+		display: block;
+		margin-bottom: 16px;
+		-webkit-transition: color 0.15s ease;
+		transition: color 0.15s ease;
+	}
+	.catalogue .catalogue-panel .menu-link-primary:hover,
+	.catalogue .catalogue-panel .menu-link-primary:active {
+		color: #C32E1C;
+	}
+	.catalogue .catalogue-panel .menu-pill {
+		display: inline-flex;
+		align-items: center;
+		padding: 5px 12px;
+		margin: 0 6px 8px 0;
+		border: 1.5px solid #d0d0d0;
+		border-radius: 20px;
+		color: #303030;
+		text-decoration: none;
 		font-family: "GothamBook";
-		font-size: 0.95em;
+		font-size: 0.8em;
+		letter-spacing: 0.02em;
+		-webkit-transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+		transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
 	}
 	.catalogue .catalogue-panel .menu-pill:hover,
 	.catalogue .catalogue-panel .menu-pill:active {
 		border-color: #C32E1C;
 		color: #C32E1C;
+		background-color: #fff5f4;
 	}
 	.catalogue .catalogue-panel .menu-etc {
-		display: block;
-		margin-top: 6px;
-		color: #505050;
-		opacity: .85;
+		display: none;
 	}
 	.catalogue .catalogue-panel .menu-text {
 		display: block;
@@ -366,19 +399,94 @@ header .btn-header {
 		}
 		.catalogue .catalogue-panel .menu-grid {
 			flex-flow: column nowrap;
-			gap: 12px;
+			gap: 16px;
+		}
+		.catalogue .catalogue-panel .menu-grid .menu-col:first-child {
+			flex: 0 0 auto;
+			max-width: 100%;
+			margin-right: 0;
+		}
+		.catalogue .catalogue-panel .menu-grid .menu-col:not(:first-child) {
+			padding: 0;
 		}
 	}
 	.catalogue .catalogue-panel .menu-more {
-		display: inline-block;
-		margin-top: 10px;
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		margin-top: 14px;
+		padding: 5px 12px;
+		background: transparent;
+		border: 1.5px solid #C32E1C;
+		border-radius: 20px;
 		color: #C32E1C;
 		text-decoration: none;
+		font-size: 0.75em;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		-webkit-transition: background-color 0.15s ease, color 0.15s ease;
+		transition: background-color 0.15s ease, color 0.15s ease;
+	}
+	.catalogue .catalogue-panel .menu-more:after {
+		content: "\2192";
+		font-size: 1.1em;
+		font-weight: normal;
+		line-height: 1;
+	}
+	.catalogue .catalogue-panel .menu-more:hover,
+	.catalogue .catalogue-panel .menu-more:active {
+		background-color: #C32E1C;
+		color: #fff;
 	}
 	.catalogue .catalogue-panel .menu-empty {
 		display: block;
 		color: #505050;
 		opacity: .85;
+	}
+	.catalogue .catalogue-submenu {
+		display: block;
+		width: 100%;
+		flex: 0 0 100%;
+		margin: 22px 0 12px 0;
+		padding: 20px 22px;
+		background-color: #f9f9f9;
+		border: 1px solid #e8e8e8;
+		border-radius: 8px;
+		box-sizing: border-box;
+	}
+	.catalogue .catalogue-submenu-title {
+		font-family: "GothamBook";
+		font-size: 0.7em;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.09em;
+		margin: 0 0 14px 0;
+		color: #505050;
+	}
+	.catalogue .catalogue-submenu-links {
+		display: flex;
+		flex-flow: row wrap;
+		gap: 8px;
+	}
+	.catalogue .catalogue-submenu-link {
+		display: inline-flex;
+		align-items: center;
+		padding: 6px 15px;
+		border: 1.5px solid #d0d0d0;
+		border-radius: 20px;
+		color: #303030;
+		text-decoration: none;
+		font-family: "GothamBook";
+		font-size: 0.87em;
+		-webkit-transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+		transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+	}
+	.catalogue .catalogue-submenu-link:hover,
+	.catalogue .catalogue-submenu-link:active {
+		border-color: #C32E1C;
+		color: #C32E1C;
+		background-color: #fff5f4;
 	}
 	/* BRASSERIES */
 	.catalogue #brasseries-pannel {

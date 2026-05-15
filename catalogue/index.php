@@ -222,28 +222,42 @@
 
 	$base_catalogue_url = $url."/univers/".$univers;
 	$show_univers_products = (isset($_GET['listing']) && $_GET['listing'] === 'produits');
+	$menu_scope = isset($_GET['menu_scope']) ? preg_replace('/[^a-z0-9\-_]/i', '', (string) $_GET['menu_scope']) : '';
+	$show_scope_products = ($menu_scope !== '');
 
 	// Pré-calcul des données de menu (catégories, fabricants, pays) par univers
 	$univers_menu = [];
 	foreach($univers_definitions as $key => $def) {
 		$univers_menu[$key] = [
 			'familles' => [],
+			'familles_top' => [],
+			'sous_familles_top' => [],
+			'sous_familles_all' => [],
 			'fabricants' => [],
+			'fabricants_all' => [],
 			'pays' => [],
+			'pays_all' => [],
+			'categories' => [],
 			'degres' => [],
 			'contenances' => [],
 			'fabriquant_ids' => [],
 		];
-		if(empty($def['categorie_ids'])) {
-			continue;
+		$universWhere = '1=0';
+		if(!empty($def['categorie_ids'])) {
+			$inCats = implode(',', array_map('intval', $def['categorie_ids']));
+			$universWhere = "p.categorie IN ($inCats)";
 		}
-		$inCats = implode(',', array_map('intval', $def['categorie_ids']));
-		$universWhere = "p.categorie IN ($inCats)";
-		if(in_array($key, ['vins','spiritueux'], true)) {
+		if(in_array($key, ['vins','spiritueux'], true) && !empty($def['categorie_ids'])) {
 			$slugs = isset($univers_famille_filter_slugs[$key]) ? $univers_famille_filter_slugs[$key] : [];
 			if(!empty($slugs)) {
 				$inSlugs = implode(',', array_map(function($s){ return "'".addslashes($s)."'"; }, $slugs));
 				$universWhere = "(p.categorie IN ($inCats) OR p.famille_id IN (SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs)))";
+			}
+		} elseif(empty($def['categorie_ids'])) {
+			$slugs = isset($univers_famille_filter_slugs[$key]) ? $univers_famille_filter_slugs[$key] : [];
+			if(!empty($slugs)) {
+				$inSlugs = implode(',', array_map(function($s){ return "'".addslashes($s)."'"; }, $slugs));
+				$universWhere = "p.famille_id IN (SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs))";
 			}
 		}
 		$taxStmt = $bdd->query("SELECT f.id AS famille_id, f.nom AS famille_nom, f.slug AS famille_slug, sf.id AS sous_famille_id, sf.nom AS sous_famille_nom, sf.slug AS sous_famille_slug\n\t\t\tFROM ob_catalogue_produits p\n\t\t\tINNER JOIN ob_catalogue_familles f ON p.famille_id = f.id\n\t\t\tLEFT JOIN ob_catalogue_sous_familles sf ON p.sous_famille_id = sf.id\n\t\t\tWHERE $universWhere AND p.famille_id IS NOT NULL\n\t\t\tORDER BY f.nom, sf.nom");
@@ -282,6 +296,41 @@
 			$familiesList = $filtered;
 		}
 		$univers_menu[$key]['familles'] = $familiesList;
+		foreach($familiesList as $familyItem) {
+			if(empty($familyItem['sous_familles'])) {
+				continue;
+			}
+			foreach($familyItem['sous_familles'] as $subFamilyItem) {
+				$univers_menu[$key]['sous_familles_all'][$subFamilyItem['slug']] = $subFamilyItem;
+			}
+		}
+		$univers_menu[$key]['sous_familles_all'] = array_values($univers_menu[$key]['sous_familles_all']);
+		$famillesTopStmt = $bdd->query("SELECT f.slug, f.nom, COUNT(*) AS total
+			FROM ob_catalogue_produits p
+			INNER JOIN ob_catalogue_familles f ON p.famille_id = f.id
+			WHERE $universWhere AND p.famille_id IS NOT NULL
+			GROUP BY f.id
+			ORDER BY total DESC, f.nom");
+		while($famTop = $famillesTopStmt->fetch(PDO::FETCH_OBJ)) {
+			$univers_menu[$key]['familles_top'][] = [
+				'slug' => (string) $famTop->slug,
+				'nom' => (string) $famTop->nom,
+				'total' => (int) $famTop->total,
+			];
+		}
+		$sousFamillesTopStmt = $bdd->query("SELECT sf.slug, sf.nom, COUNT(*) AS total
+			FROM ob_catalogue_produits p
+			INNER JOIN ob_catalogue_sous_familles sf ON p.sous_famille_id = sf.id
+			WHERE $universWhere AND p.sous_famille_id IS NOT NULL
+			GROUP BY sf.id
+			ORDER BY total DESC, sf.nom");
+		while($sfTop = $sousFamillesTopStmt->fetch(PDO::FETCH_OBJ)) {
+			$univers_menu[$key]['sous_familles_top'][] = [
+				'slug' => (string) $sfTop->slug,
+				'nom' => (string) $sfTop->nom,
+				'total' => (int) $sfTop->total,
+			];
+		}
 		$fabIds = [];
 		$fabStmt = $bdd->query("SELECT DISTINCT brasserie FROM ob_catalogue_produits p WHERE $universWhere AND brasserie <> 0");
 		while($f = $fabStmt->fetch(PDO::FETCH_OBJ)) {
@@ -302,6 +351,55 @@
 			sort($univers_menu[$key]['pays'], SORT_NATURAL | SORT_FLAG_CASE);
 		} else {
 			$univers_menu[$key]['pays'] = [];
+		}
+		$fabricantsAllStmt = $bdd->query("SELECT p.brasserie AS code, COALESCE(f.nom, b.name) AS nom, COUNT(*) AS total
+			FROM ob_catalogue_produits p
+			LEFT JOIN ob_catalogue_fabriquants f ON f.code = p.brasserie
+			LEFT JOIN ob_brasseries b ON b.id_fabriquant = p.brasserie AND b.hiden = '1'
+			WHERE $universWhere AND p.brasserie <> 0
+			GROUP BY p.brasserie, COALESCE(f.nom, b.name)
+			ORDER BY total DESC, nom");
+		while($fabAll = $fabricantsAllStmt->fetch(PDO::FETCH_OBJ)) {
+			if(empty($fabAll->code) || empty($fabAll->nom)) {
+				continue;
+			}
+			$univers_menu[$key]['fabricants_all'][] = [
+				'code' => (int) $fabAll->code,
+				'nom' => (string) $fabAll->nom,
+				'total' => (int) $fabAll->total,
+			];
+		}
+		$paysAllStmt = $bdd->query("SELECT p.pays_code AS code, COALESCE(cp.nom, p.pays_code) AS nom, COUNT(*) AS total
+			FROM ob_catalogue_produits p
+			LEFT JOIN ob_catalogue_pays cp ON cp.code = p.pays_code
+			WHERE $universWhere AND p.pays_code IS NOT NULL AND p.pays_code <> ''
+			GROUP BY p.pays_code, COALESCE(cp.nom, p.pays_code)
+			ORDER BY total DESC, nom");
+		while($paysAll = $paysAllStmt->fetch(PDO::FETCH_OBJ)) {
+			if(empty($paysAll->code)) {
+				continue;
+			}
+			$univers_menu[$key]['pays_all'][] = [
+				'code' => (string) $paysAll->code,
+				'nom' => (string) $paysAll->nom,
+				'total' => (int) $paysAll->total,
+			];
+		}
+		$categoriesStmt = $bdd->query("SELECT p.categorie AS code, COALESCE(c.nom, CONCAT('Catégorie ', p.categorie)) AS nom, COUNT(*) AS total
+			FROM ob_catalogue_produits p
+			LEFT JOIN ob_catalogue_categories c ON c.code = p.categorie
+			WHERE $universWhere AND p.categorie <> 0
+			GROUP BY p.categorie, COALESCE(c.nom, CONCAT('Catégorie ', p.categorie))
+			ORDER BY total DESC, nom");
+		while($cat = $categoriesStmt->fetch(PDO::FETCH_OBJ)) {
+			if(empty($cat->code)) {
+				continue;
+			}
+			$univers_menu[$key]['categories'][] = [
+				'code' => (int) $cat->code,
+				'nom' => (string) $cat->nom,
+				'total' => (int) $cat->total,
+			];
 		}
 
 		// Degrés / contenances pour le méga-menu
@@ -337,6 +435,247 @@
 				'slug' => $numeric_slug($cv),
 				'label' => $numeric_label($cv),
 			];
+		}
+	}
+	$build_universe_where = function($universKey, $alias = 'p') use ($univers_definitions, $univers_famille_filter_slugs, $bdd) {
+		$prefix = $alias ? $alias.'.' : '';
+		if(empty($univers_definitions[$universKey]['categorie_ids'])) {
+			$slugs = isset($univers_famille_filter_slugs[$universKey]) ? $univers_famille_filter_slugs[$universKey] : [];
+			if(empty($slugs)) {
+				return '1=0';
+			}
+			$inSlugs = implode(',', array_map(function($slug) {
+				return "'".addslashes($slug)."'";
+			}, $slugs));
+			return $prefix."famille_id IN (SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs))";
+		}
+		$inCats = implode(',', array_map('intval', $univers_definitions[$universKey]['categorie_ids']));
+		$where = $prefix."categorie IN ($inCats)";
+		if(in_array($universKey, ['vins', 'spiritueux'], true)) {
+			$slugs = isset($univers_famille_filter_slugs[$universKey]) ? $univers_famille_filter_slugs[$universKey] : [];
+			if(!empty($slugs)) {
+				$inSlugs = implode(',', array_map(function($slug) {
+					return "'".addslashes($slug)."'";
+				}, $slugs));
+				$where = '('.$where.' OR '.$prefix."famille_id IN (SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs)))";
+			}
+		}
+		return $where;
+	};
+	$current_univers_menu = isset($univers_menu[$univers]) ? $univers_menu[$univers] : [
+		'familles' => [],
+		'familles_top' => [],
+		'sous_familles_top' => [],
+		'fabricants_all' => [],
+		'pays_all' => [],
+		'categories' => [],
+	];
+	$menu_filter_href = function($universKey, $filters = array()) use ($url) {
+		$clean = array();
+		foreach($filters as $key => $value) {
+			if($value === null || $value === '') {
+				continue;
+			}
+			$clean[$key] = $value;
+		}
+		$query = http_build_query($clean);
+		return $url.'/univers/'.$universKey.'/produits'.($query !== '' ? '?'.$query : '');
+	};
+	$submenu_titles_by_univers = array(
+		'bieres' => 'Toutes les brasseries',
+		'vins' => 'Tous les domaines',
+		'spiritueux' => 'Toutes les distilleries',
+		'softs' => 'Toutes les marques',
+	);
+	$beer_color_labels = array('blanche', 'blonde', 'ambre', 'ambree', 'rousse', 'brune', 'red ale', 'fruit');
+	$beer_color_items = array();
+	$beer_style_items = array();
+	foreach($univers_menu['bieres']['categories'] as $categoryItem) {
+		$label = mb_strtolower((string) $categoryItem['nom'], 'UTF-8');
+		$isColor = false;
+		foreach($beer_color_labels as $needle) {
+			if(strpos($label, $needle) !== false) {
+				$isColor = true;
+				break;
+			}
+		}
+		if($isColor) {
+			$beer_color_items[] = $categoryItem;
+		} else {
+			$beer_style_items[] = $categoryItem;
+		}
+	}
+	$submenu_config_by_scope = array(
+		'bieres-couleur' => array(
+			'title' => 'Toutes les couleurs',
+			'items' => $beer_color_items,
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('bieres', array('menu_scope' => 'bieres-couleur', 'filtre_categorie' => $item['code']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'bieres-style' => array(
+			'title' => 'Tous les styles',
+			'items' => $beer_style_items,
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('bieres', array('menu_scope' => 'bieres-style', 'filtre_categorie' => $item['code']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'bieres-brasserie' => array(
+			'title' => 'Toutes les brasseries',
+			'items' => $univers_menu['bieres']['fabricants_all'],
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('bieres', array('menu_scope' => 'bieres-brasserie', 'filtre_fabriquant' => $item['code']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'bieres-pays' => array(
+			'title' => 'Tous les pays',
+			'items' => $univers_menu['bieres']['pays_all'],
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('bieres', array('menu_scope' => 'bieres-pays', 'filtre_pays' => $item['code']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'vins-type' => array(
+			'title' => 'Tous les types',
+			'items' => $univers_menu['vins']['categories'],
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('vins', array('menu_scope' => 'vins-type', 'filtre_categorie' => $item['code']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'vins-appellation' => array(
+			'title' => 'Toutes les appellations',
+			'items' => $univers_menu['vins']['sous_familles_all'],
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('vins', array('menu_scope' => 'vins-appellation', 'filtre_sous_famille' => $item['slug']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'vins-domaine' => array(
+			'title' => 'Tous les domaines',
+			'items' => $univers_menu['vins']['fabricants_all'],
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('vins', array('menu_scope' => 'vins-domaine', 'filtre_fabriquant' => $item['code']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'vins-pays' => array(
+			'title' => 'Tous les pays',
+			'items' => $univers_menu['vins']['pays_all'],
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('vins', array('menu_scope' => 'vins-pays', 'filtre_pays' => $item['code']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'spiritueux-type' => array(
+			'title' => 'Tous les types',
+			'items' => $univers_menu['spiritueux']['sous_familles_all'],
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('spiritueux', array('menu_scope' => 'spiritueux-type', 'filtre_sous_famille' => $item['slug']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'spiritueux-distillerie' => array(
+			'title' => 'Toutes les distilleries',
+			'items' => $univers_menu['spiritueux']['fabricants_all'],
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('spiritueux', array('menu_scope' => 'spiritueux-distillerie', 'filtre_fabriquant' => $item['code']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'spiritueux-pays' => array(
+			'title' => 'Tous les pays',
+			'items' => $univers_menu['spiritueux']['pays_all'],
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('spiritueux', array('menu_scope' => 'spiritueux-pays', 'filtre_pays' => $item['code']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'softs-type' => array(
+			'title' => 'Tous les types',
+			'items' => $univers_menu['softs']['familles'],
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('softs', array('menu_scope' => 'softs-type', 'filtre_famille' => $item['slug']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'softs-marque' => array(
+			'title' => 'Toutes les marques',
+			'items' => $univers_menu['softs']['fabricants_all'],
+			'build_href' => function($item) use ($menu_filter_href) {
+				return $menu_filter_href('softs', array('menu_scope' => 'softs-marque', 'filtre_fabriquant' => $item['code']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+	);
+	$current_scope_submenu = (isset($submenu_config_by_scope[$menu_scope]) && !empty($submenu_config_by_scope[$menu_scope]['items'])) ? $submenu_config_by_scope[$menu_scope] : null;
+	$filter_query = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
+	$filter_famille_slug = isset($_GET['filtre_famille']) ? preg_replace('/[^a-z0-9\-]/i', '', (string) $_GET['filtre_famille']) : '';
+	$filter_sous_famille_slug = isset($_GET['filtre_sous_famille']) ? preg_replace('/[^a-z0-9\-]/i', '', (string) $_GET['filtre_sous_famille']) : '';
+	$filter_categorie_code = isset($_GET['filtre_categorie']) ? (int) $_GET['filtre_categorie'] : 0;
+	$filter_fabriquant_code = isset($_GET['filtre_fabriquant']) ? (int) $_GET['filtre_fabriquant'] : 0;
+	$filter_pays_code = isset($_GET['filtre_pays']) ? trim((string) $_GET['filtre_pays']) : '';
+	$filter_pack_slug = isset($_GET['filtre_pack']) ? preg_replace('/[^a-z0-9\-]/i', '', (string) $_GET['filtre_pack']) : '';
+	$has_query_filters = ($filter_query !== '' || $filter_famille_slug !== '' || $filter_sous_famille_slug !== '' || $filter_categorie_code > 0 || $filter_fabriquant_code > 0 || $filter_pays_code !== '' || $filter_pack_slug !== '');
+	$filter_famille_id = null;
+	if($filter_famille_slug !== '') {
+		$familleFilterStmt = $bdd->prepare("SELECT id FROM ob_catalogue_familles WHERE slug = :slug LIMIT 1");
+		$familleFilterStmt->bindParam(':slug', $filter_famille_slug);
+		$familleFilterStmt->execute();
+		$filterFamille = $familleFilterStmt->fetch(PDO::FETCH_OBJ);
+		if($filterFamille && isset($filterFamille->id)) {
+			$filter_famille_id = (int) $filterFamille->id;
+		}
+	}
+	$filter_sous_famille_id = null;
+	if($filter_sous_famille_slug !== '') {
+		$sousFamilleFilterStmt = $bdd->prepare("SELECT id, famille_id FROM ob_catalogue_sous_familles WHERE slug = :slug LIMIT 1");
+		$sousFamilleFilterStmt->bindParam(':slug', $filter_sous_famille_slug);
+		$sousFamilleFilterStmt->execute();
+		$filterSousFamille = $sousFamilleFilterStmt->fetch(PDO::FETCH_OBJ);
+		if($filterSousFamille && isset($filterSousFamille->id)) {
+			$filter_sous_famille_id = (int) $filterSousFamille->id;
+			if(!$filter_famille_id) {
+				$filter_famille_id = (int) $filterSousFamille->famille_id;
+			}
+		}
+	}
+	$available_sub_familles = [];
+	foreach($current_univers_menu['familles'] as $familleMenu) {
+		if($filter_famille_slug !== '' && $familleMenu['slug'] !== $filter_famille_slug) {
+			continue;
+		}
+		foreach($familleMenu['sous_familles'] as $sousFamilleMenu) {
+			$available_sub_familles[] = $sousFamilleMenu;
 		}
 	}
 	 $brasseries_select = FALSE;
@@ -466,6 +805,12 @@
 			header("Location: ".$base_catalogue_url."");
 			exit();
 		}
+	}
+	$effective_pack_slug = null;
+	if($select_pack) {
+		$effective_pack_slug = $pack_slug;
+	} elseif($filter_pack_slug !== '' && isset($allowed_pack_by_univers[$univers]) && in_array($filter_pack_slug, $allowed_pack_by_univers[$univers], true)) {
+		$effective_pack_slug = $filter_pack_slug;
 	}
 
 	function ObPanierMap() {
@@ -628,156 +973,131 @@
 								<div class="menu-grid menu-grid--<?php echo $ukey; ?>">
 									<?php if($ukey === 'bieres') { ?>
 										<div class="menu-col">
-											<div class="menu-block-head">Famille > 20</div>
 											<a class="menu-link menu-link-primary" href="<?php echo $url; ?>/univers/bieres">Toutes les bières</a>
-											<div class="menu-block-head">Sous-famille > 8 à 19</div>
 												<a class="menu-pill" href="<?php echo $url; ?>/univers/bieres/pack/bouteilles-canettes">Bouteilles et canettes</a>
-											<div class="menu-block-head">Sous-famille > 1 à 7</div>
 												<a class="menu-pill" href="<?php echo $url; ?>/univers/bieres/pack/futs">Fûts</a>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Catégorie > 1 à 15 + 33</div>
 											<div class="menu-section-title">Couleur</div>
 											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/3">Blanche</a>
 											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/7">Blonde</a>
 											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/4">Ambrée</a>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/bieres/produits">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('bieres', array('menu_scope' => 'bieres-couleur')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Catégorie > 1 à 15 + 33</div>
 											<div class="menu-section-title">Style</div>
 											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/1">IPA</a>
 											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/7">Lager</a>
 											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/5">Stout</a>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/bieres/produits">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('bieres', array('menu_scope' => 'bieres-style')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Fabricant (à trier)</div>
 											<div class="menu-section-title">Brasserie</div>
 											<?php if(!empty($menu['fabricants'])) { $limit = 3; $i = 0; foreach($menu['fabricants'] as $fab) { if($i >= $limit) break; $i++; ?>
 												<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/<?php echo filterNom($fab->name)."-".$fab->id; ?>"><?php echo htmlspecialchars($fab->name, ENT_QUOTES, 'UTF-8'); ?></a>
 											<?php } } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/bieres/produits">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('bieres', array('menu_scope' => 'bieres-brasserie')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Pays</div>
 											<div class="menu-section-title">Pays</div>
 											<?php if(!empty($menu['pays'])) { $limit = 3; $i = 0; foreach($menu['pays'] as $pays) { if($i >= $limit) break; $i++; ?>
 												<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/pays/<?php echo rawurlencode($pays); ?>"><?php echo htmlspecialchars($pays, ENT_QUOTES, 'UTF-8'); ?></a>
 											<?php } } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/bieres/produits">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('bieres', array('menu_scope' => 'bieres-pays')); ?>">Voir tout</a>
 										</div>
 									<?php } elseif($ukey === 'vins') { ?>
 										<div class="menu-col">
-											<div class="menu-block-head">Famille > 10</div>
 											<a class="menu-link menu-link-primary" href="<?php echo $url; ?>/univers/vins">Tous les vins</a>
-											<div class="menu-block-head">Tout sauf Conditionnement > 4</div>
 											<a class="menu-pill" href="<?php echo $url; ?>/univers/vins/pack/bouteilles">Bouteilles</a>
-											<div class="menu-block-head">Conditionnement > 4</div>
 											<a class="menu-pill" href="<?php echo $url; ?>/univers/vins/pack/bib">BIB</a>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Catégorie > 20 à 26</div>
 											<div class="menu-section-title">Type</div>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/vins/categorie/20">Rouge</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/vins/categorie/22">Blanc</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/vins/categorie/21">Rosé</a>
+											<?php foreach(array_slice($menu['categories'], 0, 3) as $catItem) { ?>
+												<a class="menu-link" href="<?php echo $url; ?>/univers/vins/categorie/<?php echo (int) $catItem['code']; ?>"><?php echo htmlspecialchars($catItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/vins">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('vins', array('menu_scope' => 'vins-type')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Sous-famille > 4 à 99</div>
 											<div class="menu-section-title">Appellation</div>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/vins/sous-famille/igp-oc">Pays d’Oc</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/vins/sous-famille/bordeaux">Bordeaux</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/vins/sous-famille/cotes-du-rhone">Côtes-du-Rhône</a>
+											<?php foreach(array_slice($menu['sous_familles_top'], 0, 3) as $sfItem) { ?>
+												<a class="menu-link" href="<?php echo $menu_filter_href('vins', array('filtre_sous_famille' => $sfItem['slug'])); ?>"><?php echo htmlspecialchars($sfItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/vins">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('vins', array('menu_scope' => 'vins-appellation')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Fabricant (à trier)</div>
 											<div class="menu-section-title">Domaine</div>
-											<span class="menu-text">Plaisance</span>
-											<span class="menu-text">Le Clos du Gravillas</span>
-											<span class="menu-text">Anne de Joyeuse</span>
+											<?php foreach(array_slice($menu['fabricants_all'], 0, 3) as $fabItem) { ?>
+												<a class="menu-link" href="<?php echo $menu_filter_href('vins', array('filtre_fabriquant' => $fabItem['code'])); ?>"><?php echo htmlspecialchars($fabItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/vins">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('vins', array('menu_scope' => 'vins-domaine')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Sous-famille > 4 à 99 (à trier)</div>
-											<div class="menu-section-title">Région</div>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/vins/sous-famille/alsace">Alsace</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/vins/sous-famille/aoc-languedoc">Languedoc</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/vins">Sud-Ouest</a>
+											<div class="menu-section-title">Pays</div>
+											<?php foreach(array_slice($menu['pays_all'], 0, 3) as $paysItem) { ?>
+												<a class="menu-link" href="<?php echo $menu_filter_href('vins', array('filtre_pays' => $paysItem['code'])); ?>"><?php echo htmlspecialchars($paysItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/vins">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('vins', array('menu_scope' => 'vins-pays')); ?>">Voir tout</a>
 										</div>
 									<?php } elseif($ukey === 'spiritueux') { ?>
 										<div class="menu-col">
-											<div class="menu-block-head">Famille > 1</div>
 											<a class="menu-link menu-link-primary" href="<?php echo $url; ?>/univers/spiritueux">Tous les spiritueux</a>
-											<div class="menu-block-head">Sous-famille > ?</div>
 											<a class="menu-pill" href="<?php echo $url; ?>/univers/spiritueux/pack/bouteilles">Bouteilles</a>
-											<div class="menu-block-head">Tout sauf la sous-famille à créer</div>
 											<a class="menu-pill" href="<?php echo $url; ?>/univers/spiritueux/pack/futs">Fûts</a>
-											<div class="menu-block-head">Sous-famille à créer</div>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Sous-famille > 1 à 84</div>
 											<div class="menu-section-title">Type</div>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/spiritueux/sous-famille/whisky">Whisky</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/spiritueux/sous-famille/rhums-tiers">Rhum</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/spiritueux/sous-famille/armagnac">Armagnac</a>
+											<?php foreach(array_slice($menu['sous_familles_top'], 0, 3) as $sfItem) { ?>
+												<a class="menu-link" href="<?php echo $menu_filter_href('spiritueux', array('filtre_sous_famille' => $sfItem['slug'])); ?>"><?php echo htmlspecialchars($sfItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/spiritueux">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('spiritueux', array('menu_scope' => 'spiritueux-type')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Fabricant (à trier)</div>
 											<div class="menu-section-title">Distillerie</div>
-											<span class="menu-text">Saint-James</span>
-											<span class="menu-text">Springbank</span>
-											<span class="menu-text">Clairin</span>
+											<?php foreach(array_slice($menu['fabricants_all'], 0, 3) as $fabItem) { ?>
+												<a class="menu-link" href="<?php echo $menu_filter_href('spiritueux', array('filtre_fabriquant' => $fabItem['code'])); ?>"><?php echo htmlspecialchars($fabItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/spiritueux">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('spiritueux', array('menu_scope' => 'spiritueux-distillerie')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Pays</div>
 											<div class="menu-section-title">Pays</div>
-											<span class="menu-text">France</span>
-											<span class="menu-text">Japon</span>
-											<span class="menu-text">Écosse</span>
+											<?php foreach(array_slice($menu['pays_all'], 0, 3) as $paysItem) { ?>
+												<a class="menu-link" href="<?php echo $menu_filter_href('spiritueux', array('filtre_pays' => $paysItem['code'])); ?>"><?php echo htmlspecialchars($paysItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/spiritueux">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('spiritueux', array('menu_scope' => 'spiritueux-pays')); ?>">Voir tout</a>
 										</div>
 									<?php } elseif($ukey === 'softs') { ?>
 										<div class="menu-col">
-											<div class="menu-block-head">Famille > 40 à 75</div>
 											<a class="menu-link menu-link-primary" href="<?php echo $url; ?>/univers/softs">Tous les softs</a>
-											<div class="menu-block-head">Famille > 40 à 75</div>
 											<a class="menu-pill" href="<?php echo $url; ?>/univers/softs/pack/bouteilles">Bouteilles</a>
 											<a class="menu-pill" href="<?php echo $url; ?>/univers/softs/pack/futs">Fûts</a>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Famille 40 > 75</div>
 											<div class="menu-section-title">Type</div>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/softs/famille/softs">Boissons sucrées</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/softs/famille/jus-de-fruit">Jus de fruit</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/softs/famille/eaux">Eaux</a>
+											<?php foreach(array_slice($menu['familles_top'], 0, 3) as $famItem) { ?>
+												<a class="menu-link" href="<?php echo $menu_filter_href('softs', array('filtre_famille' => $famItem['slug'])); ?>"><?php echo htmlspecialchars($famItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/softs">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('softs', array('menu_scope' => 'softs-type')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
-											<div class="menu-block-head">Fabricant (à trier)</div>
 											<div class="menu-section-title">Marque</div>
-											<span class="menu-text">Giffard</span>
-											<span class="menu-text">Rauch</span>
-											<span class="menu-text">Fever Tree</span>
+											<?php foreach(array_slice($menu['fabricants_all'], 0, 3) as $fabItem) { ?>
+												<a class="menu-link" href="<?php echo $menu_filter_href('softs', array('filtre_fabriquant' => $fabItem['code'])); ?>"><?php echo htmlspecialchars($fabItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php } ?>
 											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $url; ?>/univers/softs">Voir tout</a>
+											<a class="menu-more" href="<?php echo $menu_filter_href('softs', array('menu_scope' => 'softs-marque')); ?>">Voir tout</a>
 										</div>
 									<?php } else { ?>
 										<div class="menu-col">
@@ -787,8 +1107,18 @@
 								</div>
 							</div>
 						<?php } ?>
-					</div>
-					</div>
+					</div><!-- /.mot-cle.catalogue-megamenu -->
+					<?php if(($show_univers_products || $show_scope_products) && !$brasseries_select && $current_scope_submenu !== null) { ?>
+						<div class="catalogue-submenu catalogue-submenu-filters">
+							<div class="catalogue-submenu-title"><?php echo $current_scope_submenu['title']; ?></div>
+							<div class="catalogue-submenu-links">
+								<?php foreach($current_scope_submenu['items'] as $submenuItem) { ?>
+									<a class="catalogue-submenu-link" href="<?php echo htmlspecialchars($current_scope_submenu['build_href']($submenuItem), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($current_scope_submenu['get_label']($submenuItem), ENT_QUOTES, 'UTF-8'); ?></a>
+								<?php } ?>
+							</div>
+						</div>
+					<?php } ?>
+					</div><!-- /.rechercher -->
 					<?php if($brasseries_select) { ?>
 						<?php
 							switch(@$_GET['trier_prix']) {
@@ -926,6 +1256,74 @@
 							if($elements->rowCount() > 0) {
 						?>
 							<?php ObRenderProduitsGrid($elements); ?>
+						<?php } ?>
+					<?php } elseif(($show_univers_products || $show_scope_products || $has_query_filters) && !$brasseries_select) { ?>
+						<?php
+							$whereParts = array();
+							$params = array();
+							$joins = '';
+							$whereParts[] = $build_universe_where($univers, 'p');
+							$whereParts[] = "p.marque IN ('1','2')";
+							if($filter_famille_id) {
+								$whereParts[] = 'p.famille_id = :filtre_famille_id';
+								$params[':filtre_famille_id'] = (int) $filter_famille_id;
+							}
+							if($filter_sous_famille_id) {
+								$whereParts[] = 'p.sous_famille_id = :filtre_sous_famille_id';
+								$params[':filtre_sous_famille_id'] = (int) $filter_sous_famille_id;
+							}
+							if($filter_categorie_code > 0) {
+								$whereParts[] = 'p.categorie = :filtre_categorie';
+								$params[':filtre_categorie'] = $filter_categorie_code;
+							}
+							if($filter_fabriquant_code > 0) {
+								$whereParts[] = 'p.brasserie = :filtre_fabriquant';
+								$params[':filtre_fabriquant'] = $filter_fabriquant_code;
+							}
+							if($filter_pays_code !== '') {
+								$whereParts[] = 'p.pays_code = :filtre_pays';
+								$params[':filtre_pays'] = $filter_pays_code;
+							}
+							if($filter_query !== '') {
+								$whereParts[] = '(p.nom LIKE :filtre_recherche OR p.nom_sup LIKE :filtre_recherche)';
+								$params[':filtre_recherche'] = '%'.$filter_query.'%';
+							}
+							if($effective_pack_slug !== null) {
+								$joins = ' LEFT JOIN ob_catalogue_sous_familles sf ON sf.id = p.sous_famille_id ';
+								$isFut = "(UPPER(COALESCE(sf.nom,'')) LIKE '%FUT%' OR UPPER(p.nom) LIKE '%FUT%' OR UPPER(p.nom) REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)')";
+								if($univers === 'vins') {
+									$isBib = "(UPPER(COALESCE(sf.nom,'')) LIKE '%BIB%' OR UPPER(p.nom) LIKE '%BIB%' OR (p.contenance IN (300,500,1000) AND UPPER(p.nom) NOT LIKE '%MAGNUM%'))";
+									if($effective_pack_slug === 'bib') {
+										$whereParts[] = $isBib;
+									} elseif($effective_pack_slug === 'bouteilles') {
+										$whereParts[] = 'NOT '.$isBib;
+									}
+								} else {
+									if($effective_pack_slug === 'futs') {
+										$whereParts[] = $isFut;
+									} else {
+										$whereParts[] = 'NOT '.$isFut;
+									}
+								}
+							}
+							switch(@$_GET['trier_prix']) {
+								case 'croissant':
+									$order = 'ORDER BY p.prix_ht+p.droits, p.marque DESC';
+								break;
+								case 'decroissant':
+									$order = 'ORDER BY p.prix_ht+p.droits DESC, p.marque DESC';
+								break;
+								default:
+									$order = 'ORDER BY p.contenance DESC, p.marque DESC';
+							}
+							$sql = 'SELECT DISTINCT p.* FROM ob_catalogue_produits p'.$joins.' WHERE '.implode(' AND ', $whereParts).' '.$order;
+							$elements = $bdd->prepare($sql);
+							$elements->execute($params);
+							if($elements->rowCount() > 0) {
+						?>
+							<?php ObRenderProduitsGrid($elements); ?>
+						<?php } else { ?>
+							<p>Aucun produit ne correspond aux filtres sélectionnés.</p>
 						<?php } ?>
 					<?php } else { ?>
 										<?php if($select_pack) { ?>

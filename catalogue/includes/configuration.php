@@ -44,9 +44,23 @@
 	$galleryimage = str_replace("catalogue.", "", $gallery);
 	$urlupload = $gallery."/upload/";
 	$drapeaux = $gallery."/images/drapeaux/";
-	$mail = "commande@occitanieboissons.com"; 
-	$mail_newsletter = "commercial@occitanieboissons.com";
-	$mail_contact = "contact@occitanieboissons.com"; 
+
+	$mails = array(
+		"production" => array(
+			"mail" => "commande@occitanieboissons.com",
+			"newsletter" => "commercial@occitanieboissons.com",
+			"contact" => "contact@occitanieboissons.com"
+		),
+		"development"  => array(
+			"mail" => "rado.rakotoarivelo@amws.space",
+			"newsletter" => "rado.rakotoarivelo@amws.space",
+			"contact" => "rado.rakotoarivelo@amws.space"
+		)
+	);
+
+	$mail = $mails[$env]['mail'];
+	$mail_newsletter = $mails[$env]['newsletter'];
+	$mail_contact = $mails[$env]['contact'];
 
 	#### GESTION UTILISATEUR
 	if(isset($_SESSION['site'])) {
@@ -139,6 +153,281 @@
 		$cacheByFamilleAndSlug[$key] = $id;
 		return $id;
 	}
+	function ob_column_exists($bdd, $table, $column) {
+		$statement = $bdd->prepare("SHOW COLUMNS FROM `".$table."` LIKE :column");
+		$statement->bindParam(':column', $column);
+		$statement->execute();
+		return $statement->fetch(PDO::FETCH_ASSOC) !== false;
+	}
+	function ob_index_exists($bdd, $table, $indexName) {
+		$statement = $bdd->prepare("SHOW INDEX FROM `".$table."` WHERE Key_name = :index_name");
+		$statement->bindParam(':index_name', $indexName);
+		$statement->execute();
+		return $statement->fetch(PDO::FETCH_ASSOC) !== false;
+	}
+	function ob_add_column_if_missing($bdd, $table, $column, $definitionSql) {
+		if(!ob_column_exists($bdd, $table, $column)) {
+			$bdd->exec("ALTER TABLE `".$table."` ADD COLUMN `".$column."` ".$definitionSql);
+		}
+	}
+	function ob_add_index_if_missing($bdd, $table, $indexName, $definitionSql) {
+		if(!ob_index_exists($bdd, $table, $indexName)) {
+			$bdd->exec("ALTER TABLE `".$table."` ADD ".$definitionSql);
+		}
+	}
+	function ob_ensure_catalogue_schema($bdd) {
+		$bdd->exec("CREATE TABLE IF NOT EXISTS ob_catalogue_categories (
+			id INT(11) NOT NULL AUTO_INCREMENT,
+			code INT(11) NOT NULL,
+			nom VARCHAR(200) NOT NULL,
+			slug VARCHAR(200) NOT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY uq_ob_catalogue_categories_code (code),
+			KEY idx_ob_catalogue_categories_slug (slug)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+		$bdd->exec("CREATE TABLE IF NOT EXISTS ob_catalogue_fabriquants (
+			id INT(11) NOT NULL AUTO_INCREMENT,
+			code INT(11) NOT NULL,
+			nom VARCHAR(200) NOT NULL,
+			rue VARCHAR(200) DEFAULT NULL,
+			quartier VARCHAR(200) DEFAULT NULL,
+			code_postal VARCHAR(50) DEFAULT NULL,
+			ville VARCHAR(150) DEFAULT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY uq_ob_catalogue_fabriquants_code (code),
+			KEY idx_ob_catalogue_fabriquants_nom (nom)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+		$bdd->exec("CREATE TABLE IF NOT EXISTS ob_catalogue_pays (
+			id INT(11) NOT NULL AUTO_INCREMENT,
+			code VARCHAR(50) NOT NULL,
+			nom VARCHAR(200) NOT NULL,
+			slug VARCHAR(200) NOT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY uq_ob_catalogue_pays_code (code),
+			KEY idx_ob_catalogue_pays_slug (slug)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+		ob_add_column_if_missing($bdd, 'ob_catalogue_familles', 'code', 'INT(11) DEFAULT NULL AFTER id');
+		ob_add_column_if_missing($bdd, 'ob_catalogue_sous_familles', 'code', 'INT(11) DEFAULT NULL AFTER famille_id');
+		ob_add_column_if_missing($bdd, 'ob_catalogue_produits', 'pays_code', 'VARCHAR(50) DEFAULT NULL AFTER sous_famille_id');
+
+		ob_add_index_if_missing($bdd, 'ob_catalogue_familles', 'uq_ob_catalogue_familles_code', 'UNIQUE KEY uq_ob_catalogue_familles_code (code)');
+		ob_add_index_if_missing($bdd, 'ob_catalogue_sous_familles', 'uq_ob_catalogue_sous_familles_famille_code', 'UNIQUE KEY uq_ob_catalogue_sous_familles_famille_code (famille_id, code)');
+		ob_add_index_if_missing($bdd, 'ob_catalogue_produits', 'idx_ob_catalogue_produits_pays_code', 'KEY idx_ob_catalogue_produits_pays_code (pays_code)');
+	}
+	function ob_excel_column_to_index($columnRef) {
+		$columnRef = strtoupper((string) preg_replace('/[^A-Z]/i', '', (string) $columnRef));
+		$length = strlen($columnRef);
+		$index = 0;
+		for($i = 0; $i < $length; $i++) {
+			$index = ($index * 26) + (ord($columnRef[$i]) - 64);
+		}
+		return max(0, $index - 1);
+	}
+	function ob_xlsx_shared_strings($zip) {
+		$sharedStrings = array();
+		$xml = $zip->getFromName('xl/sharedStrings.xml');
+		if($xml === false || trim((string) $xml) === '') {
+			return $sharedStrings;
+		}
+		$shared = @simplexml_load_string($xml);
+		if($shared === false || !isset($shared->si)) {
+			return $sharedStrings;
+		}
+		foreach($shared->si as $item) {
+			if(isset($item->t)) {
+				$sharedStrings[] = trim((string) $item->t);
+				continue;
+			}
+			$text = '';
+			if(isset($item->r)) {
+				foreach($item->r as $run) {
+					$text .= (string) $run->t;
+				}
+			}
+			$sharedStrings[] = trim($text);
+		}
+		return $sharedStrings;
+	}
+	function ob_xlsx_read_rows($path) {
+		$rows = array();
+		if(!$path || !file_exists($path) || !is_readable($path) || !class_exists('ZipArchive')) {
+			return $rows;
+		}
+		$zip = new ZipArchive();
+		if($zip->open($path) !== true) {
+			return $rows;
+		}
+		$sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+		if($sheetXml === false || trim((string) $sheetXml) === '') {
+			$zip->close();
+			return $rows;
+		}
+		$sharedStrings = ob_xlsx_shared_strings($zip);
+		$zip->close();
+		$sheet = @simplexml_load_string($sheetXml);
+		if($sheet === false || !isset($sheet->sheetData->row)) {
+			return $rows;
+		}
+		foreach($sheet->sheetData->row as $row) {
+			$rowValues = array();
+			$maxIndex = -1;
+			foreach($row->c as $cell) {
+				$cellRef = isset($cell['r']) ? (string) $cell['r'] : '';
+				$index = ob_excel_column_to_index($cellRef);
+				if($index > $maxIndex) {
+					$maxIndex = $index;
+				}
+				$value = '';
+				$type = isset($cell['t']) ? (string) $cell['t'] : '';
+				if($type === 's') {
+					$sharedIndex = (int) $cell->v;
+					$value = isset($sharedStrings[$sharedIndex]) ? $sharedStrings[$sharedIndex] : '';
+				} elseif($type === 'inlineStr') {
+					$value = isset($cell->is->t) ? (string) $cell->is->t : '';
+				} else {
+					$value = isset($cell->v) ? (string) $cell->v : '';
+				}
+				$rowValues[$index] = trim((string) $value);
+			}
+			if($maxIndex >= 0) {
+				$normalized = array();
+				for($i = 0; $i <= $maxIndex; $i++) {
+					$normalized[] = array_key_exists($i, $rowValues) ? $rowValues[$i] : '';
+				}
+				$rows[] = $normalized;
+			}
+		}
+		return $rows;
+	}
+	function ob_xlsx_assoc_rows($path) {
+		$rows = ob_xlsx_read_rows($path);
+		if(empty($rows)) {
+			return array();
+		}
+		$headers = array_shift($rows);
+		$headers = array_map(function($value) {
+			return trim((string) $value);
+		}, $headers);
+		$data = array();
+		foreach($rows as $row) {
+			if(count($row) < count($headers)) {
+				$row = array_pad($row, count($headers), '');
+			}
+			$assoc = array_combine($headers, array_slice($row, 0, count($headers)));
+			if(!is_array($assoc)) {
+				continue;
+			}
+			$hasValue = false;
+			foreach($assoc as $value) {
+				if(trim((string) $value) !== '') {
+					$hasValue = true;
+					break;
+				}
+			}
+			if($hasValue) {
+				$data[] = $assoc;
+			}
+		}
+		return $data;
+	}
+	function ob_upsert_lookup_entry($bdd, $table, $code, $values) {
+		$fields = array_keys($values);
+		$columns = array_merge(array('code'), $fields);
+		$insertColumns = array();
+		$insertParams = array();
+		$updates = array();
+		$params = array(':code' => $code);
+		foreach($columns as $column) {
+			$insertColumns[] = '`'.$column.'`';
+			$insertParams[] = ':'.$column;
+			if($column !== 'code') {
+				$updates[] = '`'.$column.'` = VALUES(`'.$column.'`)';
+				$params[':'.$column] = $values[$column];
+			}
+		}
+		$sql = 'INSERT INTO `'.$table.'` ('.implode(', ', $insertColumns).') VALUES ('.implode(', ', $insertParams).') ON DUPLICATE KEY UPDATE '.implode(', ', $updates);
+		$statement = $bdd->prepare($sql);
+		$statement->execute($params);
+	}
+	function ob_get_or_create_famille_by_code($bdd, $code, $nom, &$cacheByCode) {
+		$code = (int) $code;
+		$nom = trim((string) $nom);
+		if($code <= 0 || $nom === '') {
+			return null;
+		}
+		if(isset($cacheByCode[$code])) {
+			return (int) $cacheByCode[$code];
+		}
+		$slug = ob_slugify($nom);
+		$select = $bdd->prepare('SELECT id FROM ob_catalogue_familles WHERE code = :code LIMIT 1');
+		$select->bindParam(':code', $code, PDO::PARAM_INT);
+		$select->execute();
+		$found = $select->fetch(PDO::FETCH_OBJ);
+		if($found && isset($found->id)) {
+			$update = $bdd->prepare('UPDATE ob_catalogue_familles SET nom = :nom, slug = :slug WHERE id = :id');
+			$update->execute(array(':nom' => $nom, ':slug' => $slug, ':id' => (int) $found->id));
+			$cacheByCode[$code] = (int) $found->id;
+			return (int) $found->id;
+		}
+		$selectBySlug = $bdd->prepare('SELECT id FROM ob_catalogue_familles WHERE slug = :slug LIMIT 1');
+		$selectBySlug->bindParam(':slug', $slug);
+		$selectBySlug->execute();
+		$foundBySlug = $selectBySlug->fetch(PDO::FETCH_OBJ);
+		if($foundBySlug && isset($foundBySlug->id)) {
+			$update = $bdd->prepare('UPDATE ob_catalogue_familles SET code = :code, nom = :nom WHERE id = :id');
+			$update->execute(array(':code' => $code, ':nom' => $nom, ':id' => (int) $foundBySlug->id));
+			$cacheByCode[$code] = (int) $foundBySlug->id;
+			return (int) $foundBySlug->id;
+		}
+		$insert = $bdd->prepare('INSERT INTO ob_catalogue_familles (code, nom, slug) VALUES (:code, :nom, :slug)');
+		$insert->execute(array(':code' => $code, ':nom' => $nom, ':slug' => $slug));
+		$cacheByCode[$code] = (int) $bdd->lastInsertId();
+		return (int) $cacheByCode[$code];
+	}
+	function ob_get_or_create_sous_famille_by_code($bdd, $familleId, $code, $nom, &$cacheByFamilleAndCode) {
+		$familleId = (int) $familleId;
+		$code = (int) $code;
+		$nom = trim((string) $nom);
+		if($familleId <= 0 || $code <= 0 || $nom === '') {
+			return null;
+		}
+		$key = $familleId.':'.$code;
+		if(isset($cacheByFamilleAndCode[$key])) {
+			return (int) $cacheByFamilleAndCode[$key];
+		}
+		$slug = ob_slugify($nom);
+		$select = $bdd->prepare('SELECT id FROM ob_catalogue_sous_familles WHERE famille_id = :famille_id AND code = :code LIMIT 1');
+		$select->execute(array(':famille_id' => $familleId, ':code' => $code));
+		$found = $select->fetch(PDO::FETCH_OBJ);
+		if($found && isset($found->id)) {
+			$update = $bdd->prepare('UPDATE ob_catalogue_sous_familles SET nom = :nom, slug = :slug WHERE id = :id');
+			$update->execute(array(':nom' => $nom, ':slug' => $slug, ':id' => (int) $found->id));
+			$cacheByFamilleAndCode[$key] = (int) $found->id;
+			return (int) $found->id;
+		}
+		$selectBySlug = $bdd->prepare('SELECT id FROM ob_catalogue_sous_familles WHERE famille_id = :famille_id AND slug = :slug LIMIT 1');
+		$selectBySlug->execute(array(':famille_id' => $familleId, ':slug' => $slug));
+		$foundBySlug = $selectBySlug->fetch(PDO::FETCH_OBJ);
+		if($foundBySlug && isset($foundBySlug->id)) {
+			$update = $bdd->prepare('UPDATE ob_catalogue_sous_familles SET code = :code, nom = :nom WHERE id = :id');
+			$update->execute(array(':code' => $code, ':nom' => $nom, ':id' => (int) $foundBySlug->id));
+			$cacheByFamilleAndCode[$key] = (int) $foundBySlug->id;
+			return (int) $foundBySlug->id;
+		}
+		$insert = $bdd->prepare('INSERT INTO ob_catalogue_sous_familles (famille_id, code, nom, slug) VALUES (:famille_id, :code, :nom, :slug)');
+		$insert->execute(array(':famille_id' => $familleId, ':code' => $code, ':nom' => $nom, ':slug' => $slug));
+		$cacheByFamilleAndCode[$key] = (int) $bdd->lastInsertId();
+		return (int) $cacheByFamilleAndCode[$key];
+	}
+	function ob_country_label_from_context($countryCode, $fabriquantCode, $countryLabelsByFabriquant) {
+		$countryCode = trim((string) $countryCode);
+		$fabriquantCode = (int) $fabriquantCode;
+		if($fabriquantCode > 0 && isset($countryLabelsByFabriquant[$fabriquantCode]) && trim((string) $countryLabelsByFabriquant[$fabriquantCode]) !== '') {
+			return trim((string) $countryLabelsByFabriquant[$fabriquantCode]);
+		}
+		return $countryCode;
+	}
 	function ob_file_signature($path) {
 		if(!$path || !file_exists($path) || !is_readable($path)) {
 			return null;
@@ -166,10 +455,15 @@
 		if(!isset($prev['version']) || (int) $prev['version'] !== (int) $nextState['version']) {
 			return true;
 		}
-		if(!isset($prev['tarif']) || !isset($prev['art'])) {
-			return true;
+		foreach($nextState as $key => $value) {
+			if($key === 'generated_at' || $key === 'version') {
+				continue;
+			}
+			if(!array_key_exists($key, $prev) || $prev[$key] != $value) {
+				return true;
+			}
 		}
-		return !($prev['tarif'] == $nextState['tarif'] && $prev['art'] == $nextState['art']);
+		return false;
 	}
 	function ob_delete_missing_catalogue_products($bdd, $retainedCodes) {
 		$retainedMap = array();
@@ -189,18 +483,26 @@
 		}
 	}
 
-	// Import CSV → tables (ne doit pas tourner à chaque page)
+	// Import ERP -> tables (ne doit pas tourner à chaque page)
 	$artFile = __DIR__ . '/../transfert/produits/ART_PRIX_STO.CSV';
 	$tarifFile = __DIR__ . "/../transfert/produits/TARIFINTERNET_COMPLET.CSV";
+	$allArtFile = __DIR__ . '/../transfert/produits/all_art.xlsx';
+	$familleSsFamilleFile = __DIR__ . '/../transfert/produits/famille_ssfamille.xlsx';
+	$categoriesFile = __DIR__ . '/../transfert/produits/categories.xlsx';
+	$fabriquantFile = __DIR__ . '/../transfert/produits/fabriquant.xlsx';
 	$importStateFile = __DIR__ . "/../transfert/produits/.ob_import_state.json";
 	$importLockFile = __DIR__ . "/../transfert/produits/.ob_import_lock";
 	$forceImport = (isset($_GET['ob_import']) && $_GET['ob_import'] == '1') || (getenv('OB_FORCE_IMPORT') === '1');
 	$nextState = array(
-		'version' => 2,
+		'version' => 3,
 		'tarif' => ob_file_signature($tarifFile),
-		'art' => ob_file_signature($artFile),
+		'art_csv' => ob_file_signature($artFile),
+		'all_art' => ob_file_signature($allArtFile),
+		'famille_ssfamille' => ob_file_signature($familleSsFamilleFile),
+		'categories' => ob_file_signature($categoriesFile),
+		'fabriquant' => ob_file_signature($fabriquantFile),
 	);
-	$shouldImport = $nextState['tarif'] !== null && ob_should_run_import($importStateFile, $nextState, $forceImport);
+	$shouldImport = ($nextState['all_art'] !== null || $nextState['tarif'] !== null) && ob_should_run_import($importStateFile, $nextState, $forceImport);
 	if($shouldImport) {
 		$lockHandle = @fopen($importLockFile, 'c');
 		$locked = false;
@@ -212,184 +514,222 @@
 			@fclose($lockHandle);
 		} else {
 			// Double-check sous lock (un autre process a pu finir pendant qu'on attendait)
-			$shouldImport = $nextState['tarif'] !== null && ob_should_run_import($importStateFile, $nextState, $forceImport);
+			$shouldImport = ($nextState['all_art'] !== null || $nextState['tarif'] !== null) && ob_should_run_import($importStateFile, $nextState, $forceImport);
 			if($shouldImport) {
-				$taxonomyByCodeProduit = array();
 				$familleIdCache = array();
 				$sousFamilleIdCache = array();
 				$retainedCodeProduits = array();
-				$processedTarifRows = 0;
+				$processedProductRows = 0;
 
-				// ART_PRIX_STO.CSV (taxonomie)
-				if($artFile && file_exists($artFile) && is_readable($artFile)) {
-					$headerArt = NULL;
-					$delimiterArt = ';';
-					if(($handleArt = fopen($artFile, 'r')) !== FALSE) {
-						$headerLineArt = fgets($handleArt);
-						if($headerLineArt !== false) {
-							$headerArt = str_getcsv($headerLineArt, ';');
-							if(is_array($headerArt) && count($headerArt) === 1 && strpos($headerLineArt, "\t") !== false) {
-								$headerArt = str_getcsv($headerLineArt, "\t");
-								$delimiterArt = "\t";
-							}
-						}
-						if(is_array($headerArt) && count($headerArt) > 1) {
-							while(($lineArt = fgets($handleArt)) !== FALSE) {
-								$rowArt = str_getcsv($lineArt, $delimiterArt);
-								if(!is_array($rowArt) || count($rowArt) !== count($headerArt)) {
-									$tryDelimiter = ($delimiterArt === ';') ? "\t" : ';';
-									$rowTry = str_getcsv($lineArt, $tryDelimiter);
-									if(is_array($rowTry) && count($rowTry) === count($headerArt)) {
-										$rowArt = $rowTry;
-										$delimiterArt = $tryDelimiter;
-									} else {
-										continue;
-									}
-								}
-								$assocArt = array_combine($headerArt, $rowArt);
-								if(!is_array($assocArt) || !isset($assocArt['Article'])) {
-									continue;
-								}
-								$code = (int) preg_replace('/[^\d]/', '', (string) $assocArt['Article']);
-								if($code <= 0) {
-									continue;
-								}
-								$fam = isset($assocArt['Désignation famille']) ? trim((string) $assocArt['Désignation famille']) : '';
-								$sf = isset($assocArt['Désignation sous famille']) ? trim((string) $assocArt['Désignation sous famille']) : '';
-								$taxonomyByCodeProduit[$code] = array('famille' => $fam, 'sous_famille' => $sf);
-							}
-						}
-						fclose($handleArt);
-					}
-				}
-
+				ob_ensure_catalogue_schema($bdd);
 				try {
 					$bdd->beginTransaction();
 
-					### BRASSERIES AUTORISEES
-					$brasseriesCheck = $bdd->query("SELECT id_fabriquant FROM ob_brasseries WHERE hiden = '1'");
-					$brassieres_active = array();
+					$countryLabelsByFabriquant = array();
+					$brasseriesCheck = $bdd->query("SELECT id_fabriquant, country FROM ob_brasseries WHERE hiden = '1' AND id_fabriquant <> 0");
 					while($c = $brasseriesCheck->fetch(PDO::FETCH_OBJ)) {
-						$brassieres_active[] = (int) $c->id_fabriquant;
+						$fabriquantCode = isset($c->id_fabriquant) ? (int) $c->id_fabriquant : 0;
+						if($fabriquantCode > 0 && !empty($c->country)) {
+							$countryLabelsByFabriquant[$fabriquantCode] = trim((string) $c->country);
+						}
 					}
 
-					$checkExist = $bdd->prepare("SELECT id FROM ob_catalogue_produits WHERE code_produit = :code_produit LIMIT 1");
-					$modifProduit = $bdd->prepare("UPDATE ob_catalogue_produits SET prix_ht = :prix_ht, droits = :droits, stock = :stock, code_tva = :code_tva, nom = :nom, nom_sup = :nom_sup, uv_caisse = :uv_caisse, brasserie = :brasserie, contenance = :contenance, degre = :degre, condition_vente = :condition_vente, consigne_caisse = :consigne_caisse, marque = :marque, categorie = :categorie, famille_id = :famille_id, sous_famille_id = :sous_famille_id WHERE code_produit = :code_produit");
-					$taxOnly = $bdd->prepare("UPDATE ob_catalogue_produits SET famille_id = :famille_id, sous_famille_id = :sous_famille_id WHERE code_produit = :code_produit");
-					$createProduit = $bdd->prepare("INSERT INTO ob_catalogue_produits (code_produit, prix_ht, stock, code_tva, nom, nom_sup, brasserie, contenance, degre, condition_vente, consigne_caisse, uv_caisse, droits, marque, categorie, famille_id, sous_famille_id) VALUES (:code_produit, :prix_ht, :stock, :code_tva, :nom, :nom_sup, :brasserie, :contenance, :degre, :condition_vente, :consigne_caisse, :uv_caisse, :droits, :marque, :categorie, :famille_id, :sous_famille_id)");
+					$familleLookup = array();
+					$sousFamilleLookup = array();
+					foreach(ob_xlsx_assoc_rows($familleSsFamilleFile) as $row) {
+						$familleCode = (int) trim((string) (isset($row['Famille']) ? $row['Famille'] : '0'));
+						$sousFamilleCode = trim((string) (isset($row['Sous famille']) ? $row['Sous famille'] : ''));
+						$libelle = trim((string) (isset($row['Libellé famille']) ? $row['Libellé famille'] : ''));
+						if($familleCode <= 0 || $libelle === '') {
+							continue;
+						}
+						if($sousFamilleCode === '') {
+							$familleLookup[$familleCode] = $libelle;
+							continue;
+						}
+						$sousFamilleLookup[$familleCode.':'.(int) $sousFamilleCode] = $libelle;
+					}
+					foreach($familleLookup as $familleCode => $familleNom) {
+						ob_get_or_create_famille_by_code($bdd, $familleCode, $familleNom, $familleIdCache);
+					}
 
-					if(($handle = fopen($tarifFile, 'r')) !== FALSE) {
-						$header = fgetcsv($handle, 0, ";");
+					foreach(ob_xlsx_assoc_rows($categoriesFile) as $row) {
+						$code = (int) trim((string) (isset($row['Catégorie']) ? $row['Catégorie'] : '0'));
+						$nom = trim((string) (isset($row['Nom']) ? $row['Nom'] : ''));
+						if($code > 0 && $nom !== '') {
+							ob_upsert_lookup_entry($bdd, 'ob_catalogue_categories', $code, array(
+								'nom' => $nom,
+								'slug' => ob_slugify($nom),
+							));
+						}
+					}
+
+					foreach(ob_xlsx_assoc_rows($fabriquantFile) as $row) {
+						$code = (int) trim((string) (isset($row['Code']) ? $row['Code'] : '0'));
+						$nom = trim((string) (isset($row['Nom']) ? $row['Nom'] : ''));
+						if($code > 0 && $nom !== '') {
+							ob_upsert_lookup_entry($bdd, 'ob_catalogue_fabriquants', $code, array(
+								'nom' => $nom,
+								'rue' => isset($row['Rue']) ? trim((string) $row['Rue']) : null,
+								'quartier' => isset($row['Quartier']) ? trim((string) $row['Quartier']) : null,
+								'code_postal' => isset($row['Code postal']) ? trim((string) $row['Code postal']) : null,
+								'ville' => isset($row['Ville']) ? trim((string) $row['Ville']) : null,
+							));
+						}
+					}
+
+					$tarifByCodeProduit = array();
+					if($tarifFile && file_exists($tarifFile) && is_readable($tarifFile) && ($handle = fopen($tarifFile, 'r')) !== FALSE) {
+						$header = fgetcsv($handle, 0, ';');
 						if(is_array($header) && count($header) > 1) {
-							while(($row = fgetcsv($handle, 0, ";")) !== FALSE) {
+							while(($row = fgetcsv($handle, 0, ';')) !== FALSE) {
 								if(!is_array($row) || count($row) !== count($header)) {
 									continue;
 								}
-								try {
-									$assoc = array_combine($header, $row);
-									} catch(ValueError $e) {
-										continue;
-									}
-									if(!is_array($assoc) || !isset($assoc['CODE_PRODUIT'])) {
-										continue;
-									}
-
-									$code_produit = (int) preg_replace('/[^\d]/', '', (string) $assoc['CODE_PRODUIT']);
-									if($code_produit <= 0) {
-										continue;
-									}
-									$processedTarifRows++;
-									$fabriquant = (int) trim((string) $assoc['FABRIQUANT']);
-									$categorie = (int) trim((string) $assoc['CATEGORIE']);
-									$is_active = in_array($fabriquant, $brassieres_active, true);
-									$requiresActiveBrasserie = ($categorie >= 1 && $categorie <= 19) || in_array($categorie, array(28,29,32,33), true);
-									$canImport = $is_active || !$requiresActiveBrasserie;
-									$brasserieToStore = $is_active ? $fabriquant : 0;
-									$nom = trim((string) $assoc['LIBELLE']);
-									$nom_sup = trim((string) $assoc['LIBELLE COMP.']);
-
-									$famille_id = null;
-									$sous_famille_id = null;
-									if(isset($taxonomyByCodeProduit[$code_produit])) {
-										$famille_id = ob_get_or_create_famille_id($bdd, $taxonomyByCodeProduit[$code_produit]['famille'], $familleIdCache);
-										$sous_famille_id = ob_get_or_create_sous_famille_id($bdd, $famille_id, $taxonomyByCodeProduit[$code_produit]['sous_famille'], $sousFamilleIdCache);
-									}
-
-									$checkExist->execute(array(':code_produit' => $code_produit));
-									$existingId = $checkExist->fetchColumn();
-
-									if($existingId !== false && $existingId !== null) {
-										if($canImport) {
-											$retainedCodeProduits[$code_produit] = true;
-											$prix_ht          = (float) trim((string) $assoc['PRIX']);
-											$droits           = (float) trim((string) $assoc['ACCISE']);
-											$stock            = (int) trim((string) $assoc['STOCK_UV']);
-											$code_tva         = (int) trim((string) $assoc['CODE_TVA']);
-											$uv_caisse        = (int) trim((string) $assoc['UV_CAISSE']);
-											$contenance       = (float) trim((string) $assoc['CONTENANCE']);
-											$degre            = (float) trim((string) $assoc['DEGRE']);
-											$condition_vente  = (int) trim((string) $assoc['CONDITION_VENTE']);
-											$consigne_caisse  = (float) trim((string) $assoc['CONSIGNE_PAR_CONDITION_VENTE']);
-											$marque           = trim((string) $assoc['MARQUE']);
-
-											$modifProduit->execute(array(
-												':prix_ht' => (string) $prix_ht,
-												':droits' => (string) $droits,
-												':stock' => $stock,
-												':code_tva' => $code_tva,
-												':nom' => $nom,
-												':nom_sup' => $nom_sup,
-												':uv_caisse' => $uv_caisse,
-												':brasserie' => (int) $brasserieToStore,
-												':contenance' => (string) $contenance,
-												':degre' => (string) $degre,
-												':condition_vente' => $condition_vente,
-												':consigne_caisse' => (string) $consigne_caisse,
-												':marque' => $marque,
-												':categorie' => $categorie,
-												':famille_id' => $famille_id,
-												':sous_famille_id' => $sous_famille_id,
-												':code_produit' => $code_produit,
-											));
-										} else {
-											if(!is_null($famille_id) || !is_null($sous_famille_id)) {
-												$taxOnly->execute(array(
-													':famille_id' => $famille_id,
-													':sous_famille_id' => $sous_famille_id,
-													':code_produit' => $code_produit,
-												));
-											}
-										}
-									} else {
-										if($canImport) {
-											$retainedCodeProduits[$code_produit] = true;
-											$createProduit->execute(array(
-												':code_produit' => $code_produit,
-												':prix_ht' => $assoc['PRIX'],
-												':stock' => $assoc['STOCK_UV'],
-												':code_tva' => $assoc['CODE_TVA'],
-												':nom' => $nom,
-												':nom_sup' => $nom_sup,
-												':brasserie' => (int) $brasserieToStore,
-												':contenance' => $assoc['CONTENANCE'],
-												':degre' => $assoc['DEGRE'],
-												':condition_vente' => $assoc['CONDITION_VENTE'],
-												':consigne_caisse' => $assoc['CONSIGNE_PAR_CONDITION_VENTE'],
-												':uv_caisse' => $assoc['UV_CAISSE'],
-												':droits' => $assoc['ACCISE'],
-												':marque' => $assoc['MARQUE'],
-												':categorie' => $categorie,
-												':famille_id' => $famille_id,
-												':sous_famille_id' => $sous_famille_id,
-											));
-										}
-									}
+								$assoc = array_combine($header, $row);
+								if(!is_array($assoc) || !isset($assoc['CODE_PRODUIT'])) {
+									continue;
+								}
+								$code = (int) preg_replace('/[^\d]/', '', (string) $assoc['CODE_PRODUIT']);
+								if($code > 0) {
+									$tarifByCodeProduit[$code] = $assoc;
+								}
 							}
 						}
 						fclose($handle);
 					}
 
-					if($processedTarifRows > 0) {
+					$checkExist = $bdd->prepare("SELECT id FROM ob_catalogue_produits WHERE code_produit = :code_produit LIMIT 1");
+					$modifProduit = $bdd->prepare("UPDATE ob_catalogue_produits SET prix_ht = :prix_ht, droits = :droits, stock = :stock, code_tva = :code_tva, nom = :nom, nom_sup = :nom_sup, uv_caisse = :uv_caisse, brasserie = :brasserie, contenance = :contenance, degre = :degre, condition_vente = :condition_vente, consigne_caisse = :consigne_caisse, marque = :marque, categorie = :categorie, famille_id = :famille_id, sous_famille_id = :sous_famille_id, pays_code = :pays_code WHERE code_produit = :code_produit");
+					$createProduit = $bdd->prepare("INSERT INTO ob_catalogue_produits (code_produit, prix_ht, stock, code_tva, nom, nom_sup, brasserie, contenance, degre, condition_vente, consigne_caisse, uv_caisse, droits, marque, categorie, famille_id, sous_famille_id, pays_code) VALUES (:code_produit, :prix_ht, :stock, :code_tva, :nom, :nom_sup, :brasserie, :contenance, :degre, :condition_vente, :consigne_caisse, :uv_caisse, :droits, :marque, :categorie, :famille_id, :sous_famille_id, :pays_code)");
+
+					$allArtRows = ob_xlsx_assoc_rows($allArtFile);
+					if(empty($allArtRows) && $artFile && file_exists($artFile) && is_readable($artFile)) {
+						$headerArt = null;
+						$delimiterArt = ';';
+						if(($handleArt = fopen($artFile, 'r')) !== FALSE) {
+							$headerLineArt = fgets($handleArt);
+							if($headerLineArt !== false) {
+								$headerArt = str_getcsv($headerLineArt, ';');
+								if(is_array($headerArt) && count($headerArt) === 1 && strpos($headerLineArt, "\t") !== false) {
+									$headerArt = str_getcsv($headerLineArt, "\t");
+									$delimiterArt = "\t";
+								}
+							}
+							if(is_array($headerArt) && count($headerArt) > 1) {
+								while(($lineArt = fgets($handleArt)) !== FALSE) {
+									$rowArt = str_getcsv($lineArt, $delimiterArt);
+									if(!is_array($rowArt) || count($rowArt) !== count($headerArt)) {
+										continue;
+									}
+									$assocArt = array_combine($headerArt, $rowArt);
+									if(is_array($assocArt)) {
+										$allArtRows[] = array(
+											'Code article' => isset($assocArt['Article']) ? $assocArt['Article'] : '',
+											'Libellé article' => isset($assocArt['Désignation article']) ? $assocArt['Désignation article'] : '',
+											'Lib complementaire' => '',
+											'Famille' => '',
+											'Ssfamille' => '',
+											'Code taxe' => isset($assocArt['Code TVA']) ? $assocArt['Code TVA'] : '',
+											'Contenance' => '',
+											'Degre alcool' => '',
+											'Code Suppression' => '',
+											'Categorie article' => '',
+											'Code' => '',
+											'Code pays' => '',
+											'Pré commande' => '',
+											'Unite caisse' => '',
+											'Vente en caisse ou fût' => '',
+										);
+									}
+								}
+							}
+							fclose($handleArt);
+						}
+					}
+
+					foreach($allArtRows as $row) {
+						$codeProduit = (int) preg_replace('/[^\d]/', '', (string) (isset($row['Code article']) ? $row['Code article'] : '0'));
+						if($codeProduit <= 0) {
+							continue;
+						}
+						$codeSuppression = strtoupper(trim((string) (isset($row['Code Suppression']) ? $row['Code Suppression'] : '')));
+						if($codeSuppression === 'S') {
+							continue;
+						}
+						$processedProductRows++;
+
+						$familleCode = (int) trim((string) (isset($row['Famille']) ? $row['Famille'] : '0'));
+						$sousFamilleCode = (int) trim((string) (isset($row['Ssfamille']) ? $row['Ssfamille'] : '0'));
+						$familleId = null;
+						$sousFamilleId = null;
+						if($familleCode > 0 && isset($familleLookup[$familleCode])) {
+							$familleId = ob_get_or_create_famille_by_code($bdd, $familleCode, $familleLookup[$familleCode], $familleIdCache);
+						}
+						if($familleId && $familleCode > 0 && $sousFamilleCode > 0) {
+							$sousFamilleKey = $familleCode.':'.$sousFamilleCode;
+							if(isset($sousFamilleLookup[$sousFamilleKey])) {
+								$sousFamilleId = ob_get_or_create_sous_famille_by_code($bdd, $familleId, $sousFamilleCode, $sousFamilleLookup[$sousFamilleKey], $sousFamilleIdCache);
+							}
+						}
+
+						$tarif = isset($tarifByCodeProduit[$codeProduit]) ? $tarifByCodeProduit[$codeProduit] : array();
+						$nom = trim((string) (isset($row['Libellé article']) ? $row['Libellé article'] : (isset($tarif['LIBELLE']) ? $tarif['LIBELLE'] : '')));
+						$nomSup = trim((string) (isset($row['Lib complementaire']) ? $row['Lib complementaire'] : (isset($tarif['LIBELLE COMP.']) ? $tarif['LIBELLE COMP.'] : '')));
+						$fabriquantCode = (int) trim((string) (isset($row['Code']) ? $row['Code'] : (isset($tarif['FABRIQUANT']) ? $tarif['FABRIQUANT'] : '0')));
+						$categorie = (int) trim((string) (isset($row['Categorie article']) ? $row['Categorie article'] : (isset($tarif['CATEGORIE']) ? $tarif['CATEGORIE'] : '0')));
+						$paysCode = trim((string) (isset($row['Code pays']) ? $row['Code pays'] : ''));
+						if($paysCode !== '') {
+							$paysNom = ob_country_label_from_context($paysCode, $fabriquantCode, $countryLabelsByFabriquant);
+							ob_upsert_lookup_entry($bdd, 'ob_catalogue_pays', $paysCode, array(
+								'nom' => $paysNom,
+								'slug' => ob_slugify($paysNom),
+							));
+						}
+
+						$contenance = isset($tarif['CONTENANCE']) ? (float) trim((string) $tarif['CONTENANCE']) : (float) trim((string) (isset($row['Contenance']) ? str_replace(',', '.', $row['Contenance']) : '0'));
+						if($contenance > 0 && $contenance < 10) {
+							$contenance *= 100;
+						}
+						$degre = isset($tarif['DEGRE']) ? (float) trim((string) $tarif['DEGRE']) : (float) trim((string) (isset($row['Degre alcool']) ? str_replace(',', '.', $row['Degre alcool']) : '0'));
+						$uvCaisse = isset($tarif['UV_CAISSE']) ? (int) trim((string) $tarif['UV_CAISSE']) : (int) trim((string) (isset($row['Unite caisse']) ? $row['Unite caisse'] : '0'));
+						$conditionVente = isset($tarif['CONDITION_VENTE']) ? (int) trim((string) $tarif['CONDITION_VENTE']) : (int) trim((string) (isset($row['Vente en caisse ou fût']) ? $row['Vente en caisse ou fût'] : '0'));
+						$marque = isset($tarif['MARQUE']) ? trim((string) $tarif['MARQUE']) : ((trim((string) (isset($row['Pré commande']) ? $row['Pré commande'] : '0')) === '1') ? '2' : '1');
+						if(!in_array($marque, array('0', '1', '2'), true)) {
+							$marque = '1';
+						}
+						$dataProduit = array(
+							':code_produit' => $codeProduit,
+							':prix_ht' => isset($tarif['PRIX']) ? (string) ((float) trim((string) $tarif['PRIX'])) : '0',
+							':stock' => isset($tarif['STOCK_UV']) ? (int) trim((string) $tarif['STOCK_UV']) : 0,
+							':code_tva' => isset($tarif['CODE_TVA']) ? (int) trim((string) $tarif['CODE_TVA']) : (int) trim((string) (isset($row['Code taxe']) ? $row['Code taxe'] : '0')),
+							':nom' => $nom,
+							':nom_sup' => $nomSup,
+							':brasserie' => $fabriquantCode,
+							':contenance' => (string) $contenance,
+							':degre' => (string) $degre,
+							':condition_vente' => $conditionVente,
+							':consigne_caisse' => isset($tarif['CONSIGNE_PAR_CONDITION_VENTE']) ? (string) ((float) trim((string) $tarif['CONSIGNE_PAR_CONDITION_VENTE'])) : '0',
+							':uv_caisse' => $uvCaisse,
+							':droits' => isset($tarif['ACCISE']) ? (string) ((float) trim((string) $tarif['ACCISE'])) : '0',
+							':marque' => $marque,
+							':categorie' => $categorie,
+							':famille_id' => $familleId,
+							':sous_famille_id' => $sousFamilleId,
+							':pays_code' => ($paysCode !== '') ? $paysCode : null,
+						);
+
+						$checkExist->execute(array(':code_produit' => $codeProduit));
+						$existingId = $checkExist->fetchColumn();
+						if($existingId !== false && $existingId !== null) {
+							$modifProduit->execute($dataProduit);
+						} else {
+							$createProduit->execute($dataProduit);
+						}
+						$retainedCodeProduits[$codeProduit] = true;
+					}
+
+					if($processedProductRows > 0) {
 						ob_delete_missing_catalogue_products($bdd, array_keys($retainedCodeProduits));
 					}
 
