@@ -1,5 +1,5 @@
 ﻿<?php
-	if(!function_exists('_u2l')){ function _u2l($s){ return mb_convert_encoding($s,'ISO-8859-1','UTF-8'); } }
+	if(!function_exists('_u2l')){ function _u2l($s){ if(!is_string($s)) return $s; mb_substitute_character(63); return mb_check_encoding($s,'UTF-8') ? mb_convert_encoding($s,'ISO-8859-1','UTF-8') : $s; } }
 	require('./includes/configuration.php');
 	require('./includes/functions.php');
 	require('./pdf/fpdf.php');
