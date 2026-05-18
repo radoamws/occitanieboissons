@@ -34,18 +34,26 @@
 			 						} else {
 							 			### AJOUT ADRESSE
 							 			$addAdresse = $bdd->prepare("INSERT INTO ob_users_adresses (nom, prenom, entreprise, numerotva, adresse, adressec, codepostal, ville, pays, phone, userid, time) VALUES (:nom, :prenom, :entreprise, :tva, :adresse, :adressec, :codepostal, :ville, :pays, :phone, '".$u->id."', '".time()."')");
-										$addAdresse->bindParam(":nom", htmlentities($_POST['nom']));
-										$addAdresse->bindParam(":prenom", htmlentities($_POST['prenom']));
-										$addAdresse->bindParam(":entreprise", htmlentities(@$_POST['entreprise']));
-										$addAdresse->bindParam(":tva", htmlentities(@$_POST['tva']));
-										$addAdresse->bindParam(":adresse", htmlentities($_POST['adresse']));
-										$addAdresse->bindParam(":adressec", htmlentities($_POST['adressec']));
-										$addAdresse->bindParam(":codepostal", htmlentities($_POST['codepostal']));
-										$addAdresse->bindParam(":ville", htmlentities($_POST['ville']));
-										$addAdresse->bindParam(":pays", htmlentities($_POST['pays']));
-										$addAdresse->bindParam(":phone", htmlentities($_POST['phone']));
-										$addAdresse->execute();
-
+								$p_nom        = htmlentities($_POST['nom']);
+								$p_prenom     = htmlentities($_POST['prenom']);
+								$p_entreprise = htmlentities(@$_POST['entreprise']);
+								$p_tva        = htmlentities(@$_POST['tva']);
+								$p_adresse    = htmlentities($_POST['adresse']);
+								$p_adressec   = htmlentities($_POST['adressec']);
+								$p_codepostal = htmlentities($_POST['codepostal']);
+								$p_ville      = htmlentities($_POST['ville']);
+								$p_pays       = htmlentities($_POST['pays']);
+								$p_phone      = htmlentities($_POST['phone']);
+								$addAdresse->bindParam(":nom",        $p_nom);
+								$addAdresse->bindParam(":prenom",     $p_prenom);
+								$addAdresse->bindParam(":entreprise", $p_entreprise);
+								$addAdresse->bindParam(":tva",        $p_tva);
+								$addAdresse->bindParam(":adresse",    $p_adresse);
+								$addAdresse->bindParam(":adressec",   $p_adressec);
+								$addAdresse->bindParam(":codepostal", $p_codepostal);
+								$addAdresse->bindParam(":ville",      $p_ville);
+								$addAdresse->bindParam(":pays",       $p_pays);
+								$addAdresse->bindParam(":phone",      $p_phone);
 										/*
 										### MODIFIER DISTANCE
 										$lastinserid = $bdd->lastInsertId();
