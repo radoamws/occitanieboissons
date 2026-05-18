@@ -1,5 +1,18 @@
 ﻿<?php
-	if(!function_exists('_u2l')){ function _u2l($s){ if(!is_string($s)) return $s; mb_substitute_character(63); return mb_check_encoding($s,'UTF-8') ? mb_convert_encoding($s,'ISO-8859-1','UTF-8') : $s; } }
+	if(!function_exists('_pdf_text')) {
+		function _pdf_text($value)
+		{
+			if(!is_string($value) || $value === '')
+				return $value;
+
+			mb_substitute_character(63);
+
+			if(mb_check_encoding($value, 'UTF-8'))
+				return mb_convert_encoding($value, 'Windows-1252', 'UTF-8');
+
+			return $value;
+		}
+	}
 	require('./includes/configuration.php');
 	require('./includes/functions.php');
 	require('./pdf/fpdf.php');
@@ -47,13 +60,13 @@
 		// logo : 80 de largeur et 55 de hauteur
 		$pdf->Image($image_url.'/gallery/images/ob2.png', 10, 10, 50, 49);
 
-		// n� page en haute � droite
+		// n page en haut a droite
 		$pdf->SetXY( 120, 5 ); $pdf->SetFont( "Arial", "B", 12 ); $pdf->Cell( 160, 8, $num_page . '/' . $nb_page, 0, 0, 'C');
 
-		// n� facture, date echeance et reglement et obs
+		// n facture, date echeance et reglement et obs
 		$date = new DateTime("@$c->time");
 		$annee = $date->format('Y');
-		$num_fact = "COMMANDE N�".$c->id." - ".mPaiement($c->paiement_default);
+		$num_fact = _pdf_text("COMMANDE N°".$c->id." - ".mPaiement($c->paiement_default));
 		$pdf->SetLineWidth(0.1); $pdf->SetFillColor(192); $pdf->Rect(120, 15, 85, 8, "DF");
 		$pdf->SetXY( 120, 15 ); $pdf->SetFont( "Arial", "B", 12 ); $pdf->Cell( 85, 8, $num_fact, 0, 0, 'C');
 		
@@ -70,7 +83,7 @@
 			// les totaux, on n'affiche que le HT. le cadre apr�s les lignes, demarre a 213
 			$pdf->SetLineWidth(0.1); $pdf->SetFillColor(192); $pdf->Rect(5, 213, 90, 8, "DF");
 			// HT, la TVA et TTC sont calcul�s apr�s
-			$nombre_format_francais = "Total Consigne : " . number_format($c->consigne, 2, ',', ' ') . " �";
+			$nombre_format_francais = _pdf_text("Total Consigne : " . number_format($c->consigne, 2, ',', ' ') . " €");
 			$pdf->SetFont('Arial','',10); $pdf->SetXY( 95, 213 ); $pdf->Cell( 63, 8, $nombre_format_francais, 0, 0, 'C');
 			// en bas � droite
 			$pdf->SetFont('Arial','B',8); $pdf->SetXY( 181, 227 ); $pdf->Cell( 24, 6, number_format($c->prixht, 2, ',', ' '), 0, 0, 'R');
@@ -79,11 +92,11 @@
 			$pdf->Rect(5, 213, 200, 8, "D"); $pdf->Line(95, 213, 95, 221); $pdf->Line(158, 213, 158, 221);
 
 			// reglement
-			$pdf->SetXY( 5, 225 ); $pdf->Cell( 38, 5, "Mode de R�glement :", 0, 0, 'R'); $pdf->Cell( 55, 5, mPaiement($c->paiement_default), 0, 0, 'L');
+			$pdf->SetXY( 5, 225 ); $pdf->Cell( 38, 5, _pdf_text("Mode de Règlement :"), 0, 0, 'R'); $pdf->Cell( 55, 5, _pdf_text(mPaiement($c->paiement_default)), 0, 0, 'L');
 
 			// observations
 			$pdf->SetFont( "Arial", "BU", 10 ); $pdf->SetXY( 5, 235 ) ; $pdf->Cell($pdf->GetStringWidth("Message livraison"), 0, "Message livraison", 0, "L");
-			$pdf->SetFont( "Arial", "", 10 ); $pdf->SetXY( 5, 238 ) ; $pdf->MultiCell(190, 4, $c->message_livraison, 0, "L");
+			$pdf->SetFont( "Arial", "", 10 ); $pdf->SetXY( 5, 238 ) ; $pdf->MultiCell(190, 4, _pdf_text($c->message_livraison), 0, "L");
 			/*// echeance
 			$date_ech = $date->format('d/m/Y');
 			$pdf->SetXY( 5, 230 ); $pdf->Cell( 38, 5, "Date Ech�ance :", 0, 0, 'R'); $pdf->Cell( 38, 5, $date_ech, 0, 0, 'L');*/
@@ -93,37 +106,37 @@
 		$pdf->SetFont('Arial','BU',11); $x = 75 ; $y = 30;
 		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, "Informations client", 0, 0, 'L'); $y += 6;
 		$pdf->SetFont('Arial','B',10);
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l(mb_strtoupper($c->nom , 'UTF-8'))." "._u2l($c->prenom), 0, 0, ''); $y += 4;
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text(mb_strtoupper($c->nom , 'UTF-8'))." "._pdf_text($c->prenom), 0, 0, ''); $y += 4;
 		$pdf->SetFont('Arial','',10);
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l($c->email), 0, 0, ''); $y += 4;
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l($c->phone), 0, 0, ''); $y += 4;
-		if($c->entreprise) { $pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l($c->entreprise), 0, 0, ''); $y += 4;}
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text($c->email), 0, 0, ''); $y += 4;
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text($c->phone), 0, 0, ''); $y += 4;
+		if($c->entreprise) { $pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text($c->entreprise), 0, 0, ''); $y += 4;}
 
 		// adr livraison du client
 		$pdf->SetFont('Arial','BU',11); $x = 75 ; $y = 55;
 		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, "Adresse de livraison", 0, 0, 'L'); $y += 6;
 		$pdf->SetFont('Arial','B',10);
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l(mb_strtoupper($c->nom_l , 'UTF-8'))." "._u2l($c->prenom_l), 0, 0, ''); $y += 4;
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text(mb_strtoupper($c->nom_l , 'UTF-8'))." "._pdf_text($c->prenom_l), 0, 0, ''); $y += 4;
 		$pdf->SetFont('Arial','',10);
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l($c->phone_l), 0, 0, ''); $y += 4;
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l($c->adresse_l), 0, 0, ''); $y += 4;
-		if ($c->adressec_f) { $pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l($c->adressec_l), 0, 0, ''); $y += 4;}
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, $c->codepostal_l. ' ' ._u2l($c->ville_l) , 0, 0, ''); $y += 4;
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l($c->pays_l), 0, 0, ''); $y += 4;
-		if($c->numerotva_f) { $pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, 'N� TVA Intra : ' .$c->numerotva_l, 0, 0, '');}
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text($c->phone_l), 0, 0, ''); $y += 4;
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text($c->adresse_l), 0, 0, ''); $y += 4;
+		if ($c->adressec_f) { $pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text($c->adressec_l), 0, 0, ''); $y += 4;}
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, $c->codepostal_l. ' ' ._pdf_text($c->ville_l) , 0, 0, ''); $y += 4;
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text($c->pays_l), 0, 0, ''); $y += 4;
+		if($c->numerotva_f) { $pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text('N° TVA Intra : ') .$c->numerotva_l, 0, 0, '');}
 
 		// adr fact du client
 		$pdf->SetFont('Arial','BU',11); $x = 135 ; $y = 55;
 		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, "Adresse de facturation", 0, 0, 'L'); $y += 6;
 		$pdf->SetFont('Arial','B',10);
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l(mb_strtoupper($c->nom_f , 'UTF-8'))." "._u2l($c->prenom_f), 0, 0, ''); $y += 4;
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text(mb_strtoupper($c->nom_f , 'UTF-8'))." "._pdf_text($c->prenom_f), 0, 0, ''); $y += 4;
 		$pdf->SetFont('Arial','',10);
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l($c->phone_f), 0, 0, ''); $y += 4;
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l($c->adresse_f), 0, 0, ''); $y += 4;
-		if ($c->adressec_f) { $pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l($c->adressec_f), 0, 0, ''); $y += 4;}
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, $c->codepostal_f. ' ' ._u2l($c->ville_f) , 0, 0, ''); $y += 4;
-		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _u2l($c->pays_f), 0, 0, ''); $y += 4;
-		if($c->numerotva_f) { $pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, 'N� TVA Intra : ' .$c->numerotva_f, 0, 0, '');}
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text($c->phone_f), 0, 0, ''); $y += 4;
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text($c->adresse_f), 0, 0, ''); $y += 4;
+		if ($c->adressec_f) { $pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text($c->adressec_f), 0, 0, ''); $y += 4;}
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, $c->codepostal_f. ' ' ._pdf_text($c->ville_f) , 0, 0, ''); $y += 4;
+		$pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text($c->pays_f), 0, 0, ''); $y += 4;
+		if($c->numerotva_f) { $pdf->SetXY( $x, $y ); $pdf->Cell( 100, 8, _pdf_text('N° TVA Intra : ') .$c->numerotva_f, 0, 0, '');}
 		
 		// ***********************
 		// le cadre des articles
@@ -135,8 +148,8 @@
 		// les traits verticaux colonnes
 		$pdf->Line(116, 95, 116, 213); $pdf->Line(129, 95, 129, 213); $pdf->Line(151, 95, 151, 213); $pdf->Line(161, 95, 161, 213); $pdf->Line(183, 95, 183, 213);
 		// titre colonne
-		$pdf->SetXY( 1, 96 ); $pdf->SetFont('Arial','B',8); $pdf->Cell( 115, 8, "Libell�", 0, 0, 'C');
-		$pdf->SetXY( 116, 96 ); $pdf->SetFont('Arial','B',8); $pdf->Cell( 13, 8, "Qt�", 0, 0, 'C');
+		$pdf->SetXY( 1, 96 ); $pdf->SetFont('Arial','B',8); $pdf->Cell( 115, 8, _pdf_text("Libellé"), 0, 0, 'C');
+		$pdf->SetXY( 116, 96 ); $pdf->SetFont('Arial','B',8); $pdf->Cell( 13, 8, _pdf_text("Qté"), 0, 0, 'C');
 		$pdf->SetXY( 129, 96 ); $pdf->SetFont('Arial','B',8); $pdf->Cell( 22, 8, "PU HT HD", 0, 0, 'C');
 		$pdf->SetXY( 151, 96 ); $pdf->SetFont('Arial','B',8); $pdf->Cell( 10, 8, "TVA", 0, 0, 'C');
 		$pdf->SetXY( 161, 96 ); $pdf->SetFont('Arial','B',8); $pdf->Cell( 22, 8, "Consigne", 0, 0, 'C');
@@ -165,7 +178,7 @@
 			}
 
 			// libelle
-			$pdf->SetXY( 7, $y+9 ); $pdf->Cell( 140, 5, (($e->marque == 2) ? "Pr�commande - ":"").$e->code_produit." - "._u2l($e->nom), 0, 0, 'L');
+			$pdf->SetXY( 7, $y+9 ); $pdf->Cell( 140, 5, _pdf_text((($e->marque == 2) ? "Précommande - " : "").$e->code_produit." - ".$e->nom), 0, 0, 'L');
 			// qte
 			$pdf->SetXY( 112, $y+9 ); $pdf->Cell( 13, 5, strrev(wordwrap(strrev($e->qte), 3, ' ', true)), 0, 0, 'R');
 			// PU
@@ -250,12 +263,12 @@
 			// TOTAL HT DC
 			$pdf->SetFont('Arial','B',8); $pdf->SetXY( 181, 233 ); $pdf->Cell( 24, 6, number_format($tot_htdc, 2, ',', ' '), 0, 0, 'R');
 
-			$nombre_format_francais = "Net � payer TTC : " .number_format($tot_ttc+$c->livraison*1.2+$c->consigne, 2, ',', ' ') . " �";
+			$nombre_format_francais = _pdf_text("Net à payer TTC : " .number_format($tot_ttc+$c->livraison*1.2+$c->consigne, 2, ',', ' ') . " €");
 			$pdf->SetFont('Arial','B',12); $pdf->SetXY( 5, 213 ); $pdf->Cell( 90, 8, $nombre_format_francais, 0, 0, 'C');
 			// en bas � droite
 			$pdf->SetFont('Arial','B',8); $pdf->SetXY( 181, 245 ); $pdf->Cell( 24, 6, number_format($tot_ttc, 2, ',', ' '), 0, 0, 'R');
 			// TVA
-			$nombre_format_francais = "Livraison TTC : " . number_format($c->livraison*1.2, 2, ',', ' ') . " �";
+			$nombre_format_francais = _pdf_text("Livraison TTC : " . number_format($c->livraison*1.2, 2, ',', ' ') . " €");
 			$pdf->SetFont('Arial','',10); $pdf->SetXY( 158, 213 ); $pdf->Cell( 47, 8, $nombre_format_francais, 0, 0, 'C');
 			// en bas � droite
 			$pdf->SetFont('Arial','B',8); $pdf->SetXY( 181, 239 ); $pdf->Cell( 24, 6, number_format($tot_tva, 2, ',', ' '), 0, 0, 'R');
@@ -266,7 +279,7 @@
 		// **************************
 		$pdf->SetLineWidth(0.1); $pdf->Rect(5, 260, 200, 6, "D");
 		$pdf->SetXY( 1, 260 ); $pdf->SetFont('Arial','',7);
-		$pdf->Cell( $pdf->GetPageWidth(), 7, "Clause de r�serve de propri�t� (loi 80.335 du 12 mai 1980) : Les marchandises vendues demeurent notre propri�t� jusqu'au paiement int�gral de celles-ci.", 0, 0, 'C');
+		$pdf->Cell( $pdf->GetPageWidth(), 7, _pdf_text("Clause de réserve de propriété (loi 80.335 du 12 mai 1980) : Les marchandises vendues demeurent notre propriété jusqu'au paiement intégral de celles-ci."), 0, 0, 'C');
 		
 		$y1 = 270;
 		//Positionnement en bas et tout centrer
