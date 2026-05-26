@@ -311,6 +311,12 @@ header .btn-header {
 		flex: 1 1 auto;
 		width: 100%;
 	}
+	.catalogue .catalogue-panel .menu-pack-view {
+		display: none;
+	}
+	.catalogue .catalogue-panel .menu-pack-view.is-active {
+		display: block;
+	}
 	/* Intro col: "Toutes les X" + format pills */
 	.catalogue .catalogue-panel .menu-grid .menu-col:first-child {
 		flex: 0 0 200px;
@@ -321,6 +327,46 @@ header .btn-header {
 		padding: 18px 16px;
 		box-sizing: border-box;
 		margin-right: 28px;
+	}
+	.catalogue .catalogue-panel .menu-primary-stack {
+		display: flex;
+		flex-flow: column nowrap;
+		gap: 10px;
+	}
+	.catalogue .catalogue-panel .menu-col--primary .menu-pack-btn {
+		display: flex;
+		align-items: center;
+		width: 100%;
+		min-height: 48px;
+		padding: 11px 14px;
+		box-sizing: border-box;
+		border: 1px solid #dedede;
+		border-radius: 12px;
+		background-color: #fff;
+		color: #202020;
+		text-decoration: none;
+		font-family: "GothamBook";
+		font-size: 0.88em;
+		font-weight: 700;
+		letter-spacing: 0.02em;
+		-webkit-transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+		transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+	}
+	.catalogue .catalogue-panel .menu-col--primary .menu-pack-btn:hover,
+	.catalogue .catalogue-panel .menu-col--primary .menu-pack-btn:active,
+	.catalogue .catalogue-panel .menu-col--primary .menu-pack-btn.is-active {
+		background-color: #C32E1C;
+		border-color: #C32E1C;
+		color: #fff;
+		box-shadow: 0 10px 22px rgba(195,46,28,0.16);
+	}
+	.catalogue .catalogue-panel .menu-col--primary .menu-link-primary.menu-pack-btn {
+		margin-bottom: 0;
+		font-size: 0.94em;
+	}
+	.catalogue .catalogue-panel .menu-col--primary .menu-pill {
+		margin: 0;
+		border-radius: 12px;
 	}
 	/* Filter cols */
 	.catalogue .catalogue-panel .menu-grid .menu-col:not(:first-child) {
@@ -405,6 +451,9 @@ header .btn-header {
 			flex: 0 0 auto;
 			max-width: 100%;
 			margin-right: 0;
+		}
+		.catalogue .catalogue-panel .menu-col--primary .menu-pack-btn {
+			min-height: 44px;
 		}
 		.catalogue .catalogue-panel .menu-grid .menu-col:not(:first-child) {
 			padding: 0;

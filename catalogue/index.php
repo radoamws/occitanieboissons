@@ -804,6 +804,271 @@
 	} elseif($filter_pack_slug !== '' && isset($allowed_pack_by_univers[$univers]) && in_array($filter_pack_slug, $allowed_pack_by_univers[$univers], true)) {
 		$effective_pack_slug = $filter_pack_slug;
 	}
+	$build_pack_scope = function($universKey, $packSlug, $alias = 'p') {
+		$packSlug = trim((string) $packSlug);
+		if($packSlug === '' || $packSlug === 'all') {
+			return array('joins' => '', 'where' => '1=1');
+		}
+		$prefix = $alias ? ($alias.'.') : '';
+		$packSousFamilleAlias = $alias ? ('sf_pack_'.$alias) : 'sf_pack';
+		$joins = " LEFT JOIN ob_catalogue_sous_familles ".$packSousFamilleAlias." ON ".$packSousFamilleAlias.".id = ".$prefix."sous_famille_id ";
+		$upperNom = "UPPER(".$prefix."nom)";
+		$isFut = "(UPPER(COALESCE(".$packSousFamilleAlias.".nom,'')) LIKE '%FUT%' OR $upperNom LIKE '%FUT%' OR $upperNom REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)')";
+		if($universKey === 'vins') {
+			$isBib = "(UPPER(COALESCE(".$packSousFamilleAlias.".nom,'')) LIKE '%BIB%' OR $upperNom LIKE '%BIB%' OR (".$prefix."contenance IN (300,500,1000) AND $upperNom NOT LIKE '%MAGNUM%'))";
+			if($packSlug === 'bib') {
+				return array('joins' => $joins, 'where' => $isBib);
+			}
+			if($packSlug === 'bouteilles') {
+				return array('joins' => $joins, 'where' => 'NOT '.$isBib);
+			}
+		}
+		if($packSlug === 'futs') {
+			return array('joins' => $joins, 'where' => $isFut);
+		}
+		if(in_array($packSlug, array('bouteilles-canettes', 'bouteilles'), true)) {
+			return array('joins' => $joins, 'where' => 'NOT '.$isFut);
+		}
+		return array('joins' => '', 'where' => '1=1');
+	};
+	$build_menu_dataset = function($universKey, $packSlug = 'all') use ($bdd, $build_universe_where, $build_pack_scope, $univers_famille_filter_slugs, $degre_buckets_definitions, $numeric_slug, $numeric_label) {
+		$menuData = array(
+			'familles' => array(),
+			'familles_top' => array(),
+			'sous_familles_top' => array(),
+			'sous_familles_all' => array(),
+			'fabricants_all' => array(),
+			'pays_all' => array(),
+			'categories' => array(),
+			'degres' => array(),
+			'contenances' => array(),
+			'fabriquant_ids' => array(),
+		);
+		$scope = $build_pack_scope($universKey, $packSlug, 'p');
+		$joins = $scope['joins'];
+		$whereParts = array($build_universe_where($universKey, 'p'), "p.marque IN ('1','2')");
+		if($scope['where'] !== '1=1') {
+			$whereParts[] = $scope['where'];
+		}
+		$where = implode(' AND ', $whereParts);
+
+		$taxStmt = $bdd->query("SELECT f.id AS famille_id, f.nom AS famille_nom, f.slug AS famille_slug, sf.id AS sous_famille_id, sf.nom AS sous_famille_nom, sf.slug AS sous_famille_slug
+			FROM ob_catalogue_produits p
+			INNER JOIN ob_catalogue_familles f ON p.famille_id = f.id
+			LEFT JOIN ob_catalogue_sous_familles sf ON p.sous_famille_id = sf.id
+			".$joins."
+			WHERE $where AND p.famille_id IS NOT NULL
+			ORDER BY f.nom, sf.nom");
+		$familles = array();
+		while($t = $taxStmt->fetch(PDO::FETCH_OBJ)) {
+			$fid = (int) $t->famille_id;
+			if(!isset($familles[$fid])) {
+				$familles[$fid] = array(
+					'id' => $fid,
+					'nom' => (string) $t->famille_nom,
+					'slug' => (string) $t->famille_slug,
+					'sous_familles' => array(),
+				);
+			}
+			if(!empty($t->sous_famille_id)) {
+				$sfid = (int) $t->sous_famille_id;
+				$familles[$fid]['sous_familles'][$sfid] = array(
+					'id' => $sfid,
+					'nom' => (string) $t->sous_famille_nom,
+					'slug' => (string) $t->sous_famille_slug,
+				);
+			}
+		}
+		foreach($familles as $fid => $familleItem) {
+			$familles[$fid]['sous_familles'] = array_values($familleItem['sous_familles']);
+		}
+		$familiesList = array_values($familles);
+		if(isset($univers_famille_filter_slugs[$universKey]) && !empty($univers_famille_filter_slugs[$universKey])) {
+			$allowed = array_flip($univers_famille_filter_slugs[$universKey]);
+			$filtered = array();
+			foreach($familiesList as $familleItem) {
+				if(isset($allowed[$familleItem['slug']])) {
+					$filtered[] = $familleItem;
+				}
+			}
+			$familiesList = $filtered;
+		}
+		$menuData['familles'] = $familiesList;
+		foreach($familiesList as $familyItem) {
+			foreach($familyItem['sous_familles'] as $subFamilyItem) {
+				$menuData['sous_familles_all'][$subFamilyItem['slug']] = $subFamilyItem;
+			}
+		}
+		$menuData['sous_familles_all'] = array_values($menuData['sous_familles_all']);
+
+		$famillesTopStmt = $bdd->query("SELECT f.slug, f.nom, COUNT(*) AS total
+			FROM ob_catalogue_produits p
+			INNER JOIN ob_catalogue_familles f ON p.famille_id = f.id
+			".$joins."
+			WHERE $where AND p.famille_id IS NOT NULL
+			GROUP BY f.id
+			ORDER BY total DESC, f.nom");
+		while($famTop = $famillesTopStmt->fetch(PDO::FETCH_OBJ)) {
+			$menuData['familles_top'][] = array(
+				'slug' => (string) $famTop->slug,
+				'nom' => (string) $famTop->nom,
+				'total' => (int) $famTop->total,
+			);
+		}
+
+		$sousFamillesTopStmt = $bdd->query("SELECT sf.slug, sf.nom, COUNT(*) AS total
+			FROM ob_catalogue_produits p
+			INNER JOIN ob_catalogue_sous_familles sf ON p.sous_famille_id = sf.id
+			".$joins."
+			WHERE $where AND p.sous_famille_id IS NOT NULL
+			GROUP BY sf.id
+			ORDER BY total DESC, sf.nom");
+		while($sfTop = $sousFamillesTopStmt->fetch(PDO::FETCH_OBJ)) {
+			$menuData['sous_familles_top'][] = array(
+				'slug' => (string) $sfTop->slug,
+				'nom' => (string) $sfTop->nom,
+				'total' => (int) $sfTop->total,
+			);
+		}
+
+		$fabricantsStmt = $bdd->query("SELECT p.brasserie AS code, COALESCE(f.nom, b.name, CONCAT('Fabriquant ', p.brasserie)) AS nom, COUNT(*) AS total
+			FROM ob_catalogue_produits p
+			".$joins."
+			LEFT JOIN ob_catalogue_fabriquants f ON f.code = p.brasserie
+			LEFT JOIN ob_brasseries b ON b.id_fabriquant = p.brasserie AND b.hiden = '1'
+			WHERE $where AND p.brasserie <> 0
+			GROUP BY p.brasserie, COALESCE(f.nom, b.name, CONCAT('Fabriquant ', p.brasserie))
+			ORDER BY total DESC, nom");
+		while($fab = $fabricantsStmt->fetch(PDO::FETCH_OBJ)) {
+			if(empty($fab->code) || empty($fab->nom)) {
+				continue;
+			}
+			$menuData['fabricants_all'][] = array(
+				'code' => (int) $fab->code,
+				'nom' => (string) $fab->nom,
+				'total' => (int) $fab->total,
+			);
+			$menuData['fabriquant_ids'][] = (int) $fab->code;
+		}
+		$menuData['fabriquant_ids'] = array_values(array_unique(array_filter($menuData['fabriquant_ids'])));
+
+		$paysStmt = $bdd->query("SELECT p.pays_code AS code, COALESCE(cp.nom, p.pays_code) AS nom, COUNT(*) AS total
+			FROM ob_catalogue_produits p
+			".$joins."
+			LEFT JOIN ob_catalogue_pays cp ON cp.code = p.pays_code
+			WHERE $where AND p.pays_code IS NOT NULL AND p.pays_code <> ''
+			GROUP BY p.pays_code, COALESCE(cp.nom, p.pays_code)
+			ORDER BY total DESC, nom");
+		while($pays = $paysStmt->fetch(PDO::FETCH_OBJ)) {
+			if(empty($pays->code)) {
+				continue;
+			}
+			$menuData['pays_all'][] = array(
+				'code' => (string) $pays->code,
+				'nom' => (string) $pays->nom,
+				'total' => (int) $pays->total,
+			);
+		}
+
+		$categoriesStmt = $bdd->query("SELECT p.categorie AS code, COALESCE(c.nom, CONCAT('Catégorie ', p.categorie)) AS nom, COUNT(*) AS total
+			FROM ob_catalogue_produits p
+			".$joins."
+			LEFT JOIN ob_catalogue_categories c ON c.code = p.categorie
+			WHERE $where AND p.categorie <> 0
+			GROUP BY p.categorie, COALESCE(c.nom, CONCAT('Catégorie ', p.categorie))
+			ORDER BY total DESC, nom");
+		while($cat = $categoriesStmt->fetch(PDO::FETCH_OBJ)) {
+			if(empty($cat->code)) {
+				continue;
+			}
+			$menuData['categories'][] = array(
+				'code' => (int) $cat->code,
+				'nom' => (string) $cat->nom,
+				'total' => (int) $cat->total,
+			);
+		}
+
+		$degrees = array();
+		$degStmt = $bdd->query("SELECT DISTINCT p.degre FROM ob_catalogue_produits p ".$joins." WHERE $where AND p.degre IS NOT NULL AND p.degre > 0 ORDER BY p.degre");
+		while($d = $degStmt->fetch(PDO::FETCH_OBJ)) {
+			$degrees[] = (float) $d->degre;
+		}
+		foreach($degre_buckets_definitions as $bucket) {
+			$min = (float) $bucket['min'];
+			$max = $bucket['max'] === null ? null : (float) $bucket['max'];
+			$has = false;
+			foreach($degrees as $dv) {
+				if($dv >= $min && ($max === null || $dv < $max)) {
+					$has = true;
+					break;
+				}
+			}
+			if($has) {
+				$menuData['degres'][] = $bucket;
+			}
+		}
+
+		$contenances = array();
+		$contStmt = $bdd->query("SELECT DISTINCT p.contenance FROM ob_catalogue_produits p ".$joins." WHERE $where AND p.contenance IS NOT NULL AND p.contenance > 0 ORDER BY p.contenance");
+		while($c = $contStmt->fetch(PDO::FETCH_OBJ)) {
+			$contenances[] = (float) $c->contenance;
+		}
+		$contenances = array_values(array_unique($contenances));
+		sort($contenances, SORT_NUMERIC);
+		foreach($contenances as $cv) {
+			$menuData['contenances'][] = array(
+				'value' => $cv,
+				'slug' => $numeric_slug($cv),
+				'label' => $numeric_label($cv),
+			);
+		}
+		return $menuData;
+	};
+	$menu_pack_labels = array(
+		'bouteilles-canettes' => 'Bouteilles et canettes',
+		'futs' => 'Fûts',
+		'bouteilles' => 'Bouteilles',
+		'bib' => 'BIB',
+	);
+	$univers_menu_scoped = array();
+	foreach($univers_definitions as $menuUniversKey => $menuUniversDef) {
+		$univers_menu_scoped[$menuUniversKey] = array('all' => $univers_menu[$menuUniversKey]);
+		foreach($allowed_pack_by_univers[$menuUniversKey] as $menuPackKey) {
+			$univers_menu_scoped[$menuUniversKey][$menuPackKey] = $build_menu_dataset($menuUniversKey, $menuPackKey);
+		}
+	}
+	$get_active_menu_pack = function($panelUnivers) use ($univers, $effective_pack_slug) {
+		if($panelUnivers === $univers && !empty($effective_pack_slug)) {
+			return $effective_pack_slug;
+		}
+		return 'all';
+	};
+	$with_menu_pack_filter = function($packKey, $filters = array()) {
+		if($packKey !== 'all' && $packKey !== '') {
+			$filters['filtre_pack'] = $packKey;
+		}
+		return $filters;
+	};
+	$split_beer_categories = function($menuData) use ($beer_color_labels) {
+		$colors = array();
+		$styles = array();
+		foreach($menuData['categories'] as $categoryItem) {
+			$label = mb_strtolower((string) $categoryItem['nom'], 'UTF-8');
+			$isColor = false;
+			foreach($beer_color_labels as $needle) {
+				if(strpos($label, $needle) !== false) {
+					$isColor = true;
+					break;
+				}
+			}
+			if($isColor) {
+				$colors[] = $categoryItem;
+			} else {
+				$styles[] = $categoryItem;
+			}
+		}
+		return array('colors' => $colors, 'styles' => $styles);
+	};
 
 	function ObPanierMap() {
 		$panier_map = [];
@@ -960,136 +1225,183 @@
 						<?php } ?>
 
 						<div class="mot-cle catalogue-megamenu" data-active="<?php echo $univers; ?>">
-						<?php foreach($univers_definitions as $ukey => $udef) { $menu = $univers_menu[$ukey]; ?>
-							<div class="catalogue-panel <?php echo ($ukey === $univers) ? 'is-active' : ''; ?>" data-panel="<?php echo $ukey; ?>">
+						<?php foreach($univers_definitions as $ukey => $udef) { $menu = $univers_menu[$ukey]; $panelActivePack = $get_active_menu_pack($ukey); $panelPackKeys = array_merge(array('all'), $allowed_pack_by_univers[$ukey]); ?>
+							<div class="catalogue-panel <?php echo ($ukey === $univers) ? 'is-active' : ''; ?>" data-panel="<?php echo $ukey; ?>" data-default-pack="<?php echo htmlspecialchars($panelActivePack, ENT_QUOTES, 'UTF-8'); ?>" data-active-pack="<?php echo htmlspecialchars($panelActivePack, ENT_QUOTES, 'UTF-8'); ?>">
 								<div class="menu-grid menu-grid--<?php echo $ukey; ?>">
+									<?php if($ukey === 'bieres' || $ukey === 'vins' || $ukey === 'spiritueux' || $ukey === 'softs') { ?>
+										<div class="menu-col menu-col--primary">
+											<div class="menu-primary-stack">
+												<?php if($ukey === 'bieres') { ?>
+													<a class="menu-link menu-link-primary menu-pack-btn <?php echo ($panelActivePack === 'all') ? 'is-active' : ''; ?>" data-pack="all" href="<?php echo $url; ?>/univers/bieres/produits">Toutes les bières</a>
+												<?php } else { ?>
+													<a class="menu-link menu-link-primary menu-pack-btn <?php echo ($panelActivePack === 'all') ? 'is-active' : ''; ?>" data-pack="all" href="<?php echo $url; ?>/univers/<?php echo $ukey; ?>"><?php echo ($ukey === 'vins') ? 'Tous les vins' : (($ukey === 'spiritueux') ? 'Tous les spiritueux' : 'Tous les softs'); ?></a>
+												<?php } ?>
+												<?php foreach($allowed_pack_by_univers[$ukey] as $menuPackKey) { ?>
+													<a class="menu-pill menu-pack-btn <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>" href="<?php echo $url; ?>/univers/<?php echo $ukey; ?>/pack/<?php echo $menuPackKey; ?>"><?php echo htmlspecialchars($menu_pack_labels[$menuPackKey], ENT_QUOTES, 'UTF-8'); ?></a>
+												<?php } ?>
+											</div>
+										</div>
+									<?php } ?>
+
 									<?php if($ukey === 'bieres') { ?>
 										<div class="menu-col">
-											<a class="menu-link menu-link-primary" href="<?php echo $url; ?>/univers/bieres">Toutes les bières</a>
-												<a class="menu-pill" href="<?php echo $url; ?>/univers/bieres/pack/bouteilles-canettes">Bouteilles et canettes</a>
-												<a class="menu-pill" href="<?php echo $url; ?>/univers/bieres/pack/futs">Fûts</a>
-										</div>
-										<div class="menu-col">
 											<div class="menu-section-title">Couleur</div>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/3">Blanche</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/7">Blonde</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/4">Ambrée</a>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('bieres', array('menu_scope' => 'bieres-couleur')); ?>">Voir tout</a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; $beerGroups = $split_beer_categories($packMenu); ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($beerGroups['colors'], 0, 3) as $catItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('bieres', $with_menu_pack_filter($menuPackKey, array('filtre_categorie' => $catItem['code']))); ?>"><?php echo htmlspecialchars($catItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($beerGroups['colors']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('bieres', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'bieres-couleur'))); ?>">Voir tout</a>
+												</div>
+											<?php } ?>
 										</div>
 										<div class="menu-col">
 											<div class="menu-section-title">Style</div>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/1">IPA</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/7">Lager</a>
-											<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/categorie/5">Stout</a>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('bieres', array('menu_scope' => 'bieres-style')); ?>">Voir tout</a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; $beerGroups = $split_beer_categories($packMenu); ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($beerGroups['styles'], 0, 3) as $catItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('bieres', $with_menu_pack_filter($menuPackKey, array('filtre_categorie' => $catItem['code']))); ?>"><?php echo htmlspecialchars($catItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($beerGroups['styles']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('bieres', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'bieres-style'))); ?>">Voir tout</a>
+												</div>
+											<?php } ?>
 										</div>
 										<div class="menu-col">
 											<div class="menu-section-title">Brasserie</div>
-											<?php if(!empty($menu['fabricants'])) { $limit = 3; $i = 0; foreach($menu['fabricants'] as $fab) { if($i >= $limit) break; $i++; ?>
-												<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/<?php echo filterNom($fab->name)."-".$fab->id; ?>"><?php echo htmlspecialchars($fab->name, ENT_QUOTES, 'UTF-8'); ?></a>
-											<?php } } ?>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('bieres', array('menu_scope' => 'bieres-brasserie')); ?>">Voir tout</a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($packMenu['fabricants_all'], 0, 3) as $fabItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('bieres', $with_menu_pack_filter($menuPackKey, array('filtre_fabriquant' => $fabItem['code']))); ?>"><?php echo htmlspecialchars($fabItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($packMenu['fabricants_all']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('bieres', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'bieres-brasserie'))); ?>">Voir tout</a>
+												</div>
+											<?php } ?>
 										</div>
 										<div class="menu-col">
 											<div class="menu-section-title">Pays</div>
-											<?php if(!empty($menu['pays'])) { $limit = 3; $i = 0; foreach($menu['pays'] as $pays) { if($i >= $limit) break; $i++; ?>
-												<a class="menu-link" href="<?php echo $url; ?>/univers/bieres/pays/<?php echo rawurlencode($pays); ?>"><?php echo htmlspecialchars($pays, ENT_QUOTES, 'UTF-8'); ?></a>
-											<?php } } ?>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('bieres', array('menu_scope' => 'bieres-pays')); ?>">Voir tout</a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($packMenu['pays_all'], 0, 3) as $paysItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('bieres', $with_menu_pack_filter($menuPackKey, array('filtre_pays' => $paysItem['code']))); ?>"><?php echo htmlspecialchars($paysItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($packMenu['pays_all']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('bieres', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'bieres-pays'))); ?>">Voir tout</a>
+												</div>
+											<?php } ?>
 										</div>
 									<?php } elseif($ukey === 'vins') { ?>
 										<div class="menu-col">
-											<a class="menu-link menu-link-primary" href="<?php echo $url; ?>/univers/vins">Tous les vins</a>
-											<a class="menu-pill" href="<?php echo $url; ?>/univers/vins/pack/bouteilles">Bouteilles</a>
-											<a class="menu-pill" href="<?php echo $url; ?>/univers/vins/pack/bib">BIB</a>
-										</div>
-										<div class="menu-col">
 											<div class="menu-section-title">Type</div>
-											<?php foreach(array_slice($menu['categories'], 0, 3) as $catItem) { ?>
-												<a class="menu-link" href="<?php echo $url; ?>/univers/vins/categorie/<?php echo (int) $catItem['code']; ?>"><?php echo htmlspecialchars($catItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($packMenu['categories'], 0, 3) as $catItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('filtre_categorie' => $catItem['code']))); ?>"><?php echo htmlspecialchars($catItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($packMenu['categories']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'vins-type'))); ?>">Voir tout</a>
+												</div>
 											<?php } ?>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('vins', array('menu_scope' => 'vins-type')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
 											<div class="menu-section-title">Appellation</div>
-											<?php foreach(array_slice($menu['sous_familles_top'], 0, 3) as $sfItem) { ?>
-												<a class="menu-link" href="<?php echo $menu_filter_href('vins', array('filtre_sous_famille' => $sfItem['slug'])); ?>"><?php echo htmlspecialchars($sfItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($packMenu['sous_familles_top'], 0, 3) as $sfItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('filtre_sous_famille' => $sfItem['slug']))); ?>"><?php echo htmlspecialchars($sfItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($packMenu['sous_familles_top']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'vins-appellation'))); ?>">Voir tout</a>
+												</div>
 											<?php } ?>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('vins', array('menu_scope' => 'vins-appellation')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
 											<div class="menu-section-title">Domaine</div>
-											<?php foreach(array_slice($menu['fabricants_all'], 0, 3) as $fabItem) { ?>
-												<a class="menu-link" href="<?php echo $menu_filter_href('vins', array('filtre_fabriquant' => $fabItem['code'])); ?>"><?php echo htmlspecialchars($fabItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($packMenu['fabricants_all'], 0, 3) as $fabItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('filtre_fabriquant' => $fabItem['code']))); ?>"><?php echo htmlspecialchars($fabItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($packMenu['fabricants_all']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'vins-domaine'))); ?>">Voir tout</a>
+												</div>
 											<?php } ?>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('vins', array('menu_scope' => 'vins-domaine')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
 											<div class="menu-section-title">Pays</div>
-											<?php foreach(array_slice($menu['pays_all'], 0, 3) as $paysItem) { ?>
-												<a class="menu-link" href="<?php echo $menu_filter_href('vins', array('filtre_pays' => $paysItem['code'])); ?>"><?php echo htmlspecialchars($paysItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($packMenu['pays_all'], 0, 3) as $paysItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('filtre_pays' => $paysItem['code']))); ?>"><?php echo htmlspecialchars($paysItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($packMenu['pays_all']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'vins-pays'))); ?>">Voir tout</a>
+												</div>
 											<?php } ?>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('vins', array('menu_scope' => 'vins-pays')); ?>">Voir tout</a>
 										</div>
 									<?php } elseif($ukey === 'spiritueux') { ?>
 										<div class="menu-col">
-											<a class="menu-link menu-link-primary" href="<?php echo $url; ?>/univers/spiritueux">Tous les spiritueux</a>
-											<a class="menu-pill" href="<?php echo $url; ?>/univers/spiritueux/pack/bouteilles">Bouteilles</a>
-											<a class="menu-pill" href="<?php echo $url; ?>/univers/spiritueux/pack/futs">Fûts</a>
-										</div>
-										<div class="menu-col">
 											<div class="menu-section-title">Type</div>
-											<?php foreach(array_slice($menu['sous_familles_top'], 0, 3) as $sfItem) { ?>
-												<a class="menu-link" href="<?php echo $menu_filter_href('spiritueux', array('filtre_sous_famille' => $sfItem['slug'])); ?>"><?php echo htmlspecialchars($sfItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($packMenu['sous_familles_top'], 0, 3) as $sfItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('spiritueux', $with_menu_pack_filter($menuPackKey, array('filtre_sous_famille' => $sfItem['slug']))); ?>"><?php echo htmlspecialchars($sfItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($packMenu['sous_familles_top']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('spiritueux', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'spiritueux-type'))); ?>">Voir tout</a>
+												</div>
 											<?php } ?>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('spiritueux', array('menu_scope' => 'spiritueux-type')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
 											<div class="menu-section-title">Distillerie</div>
-											<?php foreach(array_slice($menu['fabricants_all'], 0, 3) as $fabItem) { ?>
-												<a class="menu-link" href="<?php echo $menu_filter_href('spiritueux', array('filtre_fabriquant' => $fabItem['code'])); ?>"><?php echo htmlspecialchars($fabItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($packMenu['fabricants_all'], 0, 3) as $fabItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('spiritueux', $with_menu_pack_filter($menuPackKey, array('filtre_fabriquant' => $fabItem['code']))); ?>"><?php echo htmlspecialchars($fabItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($packMenu['fabricants_all']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('spiritueux', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'spiritueux-distillerie'))); ?>">Voir tout</a>
+												</div>
 											<?php } ?>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('spiritueux', array('menu_scope' => 'spiritueux-distillerie')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
 											<div class="menu-section-title">Pays</div>
-											<?php foreach(array_slice($menu['pays_all'], 0, 3) as $paysItem) { ?>
-												<a class="menu-link" href="<?php echo $menu_filter_href('spiritueux', array('filtre_pays' => $paysItem['code'])); ?>"><?php echo htmlspecialchars($paysItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($packMenu['pays_all'], 0, 3) as $paysItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('spiritueux', $with_menu_pack_filter($menuPackKey, array('filtre_pays' => $paysItem['code']))); ?>"><?php echo htmlspecialchars($paysItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($packMenu['pays_all']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('spiritueux', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'spiritueux-pays'))); ?>">Voir tout</a>
+												</div>
 											<?php } ?>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('spiritueux', array('menu_scope' => 'spiritueux-pays')); ?>">Voir tout</a>
 										</div>
 									<?php } elseif($ukey === 'softs') { ?>
 										<div class="menu-col">
-											<a class="menu-link menu-link-primary" href="<?php echo $url; ?>/univers/softs">Tous les softs</a>
-											<a class="menu-pill" href="<?php echo $url; ?>/univers/softs/pack/bouteilles">Bouteilles</a>
-											<a class="menu-pill" href="<?php echo $url; ?>/univers/softs/pack/futs">Fûts</a>
-										</div>
-										<div class="menu-col">
 											<div class="menu-section-title">Type</div>
-											<?php foreach(array_slice($menu['familles_top'], 0, 3) as $famItem) { ?>
-												<a class="menu-link" href="<?php echo $menu_filter_href('softs', array('filtre_famille' => $famItem['slug'])); ?>"><?php echo htmlspecialchars($famItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($packMenu['familles_top'], 0, 3) as $famItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('softs', $with_menu_pack_filter($menuPackKey, array('filtre_famille' => $famItem['slug']))); ?>"><?php echo htmlspecialchars($famItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($packMenu['familles_top']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('softs', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'softs-type'))); ?>">Voir tout</a>
+												</div>
 											<?php } ?>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('softs', array('menu_scope' => 'softs-type')); ?>">Voir tout</a>
 										</div>
 										<div class="menu-col">
 											<div class="menu-section-title">Marque</div>
-											<?php foreach(array_slice($menu['fabricants_all'], 0, 3) as $fabItem) { ?>
-												<a class="menu-link" href="<?php echo $menu_filter_href('softs', array('filtre_fabriquant' => $fabItem['code'])); ?>"><?php echo htmlspecialchars($fabItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
+												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
+													<?php foreach(array_slice($packMenu['fabricants_all'], 0, 3) as $fabItem) { ?>
+														<a class="menu-link" href="<?php echo $menu_filter_href('softs', $with_menu_pack_filter($menuPackKey, array('filtre_fabriquant' => $fabItem['code']))); ?>"><?php echo htmlspecialchars($fabItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+													<?php } ?>
+													<?php if(count($packMenu['fabricants_all']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<a class="menu-more" href="<?php echo $menu_filter_href('softs', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'softs-marque'))); ?>">Voir tout</a>
+												</div>
 											<?php } ?>
-											<span class="menu-etc">etc.</span>
-											<a class="menu-more" href="<?php echo $menu_filter_href('softs', array('menu_scope' => 'softs-marque')); ?>">Voir tout</a>
 										</div>
 									<?php } else { ?>
 										<div class="menu-col">
@@ -1099,7 +1411,7 @@
 								</div>
 							</div>
 						<?php } ?>
-					</div><!-- /.mot-cle.catalogue-megamenu -->
+						</div><!-- /.mot-cle.catalogue-megamenu -->
 					<?php if(($show_univers_products || $show_scope_products) && !$brasseries_select && $current_scope_submenu !== null) { ?>
 						<div class="catalogue-submenu catalogue-submenu-filters">
 							<div class="catalogue-submenu-title"><?php echo $current_scope_submenu['title']; ?></div>

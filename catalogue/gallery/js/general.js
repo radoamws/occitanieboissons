@@ -461,11 +461,26 @@ $(function() {
 		function setActiveMenuDim(panel, dim) {
 			if(!panel || !dim) return;
 			var $panel = $(panel);
+			if(!$(".menu-dim-btn", $panel).length) return;
 			$panel.attr("data-active-dim", dim);
 			$(".menu-dim-btn", $panel).removeClass("is-active");
 			$(".menu-dim-btn[data-dim='"+dim+"']", $panel).addClass("is-active");
 			$(".menu-dim-panel", $panel).removeClass("is-active");
 			$(".menu-dim-panel[data-dim='"+dim+"']", $panel).addClass("is-active");
+		}
+		function setActiveMenuPack(panel, pack) {
+			if(!panel) return;
+			var $panel = $(panel);
+			if(!$(".menu-pack-btn", $panel).length) return;
+			var nextPack = pack || $panel.data("default-pack") || "all";
+			if(!$(".menu-pack-view[data-pack='"+nextPack+"']", $panel).length) {
+				nextPack = "all";
+			}
+			$panel.attr("data-active-pack", nextPack);
+			$(".menu-pack-btn", $panel).removeClass("is-active");
+			$(".menu-pack-btn[data-pack='"+nextPack+"']", $panel).addClass("is-active");
+			$(".menu-pack-view", $panel).removeClass("is-active");
+			$(".menu-pack-view[data-pack='"+nextPack+"']", $panel).addClass("is-active");
 		}
 		function setActiveUnivers(univers) {
 			if(!univers) return;
@@ -474,6 +489,7 @@ $(function() {
 			$(".catalogue-tab[data-univers='"+univers+"']").addClass("is-active");
 			$(".catalogue-panel").removeClass("is-active");
 			var $panel = $(".catalogue-panel[data-panel='"+univers+"']").addClass("is-active");
+			setActiveMenuPack($panel, $panel.data("active-pack") || $panel.data("default-pack") || "all");
 			setActiveMenuDim($panel, "categories");
 		}
 		$(document).on("mouseenter focus", ".catalogue-tab", function() {
@@ -491,6 +507,15 @@ $(function() {
 		$(document).on("click", ".menu-dim-btn", function(e) {
 			setActiveMenuDim($(this).closest(".catalogue-panel"), $(this).data("dim"));
 			e.preventDefault();
+		});
+		$(document).on("mouseenter focus", ".catalogue-panel.is-active .menu-pack-btn", function() {
+			setActiveMenuPack($(this).closest(".catalogue-panel"), $(this).data("pack"));
+		});
+		$(function() {
+			var $activePanel = $(".catalogue-panel.is-active").first();
+			if($activePanel.length) {
+				setActiveMenuPack($activePanel, $activePanel.data("active-pack") || $activePanel.data("default-pack") || "all");
+			}
 		});
 		// RECHERCHE BRASSERIES
 		$('form#recherche_bc input[type="text"]').autocomplete({
