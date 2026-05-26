@@ -485,24 +485,20 @@
 
 	// Import ERP -> tables (ne doit pas tourner à chaque page)
 	$artFile = __DIR__ . '/../transfert/produits/ART_PRIX_STO.CSV';
+	$productFile = __DIR__ . '/../transfert/produits/PRODUCT.CSV';
 	$tarifFile = __DIR__ . "/../transfert/produits/TARIFINTERNET_COMPLET.CSV";
-	$allArtFile = __DIR__ . '/../transfert/produits/all_art.xlsx';
-	$familleSsFamilleFile = __DIR__ . '/../transfert/produits/famille_ssfamille.xlsx';
-	$categoriesFile = __DIR__ . '/../transfert/produits/categories.xlsx';
-	$fabriquantFile = __DIR__ . '/../transfert/produits/fabriquant.xlsx';
+	$tarifLightFile = __DIR__ . "/../transfert/produits/TARIFINTERNET.CSV";
 	$importStateFile = __DIR__ . "/../transfert/produits/.ob_import_state.json";
 	$importLockFile = __DIR__ . "/../transfert/produits/.ob_import_lock";
 	$forceImport = (isset($_GET['ob_import']) && $_GET['ob_import'] == '1') || (getenv('OB_FORCE_IMPORT') === '1');
 	$nextState = array(
-		'version' => 3,
+		'version' => 4,
 		'tarif' => ob_file_signature($tarifFile),
+		'tarif_light' => ob_file_signature($tarifLightFile),
 		'art_csv' => ob_file_signature($artFile),
-		'all_art' => ob_file_signature($allArtFile),
-		'famille_ssfamille' => ob_file_signature($familleSsFamilleFile),
-		'categories' => ob_file_signature($categoriesFile),
-		'fabriquant' => ob_file_signature($fabriquantFile),
+		'product_csv' => ob_file_signature($productFile),
 	);
-	$shouldImport = ($nextState['all_art'] !== null || $nextState['tarif'] !== null) && ob_should_run_import($importStateFile, $nextState, $forceImport);
+	$shouldImport = ($nextState['tarif'] !== null) && ob_should_run_import($importStateFile, $nextState, $forceImport);
 	if($shouldImport) {
 		$lockHandle = @fopen($importLockFile, 'c');
 		$locked = false;
@@ -514,7 +510,7 @@
 			@fclose($lockHandle);
 		} else {
 			// Double-check sous lock (un autre process a pu finir pendant qu'on attendait)
-			$shouldImport = ($nextState['all_art'] !== null || $nextState['tarif'] !== null) && ob_should_run_import($importStateFile, $nextState, $forceImport);
+			$shouldImport = ($nextState['tarif'] !== null) && ob_should_run_import($importStateFile, $nextState, $forceImport);
 			if($shouldImport) {
 				$familleIdCache = array();
 				$sousFamilleIdCache = array();
@@ -536,47 +532,6 @@
 
 					$familleLookup = array();
 					$sousFamilleLookup = array();
-					foreach(ob_xlsx_assoc_rows($familleSsFamilleFile) as $row) {
-						$familleCode = (int) trim((string) (isset($row['Famille']) ? $row['Famille'] : '0'));
-						$sousFamilleCode = trim((string) (isset($row['Sous famille']) ? $row['Sous famille'] : ''));
-						$libelle = trim((string) (isset($row['Libellé famille']) ? $row['Libellé famille'] : ''));
-						if($familleCode <= 0 || $libelle === '') {
-							continue;
-						}
-						if($sousFamilleCode === '') {
-							$familleLookup[$familleCode] = $libelle;
-							continue;
-						}
-						$sousFamilleLookup[$familleCode.':'.(int) $sousFamilleCode] = $libelle;
-					}
-					foreach($familleLookup as $familleCode => $familleNom) {
-						ob_get_or_create_famille_by_code($bdd, $familleCode, $familleNom, $familleIdCache);
-					}
-
-					foreach(ob_xlsx_assoc_rows($categoriesFile) as $row) {
-						$code = (int) trim((string) (isset($row['Catégorie']) ? $row['Catégorie'] : '0'));
-						$nom = trim((string) (isset($row['Nom']) ? $row['Nom'] : ''));
-						if($code > 0 && $nom !== '') {
-							ob_upsert_lookup_entry($bdd, 'ob_catalogue_categories', $code, array(
-								'nom' => $nom,
-								'slug' => ob_slugify($nom),
-							));
-						}
-					}
-
-					foreach(ob_xlsx_assoc_rows($fabriquantFile) as $row) {
-						$code = (int) trim((string) (isset($row['Code']) ? $row['Code'] : '0'));
-						$nom = trim((string) (isset($row['Nom']) ? $row['Nom'] : ''));
-						if($code > 0 && $nom !== '') {
-							ob_upsert_lookup_entry($bdd, 'ob_catalogue_fabriquants', $code, array(
-								'nom' => $nom,
-								'rue' => isset($row['Rue']) ? trim((string) $row['Rue']) : null,
-								'quartier' => isset($row['Quartier']) ? trim((string) $row['Quartier']) : null,
-								'code_postal' => isset($row['Code postal']) ? trim((string) $row['Code postal']) : null,
-								'ville' => isset($row['Ville']) ? trim((string) $row['Ville']) : null,
-							));
-						}
-					}
 
 					$tarifByCodeProduit = array();
 					if($tarifFile && file_exists($tarifFile) && is_readable($tarifFile) && ($handle = fopen($tarifFile, 'r')) !== FALSE) {
@@ -599,12 +554,8 @@
 						fclose($handle);
 					}
 
-					$checkExist = $bdd->prepare("SELECT id FROM ob_catalogue_produits WHERE code_produit = :code_produit LIMIT 1");
-					$modifProduit = $bdd->prepare("UPDATE ob_catalogue_produits SET prix_ht = :prix_ht, droits = :droits, stock = :stock, code_tva = :code_tva, nom = :nom, nom_sup = :nom_sup, uv_caisse = :uv_caisse, brasserie = :brasserie, contenance = :contenance, degre = :degre, condition_vente = :condition_vente, consigne_caisse = :consigne_caisse, marque = :marque, categorie = :categorie, famille_id = :famille_id, sous_famille_id = :sous_famille_id, pays_code = :pays_code WHERE code_produit = :code_produit");
-					$createProduit = $bdd->prepare("INSERT INTO ob_catalogue_produits (code_produit, prix_ht, stock, code_tva, nom, nom_sup, brasserie, contenance, degre, condition_vente, consigne_caisse, uv_caisse, droits, marque, categorie, famille_id, sous_famille_id, pays_code) VALUES (:code_produit, :prix_ht, :stock, :code_tva, :nom, :nom_sup, :brasserie, :contenance, :degre, :condition_vente, :consigne_caisse, :uv_caisse, :droits, :marque, :categorie, :famille_id, :sous_famille_id, :pays_code)");
-
-					$allArtRows = ob_xlsx_assoc_rows($allArtFile);
-					if(empty($allArtRows) && $artFile && file_exists($artFile) && is_readable($artFile)) {
+					$artTaxonomyByCodeProduit = array();
+					if($artFile && file_exists($artFile) && is_readable($artFile)) {
 						$headerArt = null;
 						$delimiterArt = ';';
 						if(($handleArt = fopen($artFile, 'r')) !== FALSE) {
@@ -620,32 +571,116 @@
 								while(($lineArt = fgets($handleArt)) !== FALSE) {
 									$rowArt = str_getcsv($lineArt, $delimiterArt);
 									if(!is_array($rowArt) || count($rowArt) !== count($headerArt)) {
-										continue;
+										$tryDelimiter = ($delimiterArt === ';') ? "\t" : ';';
+										$rowTry = str_getcsv($lineArt, $tryDelimiter);
+										if(is_array($rowTry) && count($rowTry) === count($headerArt)) {
+											$rowArt = $rowTry;
+											$delimiterArt = $tryDelimiter;
+										} else {
+											continue;
+										}
 									}
 									$assocArt = array_combine($headerArt, $rowArt);
-									if(is_array($assocArt)) {
-										$allArtRows[] = array(
-											'Code article' => isset($assocArt['Article']) ? $assocArt['Article'] : '',
-											'Libellé article' => isset($assocArt['Désignation article']) ? $assocArt['Désignation article'] : '',
-											'Lib complementaire' => '',
-											'Famille' => '',
-											'Ssfamille' => '',
-											'Code taxe' => isset($assocArt['Code TVA']) ? $assocArt['Code TVA'] : '',
-											'Contenance' => '',
-											'Degre alcool' => '',
-											'Code Suppression' => '',
-											'Categorie article' => '',
-											'Code' => '',
-											'Code pays' => '',
-											'Pré commande' => '',
-											'Unite caisse' => '',
-											'Vente en caisse ou fût' => '',
-										);
+									if(!is_array($assocArt) || !isset($assocArt['Article'])) {
+										continue;
 									}
+									$codeProduitArt = (int) preg_replace('/[^\d]/', '', (string) $assocArt['Article']);
+									if($codeProduitArt <= 0) {
+										continue;
+									}
+									$familleNomArt = isset($assocArt['Désignation famille']) ? trim((string) $assocArt['Désignation famille']) : '';
+									$sousFamilleNomArt = isset($assocArt['Désignation sous famille']) ? trim((string) $assocArt['Désignation sous famille']) : '';
+									$artTaxonomyByCodeProduit[$codeProduitArt] = array(
+										'famille' => $familleNomArt,
+										'sous_famille' => $sousFamilleNomArt,
+									);
 								}
 							}
 							fclose($handleArt);
 						}
+					}
+
+					foreach($tarifByCodeProduit as $codeProduitTarif => $tarifRow) {
+						$familleCode = (int) trim((string) (isset($tarifRow['CODE FAMILLE']) ? $tarifRow['CODE FAMILLE'] : '0'));
+						$familleNom = trim((string) (isset($tarifRow['LIBELLE FAMILLE']) ? $tarifRow['LIBELLE FAMILLE'] : ''));
+						if($familleCode > 0 && $familleNom !== '' && !isset($familleLookup[$familleCode])) {
+							$familleLookup[$familleCode] = $familleNom;
+						}
+						$sousFamilleCode = (int) trim((string) (isset($tarifRow['CODE SS FAMILLE']) ? $tarifRow['CODE SS FAMILLE'] : '0'));
+						if($familleCode > 0 && $sousFamilleCode > 0) {
+							$sousFamilleKey = $familleCode.':'.$sousFamilleCode;
+							if(!isset($sousFamilleLookup[$sousFamilleKey])) {
+								$sousFamilleNom = '';
+								if(isset($artTaxonomyByCodeProduit[$codeProduitTarif]['sous_famille'])) {
+									$sousFamilleNom = trim((string) $artTaxonomyByCodeProduit[$codeProduitTarif]['sous_famille']);
+								}
+								if($sousFamilleNom !== '') {
+									$sousFamilleLookup[$sousFamilleKey] = $sousFamilleNom;
+								}
+							}
+						}
+						$codeCategorie = (int) trim((string) (isset($tarifRow['CODE CATEGORIE']) ? $tarifRow['CODE CATEGORIE'] : '0'));
+						$nomCategorie = trim((string) (isset($tarifRow['CATEGORIE']) ? $tarifRow['CATEGORIE'] : ''));
+						if($codeCategorie > 0 && $nomCategorie !== '') {
+							ob_upsert_lookup_entry($bdd, 'ob_catalogue_categories', $codeCategorie, array(
+								'nom' => $nomCategorie,
+								'slug' => ob_slugify($nomCategorie),
+							));
+						}
+						$codeFabriquant = (int) trim((string) (isset($tarifRow['CODE FABRIQUANT']) ? $tarifRow['CODE FABRIQUANT'] : '0'));
+						$nomFabriquant = trim((string) (isset($tarifRow['FABRIQUANT']) ? $tarifRow['FABRIQUANT'] : ''));
+						if($codeFabriquant > 0 && $nomFabriquant !== '') {
+							ob_upsert_lookup_entry($bdd, 'ob_catalogue_fabriquants', $codeFabriquant, array(
+								'nom' => $nomFabriquant,
+								'rue' => null,
+								'quartier' => null,
+								'code_postal' => null,
+								'ville' => null,
+							));
+						}
+						$codePays = trim((string) (isset($tarifRow['CODE PAYS']) ? $tarifRow['CODE PAYS'] : ''));
+						$nomPays = trim((string) (isset($tarifRow['PAYS']) ? $tarifRow['PAYS'] : ''));
+						if($codePays !== '' && $nomPays !== '') {
+							ob_upsert_lookup_entry($bdd, 'ob_catalogue_pays', $codePays, array(
+								'nom' => $nomPays,
+								'slug' => ob_slugify($nomPays),
+							));
+						}
+					}
+
+					foreach($familleLookup as $familleCode => $familleNom) {
+						ob_get_or_create_famille_by_code($bdd, $familleCode, $familleNom, $familleIdCache);
+					}
+
+					$checkExist = $bdd->prepare("SELECT id FROM ob_catalogue_produits WHERE code_produit = :code_produit LIMIT 1");
+					$modifProduit = $bdd->prepare("UPDATE ob_catalogue_produits SET prix_ht = :prix_ht, droits = :droits, stock = :stock, code_tva = :code_tva, nom = :nom, nom_sup = :nom_sup, uv_caisse = :uv_caisse, brasserie = :brasserie, contenance = :contenance, degre = :degre, condition_vente = :condition_vente, consigne_caisse = :consigne_caisse, marque = :marque, categorie = :categorie, famille_id = :famille_id, sous_famille_id = :sous_famille_id, pays_code = :pays_code WHERE code_produit = :code_produit");
+					$createProduit = $bdd->prepare("INSERT INTO ob_catalogue_produits (code_produit, prix_ht, stock, code_tva, nom, nom_sup, brasserie, contenance, degre, condition_vente, consigne_caisse, uv_caisse, droits, marque, categorie, famille_id, sous_famille_id, pays_code) VALUES (:code_produit, :prix_ht, :stock, :code_tva, :nom, :nom_sup, :brasserie, :contenance, :degre, :condition_vente, :consigne_caisse, :uv_caisse, :droits, :marque, :categorie, :famille_id, :sous_famille_id, :pays_code)");
+
+					$allArtRows = array();
+					foreach($tarifByCodeProduit as $tarifRow) {
+						$codeProduitTarif = (int) preg_replace('/[^\d]/', '', (string) (isset($tarifRow['CODE_PRODUIT']) ? $tarifRow['CODE_PRODUIT'] : '0'));
+						$allArtRows[] = array(
+							'Code article' => isset($tarifRow['CODE_PRODUIT']) ? $tarifRow['CODE_PRODUIT'] : '',
+							'Libellé article' => isset($tarifRow['LIBELLE']) ? $tarifRow['LIBELLE'] : '',
+							'Lib complementaire' => isset($tarifRow['LIBELLE COMP.']) ? $tarifRow['LIBELLE COMP.'] : '',
+							'Famille' => isset($tarifRow['CODE FAMILLE']) ? $tarifRow['CODE FAMILLE'] : '',
+							'Ssfamille' => isset($tarifRow['CODE SS FAMILLE']) ? $tarifRow['CODE SS FAMILLE'] : '',
+							'Libelle famille' => isset($tarifRow['LIBELLE FAMILLE']) ? $tarifRow['LIBELLE FAMILLE'] : '',
+							'Libelle sous famille' => isset($artTaxonomyByCodeProduit[$codeProduitTarif]['sous_famille']) ? $artTaxonomyByCodeProduit[$codeProduitTarif]['sous_famille'] : '',
+							'Code taxe' => isset($tarifRow['CODE_TVA']) ? $tarifRow['CODE_TVA'] : '',
+							'Contenance' => isset($tarifRow['CONTENANCE']) ? $tarifRow['CONTENANCE'] : '',
+							'Degre alcool' => isset($tarifRow['DEGRE']) ? $tarifRow['DEGRE'] : '',
+							'Code Suppression' => '',
+							'Categorie article' => isset($tarifRow['CODE CATEGORIE']) ? $tarifRow['CODE CATEGORIE'] : '',
+							'Libelle categorie' => isset($tarifRow['CATEGORIE']) ? $tarifRow['CATEGORIE'] : '',
+							'Code' => isset($tarifRow['CODE FABRIQUANT']) ? $tarifRow['CODE FABRIQUANT'] : '',
+							'Nom fabriquant' => isset($tarifRow['FABRIQUANT']) ? $tarifRow['FABRIQUANT'] : '',
+							'Code pays' => isset($tarifRow['CODE PAYS']) ? $tarifRow['CODE PAYS'] : '',
+							'Nom pays' => isset($tarifRow['PAYS']) ? $tarifRow['PAYS'] : '',
+							'Pré commande' => (isset($tarifRow['MARQUE']) && trim((string) $tarifRow['MARQUE']) === '2') ? '1' : '0',
+							'Unite caisse' => isset($tarifRow['UV_CAISSE']) ? $tarifRow['UV_CAISSE'] : '',
+							'Vente en caisse ou fût' => isset($tarifRow['CODE CONDITION_VENTE']) ? $tarifRow['CODE CONDITION_VENTE'] : (isset($tarifRow['CONDITION_VENTE']) ? $tarifRow['CONDITION_VENTE'] : ''),
+						);
 					}
 
 					foreach($allArtRows as $row) {
@@ -663,22 +698,34 @@
 						$sousFamilleCode = (int) trim((string) (isset($row['Ssfamille']) ? $row['Ssfamille'] : '0'));
 						$familleId = null;
 						$sousFamilleId = null;
-						if($familleCode > 0 && isset($familleLookup[$familleCode])) {
-							$familleId = ob_get_or_create_famille_by_code($bdd, $familleCode, $familleLookup[$familleCode], $familleIdCache);
+						if($familleCode > 0) {
+							$familleNom = isset($familleLookup[$familleCode]) ? trim((string) $familleLookup[$familleCode]) : '';
+							if($familleNom === '' && isset($row['Libelle famille'])) {
+								$familleNom = trim((string) $row['Libelle famille']);
+							}
+							if($familleNom === '') {
+								$familleNom = 'Famille '.$familleCode;
+							}
+							$familleId = ob_get_or_create_famille_by_code($bdd, $familleCode, $familleNom, $familleIdCache);
 						}
 						if($familleId && $familleCode > 0 && $sousFamilleCode > 0) {
 							$sousFamilleKey = $familleCode.':'.$sousFamilleCode;
-							if(isset($sousFamilleLookup[$sousFamilleKey])) {
-								$sousFamilleId = ob_get_or_create_sous_famille_by_code($bdd, $familleId, $sousFamilleCode, $sousFamilleLookup[$sousFamilleKey], $sousFamilleIdCache);
+							$sousFamilleNom = isset($sousFamilleLookup[$sousFamilleKey]) ? trim((string) $sousFamilleLookup[$sousFamilleKey]) : '';
+							if($sousFamilleNom === '' && isset($row['Libelle sous famille'])) {
+								$sousFamilleNom = trim((string) $row['Libelle sous famille']);
 							}
+							if($sousFamilleNom === '') {
+								$sousFamilleNom = 'Sous-famille '.$sousFamilleCode;
+							}
+							$sousFamilleId = ob_get_or_create_sous_famille_by_code($bdd, $familleId, $sousFamilleCode, $sousFamilleNom, $sousFamilleIdCache);
 						}
 
 						$tarif = isset($tarifByCodeProduit[$codeProduit]) ? $tarifByCodeProduit[$codeProduit] : array();
 						$nom = trim((string) (isset($row['Libellé article']) ? $row['Libellé article'] : (isset($tarif['LIBELLE']) ? $tarif['LIBELLE'] : '')));
 						$nomSup = trim((string) (isset($row['Lib complementaire']) ? $row['Lib complementaire'] : (isset($tarif['LIBELLE COMP.']) ? $tarif['LIBELLE COMP.'] : '')));
-						$fabriquantCode = (int) trim((string) (isset($row['Code']) ? $row['Code'] : (isset($tarif['FABRIQUANT']) ? $tarif['FABRIQUANT'] : '0')));
-						$categorie = (int) trim((string) (isset($row['Categorie article']) ? $row['Categorie article'] : (isset($tarif['CATEGORIE']) ? $tarif['CATEGORIE'] : '0')));
-						$paysCode = trim((string) (isset($row['Code pays']) ? $row['Code pays'] : ''));
+						$fabriquantCode = (int) trim((string) (isset($row['Code']) ? $row['Code'] : (isset($tarif['CODE FABRIQUANT']) ? $tarif['CODE FABRIQUANT'] : '0')));
+						$categorie = (int) trim((string) (isset($row['Categorie article']) ? $row['Categorie article'] : (isset($tarif['CODE CATEGORIE']) ? $tarif['CODE CATEGORIE'] : '0')));
+						$paysCode = trim((string) (isset($row['Code pays']) ? $row['Code pays'] : (isset($tarif['CODE PAYS']) ? $tarif['CODE PAYS'] : '')));
 						if($paysCode !== '') {
 							$paysNom = ob_country_label_from_context($paysCode, $fabriquantCode, $countryLabelsByFabriquant);
 							ob_upsert_lookup_entry($bdd, 'ob_catalogue_pays', $paysCode, array(
@@ -693,7 +740,7 @@
 						}
 						$degre = isset($tarif['DEGRE']) ? (float) trim((string) $tarif['DEGRE']) : (float) trim((string) (isset($row['Degre alcool']) ? str_replace(',', '.', $row['Degre alcool']) : '0'));
 						$uvCaisse = isset($tarif['UV_CAISSE']) ? (int) trim((string) $tarif['UV_CAISSE']) : (int) trim((string) (isset($row['Unite caisse']) ? $row['Unite caisse'] : '0'));
-						$conditionVente = isset($tarif['CONDITION_VENTE']) ? (int) trim((string) $tarif['CONDITION_VENTE']) : (int) trim((string) (isset($row['Vente en caisse ou fût']) ? $row['Vente en caisse ou fût'] : '0'));
+						$conditionVente = isset($tarif['CODE CONDITION_VENTE']) ? (int) trim((string) $tarif['CODE CONDITION_VENTE']) : (isset($tarif['CONDITION_VENTE']) ? (int) trim((string) $tarif['CONDITION_VENTE']) : (int) trim((string) (isset($row['Vente en caisse ou fût']) ? $row['Vente en caisse ou fût'] : '0')));
 						$marque = isset($tarif['MARQUE']) ? trim((string) $tarif['MARQUE']) : ((trim((string) (isset($row['Pré commande']) ? $row['Pré commande'] : '0')) === '1') ? '2' : '1');
 						if(!in_array($marque, array('0', '1', '2'), true)) {
 							$marque = '1';

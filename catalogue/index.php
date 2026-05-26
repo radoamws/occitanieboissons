@@ -53,18 +53,23 @@
 		'bieres' => [
 			'label' => 'Bières',
 			'categorie_ids' => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,28,29,32],
+			'famille_codes' => [20],
 		],
 		'vins' => [
 			'label' => 'Vins',
 			'categorie_ids' => [20,21,22,23,24,25,26],
+			'famille_codes' => [10],
 		],
 		'spiritueux' => [
 			'label' => 'Spiritueux',
 			'categorie_ids' => [30,31],
+			'famille_codes' => [1],
 		],
 		'softs' => [
 			'label' => 'Softs',
 			'categorie_ids' => [],
+			'famille_code_min' => 40,
+			'famille_code_max' => 75,
 		],
 		'promotions' => [
 			'label' => 'Promotions',
@@ -73,10 +78,6 @@
 	];
 	// Filtrage des familles/sous-familles affichées par univers (menu PDF)
 	$univers_famille_filter_slugs = [
-		'bieres' => ['bieres', 'cidres', 'ciders'],
-		'vins' => ['vins', 'vins-permanents', 'vins-au-comptoir', 'sangria'],
-		'spiritueux' => ['alcool'],
-		'softs' => ['softs', 'soft-drinks-bib', 'eaux', 'jus-de-fruit', 'gaz', 'sirop', 'puree-de-fruits'],
 		'promotions' => ['remises'],
 	];
 	// (PDF) Menus: libellés et ordre figés sur les captures.
@@ -224,6 +225,39 @@
 	$show_univers_products = (isset($_GET['listing']) && $_GET['listing'] === 'produits');
 	$menu_scope = isset($_GET['menu_scope']) ? preg_replace('/[^a-z0-9\-_]/i', '', (string) $_GET['menu_scope']) : '';
 	$show_scope_products = ($menu_scope !== '');
+	$build_universe_where = function($universKey, $alias = 'p') use ($univers_definitions, $univers_famille_filter_slugs) {
+		if(!isset($univers_definitions[$universKey])) {
+			return '1=0';
+		}
+		$def = $univers_definitions[$universKey];
+		$prefix = $alias ? ($alias.'.') : '';
+		$parts = [];
+		if(!empty($def['categorie_ids'])) {
+			$inCats = implode(',', array_map('intval', $def['categorie_ids']));
+			$parts[] = $prefix."categorie IN ($inCats)";
+		}
+		if(isset($def['famille_codes']) && !empty($def['famille_codes'])) {
+			$inFamCodes = implode(',', array_map('intval', $def['famille_codes']));
+			$parts[] = $prefix."famille_id IN (SELECT id FROM ob_catalogue_familles WHERE code IN ($inFamCodes))";
+		}
+		if(isset($def['famille_code_min']) && isset($def['famille_code_max'])) {
+			$minCode = (int) $def['famille_code_min'];
+			$maxCode = (int) $def['famille_code_max'];
+			if($minCode > 0 && $maxCode >= $minCode) {
+				$parts[] = $prefix."famille_id IN (SELECT id FROM ob_catalogue_familles WHERE code BETWEEN $minCode AND $maxCode)";
+			}
+		}
+		if(isset($univers_famille_filter_slugs[$universKey]) && !empty($univers_famille_filter_slugs[$universKey])) {
+			$inSlugs = implode(',', array_map(function($slug) {
+				return "'".addslashes($slug)."'";
+			}, $univers_famille_filter_slugs[$universKey]));
+			$parts[] = $prefix."famille_id IN (SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs))";
+		}
+		if(empty($parts)) {
+			return '1=0';
+		}
+		return '('.implode(' OR ', $parts).')';
+	};
 
 	// Pré-calcul des données de menu (catégories, fabricants, pays) par univers
 	$univers_menu = [];
@@ -242,24 +276,7 @@
 			'contenances' => [],
 			'fabriquant_ids' => [],
 		];
-		$universWhere = '1=0';
-		if(!empty($def['categorie_ids'])) {
-			$inCats = implode(',', array_map('intval', $def['categorie_ids']));
-			$universWhere = "p.categorie IN ($inCats)";
-		}
-		if(in_array($key, ['vins','spiritueux'], true) && !empty($def['categorie_ids'])) {
-			$slugs = isset($univers_famille_filter_slugs[$key]) ? $univers_famille_filter_slugs[$key] : [];
-			if(!empty($slugs)) {
-				$inSlugs = implode(',', array_map(function($s){ return "'".addslashes($s)."'"; }, $slugs));
-				$universWhere = "(p.categorie IN ($inCats) OR p.famille_id IN (SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs)))";
-			}
-		} elseif(empty($def['categorie_ids'])) {
-			$slugs = isset($univers_famille_filter_slugs[$key]) ? $univers_famille_filter_slugs[$key] : [];
-			if(!empty($slugs)) {
-				$inSlugs = implode(',', array_map(function($s){ return "'".addslashes($s)."'"; }, $slugs));
-				$universWhere = "p.famille_id IN (SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs))";
-			}
-		}
+		$universWhere = $build_universe_where($key, 'p');
 		$taxStmt = $bdd->query("SELECT f.id AS famille_id, f.nom AS famille_nom, f.slug AS famille_slug, sf.id AS sous_famille_id, sf.nom AS sous_famille_nom, sf.slug AS sous_famille_slug\n\t\t\tFROM ob_catalogue_produits p\n\t\t\tINNER JOIN ob_catalogue_familles f ON p.famille_id = f.id\n\t\t\tLEFT JOIN ob_catalogue_sous_familles sf ON p.sous_famille_id = sf.id\n\t\t\tWHERE $universWhere AND p.famille_id IS NOT NULL\n\t\t\tORDER BY f.nom, sf.nom");
 		$familles = [];
 		while($t = $taxStmt->fetch(PDO::FETCH_OBJ)) {
@@ -285,7 +302,7 @@
 			$familles[$fid]['sous_familles'] = array_values($f['sous_familles']);
 		}
 		$familiesList = array_values($familles);
-		if(isset($univers_famille_filter_slugs[$key])) {
+		if(isset($univers_famille_filter_slugs[$key]) && !empty($univers_famille_filter_slugs[$key])) {
 			$allowed = array_flip($univers_famille_filter_slugs[$key]);
 			$filtered = [];
 			foreach($familiesList as $f) {
@@ -437,31 +454,6 @@
 			];
 		}
 	}
-	$build_universe_where = function($universKey, $alias = 'p') use ($univers_definitions, $univers_famille_filter_slugs, $bdd) {
-		$prefix = $alias ? $alias.'.' : '';
-		if(empty($univers_definitions[$universKey]['categorie_ids'])) {
-			$slugs = isset($univers_famille_filter_slugs[$universKey]) ? $univers_famille_filter_slugs[$universKey] : [];
-			if(empty($slugs)) {
-				return '1=0';
-			}
-			$inSlugs = implode(',', array_map(function($slug) {
-				return "'".addslashes($slug)."'";
-			}, $slugs));
-			return $prefix."famille_id IN (SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs))";
-		}
-		$inCats = implode(',', array_map('intval', $univers_definitions[$universKey]['categorie_ids']));
-		$where = $prefix."categorie IN ($inCats)";
-		if(in_array($universKey, ['vins', 'spiritueux'], true)) {
-			$slugs = isset($univers_famille_filter_slugs[$universKey]) ? $univers_famille_filter_slugs[$universKey] : [];
-			if(!empty($slugs)) {
-				$inSlugs = implode(',', array_map(function($slug) {
-					return "'".addslashes($slug)."'";
-				}, $slugs));
-				$where = '('.$where.' OR '.$prefix."famille_id IN (SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs)))";
-			}
-		}
-		return $where;
-	};
 	$current_univers_menu = isset($univers_menu[$univers]) ? $univers_menu[$univers] : [
 		'familles' => [],
 		'familles_top' => [],
@@ -1189,17 +1181,9 @@
 						?>
 							<?php ObRenderProduitsGrid($elements); ?>
 						<?php } ?>
-					<?php } elseif($select_degre && $degre_bucket && !empty($univers_definitions[$univers]['categorie_ids'])) { ?>
+					<?php } elseif($select_degre && $degre_bucket) { ?>
 						<?php
-							$inCats = implode(',', array_map('intval', $univers_definitions[$univers]['categorie_ids']));
-							$universeWhere = "categorie IN ($inCats)";
-							if(in_array($univers, ['vins','spiritueux'], true)) {
-								$slugs = isset($univers_famille_filter_slugs[$univers]) ? $univers_famille_filter_slugs[$univers] : [];
-								if(!empty($slugs)) {
-									$inSlugs = implode(',', array_map(function($s){ return "'".addslashes($s)."'"; }, $slugs));
-									$universeWhere = "(categorie IN ($inCats) OR famille_id IN (SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs)))";
-								}
-							}
+							$universeWhere = $build_universe_where($univers, '');
 							$min = (float) $degre_bucket['min'];
 							$max = $degre_bucket['max'] === null ? null : (float) $degre_bucket['max'];
 							$labelDegre = $degre_bucket['label'];
@@ -1230,17 +1214,9 @@
 						?>
 							<?php ObRenderProduitsGrid($elements); ?>
 						<?php } ?>
-					<?php } elseif($select_contenance && $contenance_value !== null && !empty($univers_definitions[$univers]['categorie_ids'])) { ?>
+					<?php } elseif($select_contenance && $contenance_value !== null) { ?>
 						<?php
-							$inCats = implode(',', array_map('intval', $univers_definitions[$univers]['categorie_ids']));
-							$universeWhere = "categorie IN ($inCats)";
-							if(in_array($univers, ['vins','spiritueux'], true)) {
-								$slugs = isset($univers_famille_filter_slugs[$univers]) ? $univers_famille_filter_slugs[$univers] : [];
-								if(!empty($slugs)) {
-									$inSlugs = implode(',', array_map(function($s){ return "'".addslashes($s)."'"; }, $slugs));
-									$universeWhere = "(categorie IN ($inCats) OR famille_id IN (SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs)))";
-								}
-							}
+							$universeWhere = $build_universe_where($univers, '');
 							$contenance = (float) $contenance_value;
 							switch(@$_GET['trier_prix']) {
 								case "croissant":
@@ -1331,44 +1307,7 @@
 												$trier_prix = isset($_GET['trier_prix']) ? $_GET['trier_prix'] : null;
 												$whereParts = [];
 												$joins = '';
-												if(!empty($univers_definitions[$univers]['categorie_ids'])) {
-													$inCats = implode(',', array_map('intval', $univers_definitions[$univers]['categorie_ids']));
-															$catWhere = "p.categorie IN ($inCats)";
-															if(in_array($univers, ['vins','spiritueux'], true)) {
-																// TARIFINTERNET_COMPLET contient beaucoup d'articles vins/spiritueux avec categorie=0.
-																// Pour garder les packs cohérents, on inclut aussi via la taxonomie (familles).
-																$slugs = isset($univers_famille_filter_slugs[$univers]) ? $univers_famille_filter_slugs[$univers] : [];
-																$ids = [];
-																if(!empty($slugs)) {
-																	$inSlugs = implode(',', array_map(function($s){ return "'".addslashes($s)."'"; }, $slugs));
-																	$idStmt = $bdd->query("SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs)");
-																	while($r = $idStmt->fetch(PDO::FETCH_OBJ)) { $ids[] = (int) $r->id; }
-																}
-																$ids = array_values(array_unique(array_filter($ids)));
-																if(!empty($ids)) {
-																	$whereParts[] = "($catWhere OR p.famille_id IN (".implode(',', array_map('intval', $ids))."))";
-																} else {
-																	$whereParts[] = $catWhere;
-																}
-															} else {
-																$whereParts[] = $catWhere;
-															}
-												} else {
-													// Univers sans catégories: on limite par familles (taxonomie importée)
-													$slugs = isset($univers_famille_filter_slugs[$univers]) ? $univers_famille_filter_slugs[$univers] : [];
-													$ids = [];
-													if(!empty($slugs)) {
-														$inSlugs = implode(',', array_map(function($s){ return "'".addslashes($s)."'"; }, $slugs));
-														$idStmt = $bdd->query("SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs)");
-														while($r = $idStmt->fetch(PDO::FETCH_OBJ)) { $ids[] = (int) $r->id; }
-													}
-													$ids = array_values(array_unique(array_filter($ids)));
-													if(!empty($ids)) {
-														$whereParts[] = "p.famille_id IN (".implode(',', array_map('intval', $ids)).")";
-													} else {
-														$whereParts[] = "1=0";
-													}
-												}
+												$whereParts[] = $build_universe_where($univers, 'p');
 												$whereParts[] = "p.marque IN ('1','2')";
 												$pack = $pack_slug;
 												$packCondition = '1=1';
@@ -1418,9 +1357,7 @@
 							<section id="brasseries-pannel">
 								<?php
 									$fabFilter = $univers_menu[$univers]['fabriquant_ids'];
-									if(empty($univers_definitions[$univers]['categorie_ids'])) {
-										$brasseries = $bdd->query("SELECT * FROM ob_brasseries WHERE 1=0");
-									} elseif(!empty($fabFilter)) {
+									if(!empty($fabFilter)) {
 										$inFab = implode(',', array_map('intval', $fabFilter));
 										if(isset($_GET['pays'])) {
 											$brasseries = $bdd->prepare("SELECT * FROM ob_brasseries WHERE country = :pays AND hiden = '1' AND id_fabriquant IN ($inFab) ORDER BY name");
@@ -1459,41 +1396,7 @@
 												<?php
 													$trier_prix = isset($_GET['trier_prix']) ? $_GET['trier_prix'] : null;
 													$whereParts = [];
-													if(!empty($univers_definitions[$univers]['categorie_ids'])) {
-														$inCats = implode(',', array_map('intval', $univers_definitions[$univers]['categorie_ids']));
-																$catWhere = "p.categorie IN ($inCats)";
-																if(in_array($univers, ['vins','spiritueux'], true)) {
-																	$slugs = isset($univers_famille_filter_slugs[$univers]) ? $univers_famille_filter_slugs[$univers] : [];
-																	$ids = [];
-																	if(!empty($slugs)) {
-																		$inSlugs = implode(',', array_map(function($s){ return "'".addslashes($s)."'"; }, $slugs));
-																		$idStmt = $bdd->query("SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs)");
-																		while($r = $idStmt->fetch(PDO::FETCH_OBJ)) { $ids[] = (int) $r->id; }
-																	}
-																	$ids = array_values(array_unique(array_filter($ids)));
-																	if(!empty($ids)) {
-																		$whereParts[] = "($catWhere OR p.famille_id IN (".implode(',', array_map('intval', $ids))."))";
-																	} else {
-																		$whereParts[] = $catWhere;
-																	}
-																} else {
-																	$whereParts[] = $catWhere;
-																}
-													} else {
-														$slugs = isset($univers_famille_filter_slugs[$univers]) ? $univers_famille_filter_slugs[$univers] : [];
-														$ids = [];
-														if(!empty($slugs)) {
-															$inSlugs = implode(',', array_map(function($s){ return "'".addslashes($s)."'"; }, $slugs));
-															$idStmt = $bdd->query("SELECT id FROM ob_catalogue_familles WHERE slug IN ($inSlugs)");
-															while($r = $idStmt->fetch(PDO::FETCH_OBJ)) { $ids[] = (int) $r->id; }
-														}
-														$ids = array_values(array_unique(array_filter($ids)));
-														if(!empty($ids)) {
-															$whereParts[] = "p.famille_id IN (".implode(',', array_map('intval', $ids)).")";
-														} else {
-															$whereParts[] = "1=0";
-														}
-													}
+													$whereParts[] = $build_universe_where($univers, 'p');
 													$whereParts[] = "p.marque IN ('1','2')";
 													$where = implode(' AND ', $whereParts);
 													switch($trier_prix) {
