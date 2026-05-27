@@ -665,7 +665,7 @@
 			},
 		),
 	);
-	$current_scope_submenu = (isset($submenu_config_by_scope[$menu_scope]) && !empty($submenu_config_by_scope[$menu_scope]['items'])) ? $submenu_config_by_scope[$menu_scope] : null;
+	$current_scope_submenu = isset($submenu_config_by_scope[$menu_scope]) ? $submenu_config_by_scope[$menu_scope] : null;
 	$filter_famille_id = null;
 	if($filter_famille_slug !== '') {
 		$familleFilterStmt = $bdd->prepare("SELECT id FROM ob_catalogue_familles WHERE slug = :slug LIMIT 1");
@@ -1097,6 +1097,198 @@
 		}
 		return array('colors' => $colors, 'styles' => $styles);
 	};
+	$resolve_scope_pack = function($universKey) use ($filter_pack_slug, $effective_pack_slug, $allowed_pack_by_univers) {
+		if(isset($allowed_pack_by_univers[$universKey]) && in_array($filter_pack_slug, $allowed_pack_by_univers[$universKey], true)) {
+			return $filter_pack_slug;
+		}
+		if(isset($allowed_pack_by_univers[$universKey]) && in_array((string) $effective_pack_slug, $allowed_pack_by_univers[$universKey], true)) {
+			return (string) $effective_pack_slug;
+		}
+		return 'all';
+	};
+	$scope_pack = array(
+		'bieres' => $resolve_scope_pack('bieres'),
+		'vins' => $resolve_scope_pack('vins'),
+		'spiritueux' => $resolve_scope_pack('spiritueux'),
+		'softs' => $resolve_scope_pack('softs'),
+	);
+	$submenu_bieres_menu = $univers_menu_scoped['bieres'][$scope_pack['bieres']];
+	$submenu_vins_menu = $univers_menu_scoped['vins'][$scope_pack['vins']];
+	$submenu_spiritueux_menu = $univers_menu_scoped['spiritueux'][$scope_pack['spiritueux']];
+	$submenu_softs_menu = $univers_menu_scoped['softs'][$scope_pack['softs']];
+	$submenu_bieres_split = $split_beer_categories($submenu_bieres_menu);
+	$submenu_config_by_scope = array(
+		'bieres-couleur' => array(
+			'title' => 'Toutes les couleurs',
+			'items' => $submenu_bieres_split['colors'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_categorie' => $item['code']);
+				if($scope_pack['bieres'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['bieres'];
+				}
+				return $menu_scope_href('bieres', 'bieres-couleur', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_categorie_code) { return ((int) $filter_categorie_code === (int) $item['code']); },
+		),
+		'bieres-style' => array(
+			'title' => 'Tous les styles',
+			'items' => $submenu_bieres_split['styles'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_categorie' => $item['code']);
+				if($scope_pack['bieres'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['bieres'];
+				}
+				return $menu_scope_href('bieres', 'bieres-style', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_categorie_code) { return ((int) $filter_categorie_code === (int) $item['code']); },
+		),
+		'bieres-brasserie' => array(
+			'title' => 'Toutes les brasseries',
+			'items' => $submenu_bieres_menu['fabricants_all'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_fabriquant' => $item['code']);
+				if($scope_pack['bieres'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['bieres'];
+				}
+				return $menu_scope_href('bieres', 'bieres-brasserie', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_fabriquant_code) { return ((int) $filter_fabriquant_code === (int) $item['code']); },
+		),
+		'bieres-pays' => array(
+			'title' => 'Tous les pays',
+			'items' => $submenu_bieres_menu['pays_all'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_pays' => $item['code']);
+				if($scope_pack['bieres'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['bieres'];
+				}
+				return $menu_scope_href('bieres', 'bieres-pays', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_pays_code) { return ((string) $filter_pays_code === (string) $item['code']); },
+		),
+		'vins-type' => array(
+			'title' => 'Tous les types',
+			'items' => $submenu_vins_menu['categories'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_categorie' => $item['code']);
+				if($scope_pack['vins'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['vins'];
+				}
+				return $menu_scope_href('vins', 'vins-type', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_categorie_code) { return ((int) $filter_categorie_code === (int) $item['code']); },
+		),
+		'vins-appellation' => array(
+			'title' => 'Toutes les appellations',
+			'items' => $submenu_vins_menu['sous_familles_all'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_sous_famille' => $item['slug']);
+				if($scope_pack['vins'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['vins'];
+				}
+				return $menu_scope_href('vins', 'vins-appellation', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_sous_famille_slug) { return ((string) $filter_sous_famille_slug === (string) $item['slug']); },
+		),
+		'vins-domaine' => array(
+			'title' => 'Tous les domaines',
+			'items' => $submenu_vins_menu['fabricants_all'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_fabriquant' => $item['code']);
+				if($scope_pack['vins'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['vins'];
+				}
+				return $menu_scope_href('vins', 'vins-domaine', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_fabriquant_code) { return ((int) $filter_fabriquant_code === (int) $item['code']); },
+		),
+		'vins-pays' => array(
+			'title' => 'Tous les pays',
+			'items' => $submenu_vins_menu['pays_all'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_pays' => $item['code']);
+				if($scope_pack['vins'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['vins'];
+				}
+				return $menu_scope_href('vins', 'vins-pays', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_pays_code) { return ((string) $filter_pays_code === (string) $item['code']); },
+		),
+		'spiritueux-type' => array(
+			'title' => 'Tous les types',
+			'items' => $submenu_spiritueux_menu['sous_familles_all'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_sous_famille' => $item['slug']);
+				if($scope_pack['spiritueux'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['spiritueux'];
+				}
+				return $menu_scope_href('spiritueux', 'spiritueux-type', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_sous_famille_slug) { return ((string) $filter_sous_famille_slug === (string) $item['slug']); },
+		),
+		'spiritueux-distillerie' => array(
+			'title' => 'Toutes les distilleries',
+			'items' => $submenu_spiritueux_menu['fabricants_all'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_fabriquant' => $item['code']);
+				if($scope_pack['spiritueux'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['spiritueux'];
+				}
+				return $menu_scope_href('spiritueux', 'spiritueux-distillerie', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_fabriquant_code) { return ((int) $filter_fabriquant_code === (int) $item['code']); },
+		),
+		'spiritueux-pays' => array(
+			'title' => 'Tous les pays',
+			'items' => $submenu_spiritueux_menu['pays_all'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_pays' => $item['code']);
+				if($scope_pack['spiritueux'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['spiritueux'];
+				}
+				return $menu_scope_href('spiritueux', 'spiritueux-pays', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_pays_code) { return ((string) $filter_pays_code === (string) $item['code']); },
+		),
+		'softs-type' => array(
+			'title' => 'Tous les types',
+			'items' => $submenu_softs_menu['familles'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_famille' => $item['slug']);
+				if($scope_pack['softs'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['softs'];
+				}
+				return $menu_scope_href('softs', 'softs-type', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_famille_slug) { return ((string) $filter_famille_slug === (string) $item['slug']); },
+		),
+		'softs-marque' => array(
+			'title' => 'Toutes les marques',
+			'items' => $submenu_softs_menu['fabricants_all'],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_fabriquant' => $item['code']);
+				if($scope_pack['softs'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['softs'];
+				}
+				return $menu_scope_href('softs', 'softs-marque', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_fabriquant_code) { return ((int) $filter_fabriquant_code === (int) $item['code']); },
+		),
+	);
+	$current_scope_submenu = isset($submenu_config_by_scope[$menu_scope]) ? $submenu_config_by_scope[$menu_scope] : null;
 
 	function ObPanierMap() {
 		$panier_map = [];
@@ -1440,17 +1632,22 @@
 							</div>
 						<?php } ?>
 						</div><!-- /.mot-cle.catalogue-megamenu -->
-					<?php if(($show_univers_products || $show_scope_products) && !$brasseries_select && $current_scope_submenu !== null) { ?>
+					</div><!-- /.rechercher -->
+					<?php if($menu_scope !== '' && !$brasseries_select) { ?>
 						<div class="catalogue-submenu catalogue-submenu-filters">
-							<div class="catalogue-submenu-title"><?php echo $current_scope_submenu['title']; ?></div>
+							<div class="catalogue-submenu-title"><?php echo ($current_scope_submenu !== null && isset($current_scope_submenu['title'])) ? $current_scope_submenu['title'] : 'Filtres'; ?></div>
 							<div class="catalogue-submenu-links">
-								<?php foreach($current_scope_submenu['items'] as $submenuItem) { ?>
-									<a class="catalogue-submenu-link" href="<?php echo htmlspecialchars($current_scope_submenu['build_href']($submenuItem), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($current_scope_submenu['get_label']($submenuItem), ENT_QUOTES, 'UTF-8'); ?></a>
+								<?php if($current_scope_submenu !== null && !empty($current_scope_submenu['items'])) { ?>
+									<?php foreach($current_scope_submenu['items'] as $submenuItem) { ?>
+										<?php $submenuItemIsActive = isset($current_scope_submenu['is_active']) ? (bool) $current_scope_submenu['is_active']($submenuItem) : false; ?>
+										<a class="catalogue-submenu-link catalogue-submenu-btn <?php echo $submenuItemIsActive ? 'is-active' : ''; ?>" href="<?php echo htmlspecialchars($current_scope_submenu['build_href']($submenuItem), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($current_scope_submenu['get_label']($submenuItem), ENT_QUOTES, 'UTF-8'); ?></a>
+									<?php } ?>
+								<?php } else { ?>
+									<span class="catalogue-submenu-empty">Aucun filtre disponible pour ce contexte (<?php echo htmlspecialchars($menu_scope, ENT_QUOTES, 'UTF-8'); ?>).</span>
 								<?php } ?>
 							</div>
 						</div>
 					<?php } ?>
-					</div><!-- /.rechercher -->
 					<?php if($brasseries_select) { ?>
 						<?php
 							switch(@$_GET['trier_prix']) {
