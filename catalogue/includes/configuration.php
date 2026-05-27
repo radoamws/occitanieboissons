@@ -420,9 +420,13 @@
 		$cacheByFamilleAndCode[$key] = (int) $bdd->lastInsertId();
 		return (int) $cacheByFamilleAndCode[$key];
 	}
-	function ob_country_label_from_context($countryCode, $fabriquantCode, $countryLabelsByFabriquant) {
+	function ob_country_label_from_context($countryCode, $fabriquantCode, $countryLabelsByFabriquant, $fallbackLabel = '') {
 		$countryCode = trim((string) $countryCode);
 		$fabriquantCode = (int) $fabriquantCode;
+		$fallbackLabel = trim((string) $fallbackLabel);
+		if($fallbackLabel !== '') {
+			return $fallbackLabel;
+		}
 		if($fabriquantCode > 0 && isset($countryLabelsByFabriquant[$fabriquantCode]) && trim((string) $countryLabelsByFabriquant[$fabriquantCode]) !== '') {
 			return trim((string) $countryLabelsByFabriquant[$fabriquantCode]);
 		}
@@ -492,7 +496,7 @@
 	$importLockFile = __DIR__ . "/../transfert/produits/.ob_import_lock";
 	$forceImport = (isset($_GET['ob_import']) && $_GET['ob_import'] == '1') || (getenv('OB_FORCE_IMPORT') === '1');
 	$nextState = array(
-		'version' => 4,
+		'version' => 5,
 		'tarif' => ob_file_signature($tarifFile),
 		'tarif_light' => ob_file_signature($tarifLightFile),
 		'art_csv' => ob_file_signature($artFile),
@@ -727,7 +731,12 @@
 						$categorie = (int) trim((string) (isset($row['Categorie article']) ? $row['Categorie article'] : (isset($tarif['CODE CATEGORIE']) ? $tarif['CODE CATEGORIE'] : '0')));
 						$paysCode = trim((string) (isset($row['Code pays']) ? $row['Code pays'] : (isset($tarif['CODE PAYS']) ? $tarif['CODE PAYS'] : '')));
 						if($paysCode !== '') {
-							$paysNom = ob_country_label_from_context($paysCode, $fabriquantCode, $countryLabelsByFabriquant);
+							$paysNom = ob_country_label_from_context(
+								$paysCode,
+								$fabriquantCode,
+								$countryLabelsByFabriquant,
+								(isset($tarif['PAYS']) ? $tarif['PAYS'] : (isset($row['Nom pays']) ? $row['Nom pays'] : ''))
+							);
 							ob_upsert_lookup_entry($bdd, 'ob_catalogue_pays', $paysCode, array(
 								'nom' => $paysNom,
 								'slug' => ob_slugify($paysNom),
