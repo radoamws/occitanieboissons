@@ -522,7 +522,7 @@ header .btn-header {
 	.catalogue .catalogue-submenu-btn {
 		display: flex;
 		align-items: center;
-		padding: 11px 14px;
+		padding: 0px 14px;
 		min-height: 44px;
 		border: 1px solid #dedede;
 		border-radius: 12px;
