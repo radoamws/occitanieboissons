@@ -473,14 +473,62 @@
 		$query = http_build_query($clean);
 		return $url.'/univers/'.$universKey.'/produits'.($query !== '' ? '?'.$query : '');
 	};
+	$ob_get_filter_values = function($key, $sanitizeCb = null) {
+		if(!isset($_GET[$key])) {
+			return array();
+		}
+		$raw = $_GET[$key];
+		$values = is_array($raw) ? $raw : array($raw);
+		$result = array();
+		foreach($values as $value) {
+			if($sanitizeCb !== null) {
+				$value = $sanitizeCb($value);
+			}
+			if($value === null || $value === '') {
+				continue;
+			}
+			$result[(string) $value] = (string) $value;
+		}
+		return array_values($result);
+	};
 	$filter_query = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
-	$filter_famille_slug = isset($_GET['filtre_famille']) ? preg_replace('/[^a-z0-9\-]/i', '', (string) $_GET['filtre_famille']) : '';
-	$filter_sous_famille_slug = isset($_GET['filtre_sous_famille']) ? preg_replace('/[^a-z0-9\-]/i', '', (string) $_GET['filtre_sous_famille']) : '';
-	$filter_categorie_code = isset($_GET['filtre_categorie']) ? (int) $_GET['filtre_categorie'] : 0;
-	$filter_fabriquant_code = isset($_GET['filtre_fabriquant']) ? (int) $_GET['filtre_fabriquant'] : 0;
-	$filter_pays_code = isset($_GET['filtre_pays']) ? trim((string) $_GET['filtre_pays']) : '';
-	$filter_pack_slug = isset($_GET['filtre_pack']) ? preg_replace('/[^a-z0-9\-]/i', '', (string) $_GET['filtre_pack']) : '';
-	$has_query_filters = ($filter_query !== '' || $filter_famille_slug !== '' || $filter_sous_famille_slug !== '' || $filter_categorie_code > 0 || $filter_fabriquant_code > 0 || $filter_pays_code !== '' || $filter_pack_slug !== '');
+	$filter_famille_slugs = $ob_get_filter_values('filtre_famille', function($value) {
+		return preg_replace('/[^a-z0-9\-]/i', '', (string) $value);
+	});
+	$filter_sous_famille_slugs = $ob_get_filter_values('filtre_sous_famille', function($value) {
+		return preg_replace('/[^a-z0-9\-]/i', '', (string) $value);
+	});
+	$filter_categorie_codes = array_map('intval', $ob_get_filter_values('filtre_categorie', function($value) {
+		$value = (int) $value;
+		return ($value > 0) ? (string) $value : '';
+	}));
+	$filter_fabriquant_codes = array_map('intval', $ob_get_filter_values('filtre_fabriquant', function($value) {
+		$value = (int) $value;
+		return ($value > 0) ? (string) $value : '';
+	}));
+	$filter_pays_codes = $ob_get_filter_values('filtre_pays', function($value) {
+		return trim((string) $value);
+	});
+	$filter_pack_slugs = $ob_get_filter_values('filtre_pack', function($value) {
+		return preg_replace('/[^a-z0-9\-]/i', '', (string) $value);
+	});
+
+	$filter_famille_slug = !empty($filter_famille_slugs) ? (string) $filter_famille_slugs[0] : '';
+	$filter_sous_famille_slug = !empty($filter_sous_famille_slugs) ? (string) $filter_sous_famille_slugs[0] : '';
+	$filter_categorie_code = !empty($filter_categorie_codes) ? (int) $filter_categorie_codes[0] : 0;
+	$filter_fabriquant_code = !empty($filter_fabriquant_codes) ? (int) $filter_fabriquant_codes[0] : 0;
+	$filter_pays_code = !empty($filter_pays_codes) ? (string) $filter_pays_codes[0] : '';
+	$filter_pack_slug = !empty($filter_pack_slugs) ? (string) $filter_pack_slugs[0] : '';
+
+	$has_query_filters = (
+		$filter_query !== ''
+		|| !empty($filter_famille_slugs)
+		|| !empty($filter_sous_famille_slugs)
+		|| !empty($filter_categorie_codes)
+		|| !empty($filter_fabriquant_codes)
+		|| !empty($filter_pays_codes)
+		|| !empty($filter_pack_slugs)
+	);
 	$menu_scope_href = function($universKey, $menuScope, $filters = array()) use ($menu_filter_href, $filter_query, $filter_famille_slug, $filter_sous_famille_slug, $filter_categorie_code, $filter_fabriquant_code, $filter_pays_code, $filter_pack_slug) {
 		$baseFilters = array('menu_scope' => $menuScope);
 		if($filter_query !== '') {
@@ -666,32 +714,43 @@
 		),
 	);
 	$current_scope_submenu = isset($submenu_config_by_scope[$menu_scope]) ? $submenu_config_by_scope[$menu_scope] : null;
-	$filter_famille_id = null;
-	if($filter_famille_slug !== '') {
+	$filter_famille_ids = array();
+	if(!empty($filter_famille_slugs)) {
 		$familleFilterStmt = $bdd->prepare("SELECT id FROM ob_catalogue_familles WHERE slug = :slug LIMIT 1");
-		$familleFilterStmt->bindParam(':slug', $filter_famille_slug);
-		$familleFilterStmt->execute();
-		$filterFamille = $familleFilterStmt->fetch(PDO::FETCH_OBJ);
-		if($filterFamille && isset($filterFamille->id)) {
-			$filter_famille_id = (int) $filterFamille->id;
-		}
-	}
-	$filter_sous_famille_id = null;
-	if($filter_sous_famille_slug !== '') {
-		$sousFamilleFilterStmt = $bdd->prepare("SELECT id, famille_id FROM ob_catalogue_sous_familles WHERE slug = :slug LIMIT 1");
-		$sousFamilleFilterStmt->bindParam(':slug', $filter_sous_famille_slug);
-		$sousFamilleFilterStmt->execute();
-		$filterSousFamille = $sousFamilleFilterStmt->fetch(PDO::FETCH_OBJ);
-		if($filterSousFamille && isset($filterSousFamille->id)) {
-			$filter_sous_famille_id = (int) $filterSousFamille->id;
-			if(!$filter_famille_id) {
-				$filter_famille_id = (int) $filterSousFamille->famille_id;
+		foreach($filter_famille_slugs as $familleSlugItem) {
+			$familleFilterStmt->bindParam(':slug', $familleSlugItem);
+			$familleFilterStmt->execute();
+			$filterFamille = $familleFilterStmt->fetch(PDO::FETCH_OBJ);
+			if($filterFamille && isset($filterFamille->id)) {
+				$filter_famille_ids[(int) $filterFamille->id] = (int) $filterFamille->id;
 			}
 		}
+		$filter_famille_ids = array_values($filter_famille_ids);
 	}
+	$filter_sous_famille_ids = array();
+	if(!empty($filter_sous_famille_slugs)) {
+		$sousFamilleFilterStmt = $bdd->prepare("SELECT id, famille_id FROM ob_catalogue_sous_familles WHERE slug = :slug LIMIT 1");
+		foreach($filter_sous_famille_slugs as $sousFamilleSlugItem) {
+			$sousFamilleFilterStmt->bindParam(':slug', $sousFamilleSlugItem);
+			$sousFamilleFilterStmt->execute();
+			$filterSousFamille = $sousFamilleFilterStmt->fetch(PDO::FETCH_OBJ);
+			if($filterSousFamille && isset($filterSousFamille->id)) {
+				$sfid = (int) $filterSousFamille->id;
+				$ffid = (int) $filterSousFamille->famille_id;
+				$filter_sous_famille_ids[$sfid] = $sfid;
+				if($ffid > 0) {
+					$filter_famille_ids[$ffid] = $ffid;
+				}
+			}
+		}
+		$filter_sous_famille_ids = array_values($filter_sous_famille_ids);
+		$filter_famille_ids = array_values($filter_famille_ids);
+	}
+	$filter_famille_id = !empty($filter_famille_ids) ? (int) $filter_famille_ids[0] : null;
+	$filter_sous_famille_id = !empty($filter_sous_famille_ids) ? (int) $filter_sous_famille_ids[0] : null;
 	$available_sub_familles = [];
 	foreach($current_univers_menu['familles'] as $familleMenu) {
-		if($filter_famille_slug !== '' && $familleMenu['slug'] !== $filter_famille_slug) {
+		if(!empty($filter_famille_slugs) && !in_array($familleMenu['slug'], $filter_famille_slugs, true)) {
 			continue;
 		}
 		foreach($familleMenu['sous_familles'] as $sousFamilleMenu) {
@@ -827,10 +886,27 @@
 		}
 	}
 	$effective_pack_slug = null;
+	$effective_pack_slugs = array();
 	if($select_pack) {
 		$effective_pack_slug = $pack_slug;
+		$effective_pack_slugs = array($pack_slug);
 	} elseif($filter_pack_slug !== '' && isset($allowed_pack_by_univers[$univers]) && in_array($filter_pack_slug, $allowed_pack_by_univers[$univers], true)) {
 		$effective_pack_slug = $filter_pack_slug;
+	}
+	if(!$select_pack && !empty($filter_pack_slugs) && isset($allowed_pack_by_univers[$univers])) {
+		$validPackSlugs = array();
+		foreach($filter_pack_slugs as $filterPackSlugItem) {
+			if(in_array($filterPackSlugItem, $allowed_pack_by_univers[$univers], true)) {
+				$validPackSlugs[$filterPackSlugItem] = $filterPackSlugItem;
+			}
+		}
+		if(!empty($validPackSlugs)) {
+			$effective_pack_slugs = array_values($validPackSlugs);
+			$effective_pack_slug = $effective_pack_slugs[0];
+		}
+	}
+	if(empty($effective_pack_slugs) && $effective_pack_slug !== null) {
+		$effective_pack_slugs = array($effective_pack_slug);
 	}
 	$build_pack_scope = function($universKey, $packSlug, $alias = 'p') {
 		$packSlug = trim((string) $packSlug);
@@ -1290,6 +1366,214 @@
 	);
 	$current_scope_submenu = isset($submenu_config_by_scope[$menu_scope]) ? $submenu_config_by_scope[$menu_scope] : null;
 
+	$sidebar_active_values = array(
+		'filtre_pack' => !empty($effective_pack_slugs) ? array_map('strval', $effective_pack_slugs) : array(),
+		'filtre_famille' => !empty($filter_famille_slugs) ? array_map('strval', $filter_famille_slugs) : (($select_famille && !empty($famille_slug)) ? array((string) $famille_slug) : array()),
+		'filtre_sous_famille' => !empty($filter_sous_famille_slugs) ? array_map('strval', $filter_sous_famille_slugs) : (($select_sous_famille && !empty($sous_famille_slug)) ? array((string) $sous_famille_slug) : array()),
+		'filtre_categorie' => !empty($filter_categorie_codes) ? array_map('strval', $filter_categorie_codes) : (($select_categorie && isset($_GET['categorie'])) ? array((string) ((int) $_GET['categorie'])) : array()),
+		'filtre_fabriquant' => !empty($filter_fabriquant_codes) ? array_map('strval', $filter_fabriquant_codes) : array(),
+		'filtre_pays' => !empty($filter_pays_codes) ? array_map('strval', $filter_pays_codes) : array(),
+	);
+
+	$sidebar_pack_key = 'all';
+	if($effective_pack_slug !== null && isset($univers_menu_scoped[$univers][$effective_pack_slug])) {
+		$sidebar_pack_key = (string) $effective_pack_slug;
+	}
+	$sidebar_menu_data = isset($univers_menu_scoped[$univers][$sidebar_pack_key]) ? $univers_menu_scoped[$univers][$sidebar_pack_key] : $univers_menu[$univers];
+
+	if(empty($sidebar_active_values['filtre_famille']) && !empty($sidebar_active_values['filtre_sous_famille']) && !empty($sidebar_menu_data['familles'])) {
+		foreach($sidebar_menu_data['familles'] as $sidebarFamilleItem) {
+			if(empty($sidebarFamilleItem['sous_familles'])) {
+				continue;
+			}
+			foreach($sidebarFamilleItem['sous_familles'] as $sidebarSousFamilleItem) {
+				if(in_array((string) $sidebarSousFamilleItem['slug'], $sidebar_active_values['filtre_sous_famille'], true)) {
+					$sidebar_active_values['filtre_famille'][] = (string) $sidebarFamilleItem['slug'];
+				}
+			}
+		}
+		$sidebar_active_values['filtre_famille'] = array_values(array_unique($sidebar_active_values['filtre_famille']));
+	}
+
+	$sidebar_filter_sections = array();
+	if(isset($allowed_pack_by_univers[$univers]) && !empty($allowed_pack_by_univers[$univers])) {
+		$packItems = array();
+		foreach($allowed_pack_by_univers[$univers] as $sidebarPackSlug) {
+			if(!isset($menu_pack_labels[$sidebarPackSlug])) {
+				continue;
+			}
+			$packItems[] = array(
+				'slug' => (string) $sidebarPackSlug,
+				'nom' => (string) $menu_pack_labels[$sidebarPackSlug],
+			);
+		}
+		if(!empty($packItems)) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Conditionnement',
+				'field' => 'filtre_pack',
+				'items' => $packItems,
+				'value_key' => 'slug',
+				'label_key' => 'nom',
+			);
+		}
+	}
+
+	if($univers === 'bieres') {
+		$sidebarBeerSplit = $split_beer_categories($sidebar_menu_data);
+		if(!empty($sidebarBeerSplit['colors'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Couleur',
+				'field' => 'filtre_categorie',
+				'items' => $sidebarBeerSplit['colors'],
+				'value_key' => 'code',
+				'label_key' => 'nom',
+			);
+		}
+		if(!empty($sidebarBeerSplit['styles'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Style',
+				'field' => 'filtre_categorie',
+				'items' => $sidebarBeerSplit['styles'],
+				'value_key' => 'code',
+				'label_key' => 'nom',
+			);
+		}
+		if(!empty($sidebar_menu_data['fabricants_all'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Brasserie',
+				'field' => 'filtre_fabriquant',
+				'items' => $sidebar_menu_data['fabricants_all'],
+				'value_key' => 'code',
+				'label_key' => 'nom',
+			);
+		}
+		if(!empty($sidebar_menu_data['pays_all'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Pays',
+				'field' => 'filtre_pays',
+				'items' => $sidebar_menu_data['pays_all'],
+				'value_key' => 'code',
+				'label_key' => 'nom',
+			);
+		}
+	} elseif($univers === 'vins') {
+		if(!empty($sidebar_menu_data['categories'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Type',
+				'field' => 'filtre_categorie',
+				'items' => $sidebar_menu_data['categories'],
+				'value_key' => 'code',
+				'label_key' => 'nom',
+			);
+		}
+		if(!empty($sidebar_menu_data['sous_familles_all'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Appellation',
+				'field' => 'filtre_sous_famille',
+				'items' => $sidebar_menu_data['sous_familles_all'],
+				'value_key' => 'slug',
+				'label_key' => 'nom',
+			);
+		}
+		if(!empty($sidebar_menu_data['fabricants_all'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Domaine',
+				'field' => 'filtre_fabriquant',
+				'items' => $sidebar_menu_data['fabricants_all'],
+				'value_key' => 'code',
+				'label_key' => 'nom',
+			);
+		}
+		if(!empty($sidebar_menu_data['pays_all'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Pays',
+				'field' => 'filtre_pays',
+				'items' => $sidebar_menu_data['pays_all'],
+				'value_key' => 'code',
+				'label_key' => 'nom',
+			);
+		}
+	} elseif($univers === 'spiritueux') {
+		if(!empty($sidebar_menu_data['sous_familles_all'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Type',
+				'field' => 'filtre_sous_famille',
+				'items' => $sidebar_menu_data['sous_familles_all'],
+				'value_key' => 'slug',
+				'label_key' => 'nom',
+			);
+		}
+		if(!empty($sidebar_menu_data['fabricants_all'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Distillerie',
+				'field' => 'filtre_fabriquant',
+				'items' => $sidebar_menu_data['fabricants_all'],
+				'value_key' => 'code',
+				'label_key' => 'nom',
+			);
+		}
+		if(!empty($sidebar_menu_data['pays_all'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Pays',
+				'field' => 'filtre_pays',
+				'items' => $sidebar_menu_data['pays_all'],
+				'value_key' => 'code',
+				'label_key' => 'nom',
+			);
+		}
+	} elseif($univers === 'softs') {
+		if(!empty($sidebar_menu_data['familles'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Type',
+				'field' => 'filtre_famille',
+				'items' => $sidebar_menu_data['familles'],
+				'value_key' => 'slug',
+				'label_key' => 'nom',
+			);
+		}
+		if(!empty($sidebar_menu_data['fabricants_all'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Marque',
+				'field' => 'filtre_fabriquant',
+				'items' => $sidebar_menu_data['fabricants_all'],
+				'value_key' => 'code',
+				'label_key' => 'nom',
+			);
+		}
+	} else {
+		if(!empty($sidebar_menu_data['familles'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Famille',
+				'field' => 'filtre_famille',
+				'items' => $sidebar_menu_data['familles'],
+				'value_key' => 'slug',
+				'label_key' => 'nom',
+			);
+		}
+		if(!empty($sidebar_menu_data['categories'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Type',
+				'field' => 'filtre_categorie',
+				'items' => $sidebar_menu_data['categories'],
+				'value_key' => 'code',
+				'label_key' => 'nom',
+			);
+		}
+	}
+
+	$show_listing_sidebar = !$brasseries_select && (
+		$show_univers_products
+		|| $show_scope_products
+		|| $has_query_filters
+		|| $select_pack
+		|| $select_categorie
+		|| $select_famille
+		|| $select_sous_famille
+		|| $select_degre
+		|| $select_contenance
+		|| $univers !== 'bieres'
+	);
+
 	function ObPanierMap() {
 		$panier_map = [];
 		$panier = [];
@@ -1648,6 +1932,46 @@
 							</div>
 						</div>
 					<?php } ?>
+					<?php if($show_listing_sidebar) { ?>
+						<div class="catalogue-listing-layout">
+							<aside class="catalogue-filters-sidebar">
+								<div class="catalogue-filters-box">
+									<h3 class="catalogue-filters-title">Filtrer les produits</h3>
+									<form class="catalogue-filters-form" method="get" action="<?php echo $url; ?>/univers/<?php echo $univers; ?>/produits">
+										<?php if($menu_scope !== '') { ?><input type="hidden" name="menu_scope" value="<?php echo htmlspecialchars($menu_scope, ENT_QUOTES, 'UTF-8'); ?>" /><?php } ?>
+										<?php if($filter_query !== '') { ?><input type="hidden" name="q" value="<?php echo htmlspecialchars($filter_query, ENT_QUOTES, 'UTF-8'); ?>" /><?php } ?>
+										<?php if(isset($_GET['trier_prix']) && ($_GET['trier_prix'] === 'croissant' || $_GET['trier_prix'] === 'decroissant')) { ?><input type="hidden" name="trier_prix" value="<?php echo htmlspecialchars($_GET['trier_prix'], ENT_QUOTES, 'UTF-8'); ?>" /><?php } ?>
+										<?php foreach($sidebar_filter_sections as $sidebarSection) { ?>
+											<?php $sidebarField = (string) $sidebarSection['field']; ?>
+											<?php $sidebarValueKey = (string) $sidebarSection['value_key']; ?>
+											<?php $sidebarLabelKey = (string) $sidebarSection['label_key']; ?>
+											<?php $sidebarActive = isset($sidebar_active_values[$sidebarField]) && is_array($sidebar_active_values[$sidebarField]) ? $sidebar_active_values[$sidebarField] : array(); ?>
+											<fieldset class="catalogue-filter-group" data-field="<?php echo htmlspecialchars($sidebarField, ENT_QUOTES, 'UTF-8'); ?>[]">
+												<legend>
+													<button type="button" class="catalogue-filter-toggle" aria-expanded="true"><?php echo htmlspecialchars($sidebarSection['title'], ENT_QUOTES, 'UTF-8'); ?></button>
+												</legend>
+												<div class="catalogue-filter-options">
+													<button type="button" class="catalogue-filter-clear" data-clear-field="<?php echo htmlspecialchars($sidebarField, ENT_QUOTES, 'UTF-8'); ?>[]">Tous</button>
+												<?php foreach($sidebarSection['items'] as $sidebarOption) { ?>
+													<?php if(!isset($sidebarOption[$sidebarValueKey]) || !isset($sidebarOption[$sidebarLabelKey])) { continue; } ?>
+													<?php $optionValue = (string) $sidebarOption[$sidebarValueKey]; ?>
+													<?php $optionLabel = (string) $sidebarOption[$sidebarLabelKey]; ?>
+														<label class="catalogue-filter-option <?php echo in_array($optionValue, $sidebarActive, true) ? 'is-active' : ''; ?>">
+															<input type="checkbox" name="<?php echo htmlspecialchars($sidebarField, ENT_QUOTES, 'UTF-8'); ?>[]" value="<?php echo htmlspecialchars($optionValue, ENT_QUOTES, 'UTF-8'); ?>" <?php echo in_array($optionValue, $sidebarActive, true) ? 'checked' : ''; ?> />
+														<span><?php echo htmlspecialchars($optionLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+													</label>
+												<?php } ?>
+												</div>
+											</fieldset>
+										<?php } ?>
+										<div class="catalogue-filter-actions">
+											<a class="btn btn-light" href="<?php echo $url; ?>/univers/<?php echo $univers; ?>/produits">Réinitialiser</a>
+										</div>
+									</form>
+								</div>
+							</aside>
+							<div class="catalogue-listing-results">
+					<?php } ?>
 					<?php if($brasseries_select) { ?>
 						<?php
 							switch(@$_GET['trier_prix']) {
@@ -1775,48 +2099,66 @@
 							$whereParts = array();
 							$params = array();
 							$joins = '';
+							$bindIn = function($prefix, $values, &$params) {
+								$placeholders = array();
+								foreach(array_values($values) as $idx => $value) {
+									$key = ':'.$prefix.$idx;
+									$placeholders[] = $key;
+									$params[$key] = $value;
+								}
+								return $placeholders;
+							};
 							$whereParts[] = $build_universe_where($univers, 'p');
 							$whereParts[] = "p.marque IN ('1','2')";
-							if($filter_famille_id) {
-								$whereParts[] = 'p.famille_id = :filtre_famille_id';
-								$params[':filtre_famille_id'] = (int) $filter_famille_id;
+							if(!empty($filter_famille_ids)) {
+								$inFamille = $bindIn('filtre_famille_id_', array_map('intval', $filter_famille_ids), $params);
+								$whereParts[] = 'p.famille_id IN ('.implode(',', $inFamille).')';
 							}
-							if($filter_sous_famille_id) {
-								$whereParts[] = 'p.sous_famille_id = :filtre_sous_famille_id';
-								$params[':filtre_sous_famille_id'] = (int) $filter_sous_famille_id;
+							if(!empty($filter_sous_famille_ids)) {
+								$inSousFamille = $bindIn('filtre_sous_famille_id_', array_map('intval', $filter_sous_famille_ids), $params);
+								$whereParts[] = 'p.sous_famille_id IN ('.implode(',', $inSousFamille).')';
 							}
-							if($filter_categorie_code > 0) {
-								$whereParts[] = 'p.categorie = :filtre_categorie';
-								$params[':filtre_categorie'] = $filter_categorie_code;
+							if(!empty($filter_categorie_codes)) {
+								$inCategorie = $bindIn('filtre_categorie_', array_map('intval', $filter_categorie_codes), $params);
+								$whereParts[] = 'p.categorie IN ('.implode(',', $inCategorie).')';
 							}
-							if($filter_fabriquant_code > 0) {
-								$whereParts[] = 'p.brasserie = :filtre_fabriquant';
-								$params[':filtre_fabriquant'] = $filter_fabriquant_code;
+							if(!empty($filter_fabriquant_codes)) {
+								$inFabriquant = $bindIn('filtre_fabriquant_', array_map('intval', $filter_fabriquant_codes), $params);
+								$whereParts[] = 'p.brasserie IN ('.implode(',', $inFabriquant).')';
 							}
-							if($filter_pays_code !== '') {
-								$whereParts[] = 'p.pays_code = :filtre_pays';
-								$params[':filtre_pays'] = $filter_pays_code;
+							if(!empty($filter_pays_codes)) {
+								$inPays = $bindIn('filtre_pays_', array_values($filter_pays_codes), $params);
+								$whereParts[] = 'p.pays_code IN ('.implode(',', $inPays).')';
 							}
 							if($filter_query !== '') {
 								$whereParts[] = '(p.nom LIKE :filtre_recherche OR p.nom_sup LIKE :filtre_recherche)';
 								$params[':filtre_recherche'] = '%'.$filter_query.'%';
 							}
-							if($effective_pack_slug !== null) {
+							if(!empty($effective_pack_slugs)) {
 								$joins = ' LEFT JOIN ob_catalogue_sous_familles sf ON sf.id = p.sous_famille_id ';
 								$isFut = "(UPPER(COALESCE(sf.nom,'')) LIKE '%FUT%' OR UPPER(p.nom) LIKE '%FUT%' OR UPPER(p.nom) REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)')";
+								$packWhereParts = array();
 								if($univers === 'vins') {
 									$isBib = "(UPPER(COALESCE(sf.nom,'')) LIKE '%BIB%' OR UPPER(p.nom) LIKE '%BIB%' OR (p.contenance IN (300,500,1000) AND UPPER(p.nom) NOT LIKE '%MAGNUM%'))";
-									if($effective_pack_slug === 'bib') {
-										$whereParts[] = $isBib;
-									} elseif($effective_pack_slug === 'bouteilles') {
-										$whereParts[] = 'NOT '.$isBib;
+									foreach($effective_pack_slugs as $effectivePackSlugItem) {
+										if($effectivePackSlugItem === 'bib') {
+											$packWhereParts[] = $isBib;
+										} elseif($effectivePackSlugItem === 'bouteilles') {
+											$packWhereParts[] = 'NOT '.$isBib;
+										}
 									}
 								} else {
-									if($effective_pack_slug === 'futs') {
-										$whereParts[] = $isFut;
-									} else {
-										$whereParts[] = 'NOT '.$isFut;
+									foreach($effective_pack_slugs as $effectivePackSlugItem) {
+										if($effectivePackSlugItem === 'futs') {
+											$packWhereParts[] = $isFut;
+										} else {
+											$packWhereParts[] = 'NOT '.$isFut;
+										}
 									}
+								}
+								$packWhereParts = array_values(array_unique($packWhereParts));
+								if(!empty($packWhereParts)) {
+									$whereParts[] = '('.implode(' OR ', $packWhereParts).')';
 								}
 							}
 							switch(@$_GET['trier_prix']) {
@@ -1955,6 +2297,10 @@
 											<?php } ?>
 										<?php } ?>
 					<?php } ?>
+						<?php if($show_listing_sidebar) { ?>
+								</div>
+							</div>
+						<?php } ?>
 				<?php } else { ?>
 					<p style="color: red;">Vous n'avez pas les droits nécessaires pour accéder au catalogue. Veuillez nous contacter à cette adresse email : commercial.ob@free.fr</p>
 				<?php } ?>
@@ -1967,5 +2313,47 @@
 		<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
 		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 		<script src="<?php echo $gallery; ?>/js/general.js?v=<?php echo @filemtime(__DIR__."/gallery/js/general.js"); ?>"></script>
+		<script>
+			(function($) {
+				$(function() {
+					var $forms = $('.catalogue-filters-form');
+					if($forms.length < 1) {
+						return;
+					}
+
+					$(document).on('click', '.catalogue-filter-toggle', function() {
+						var $btn = $(this);
+						var $group = $btn.closest('.catalogue-filter-group');
+						var $options = $group.find('.catalogue-filter-options').first();
+						var expanded = $btn.attr('aria-expanded') === 'true';
+						$btn.attr('aria-expanded', expanded ? 'false' : 'true');
+						$group.toggleClass('is-collapsed', expanded);
+						$options.stop(true, true)[expanded ? 'slideUp' : 'slideDown'](140);
+					});
+
+					$(document).on('click', '.catalogue-filter-clear', function() {
+						var $btn = $(this);
+						var fieldName = $btn.attr('data-clear-field');
+						var $form = $btn.closest('form');
+						if(!fieldName || $form.length < 1) {
+							return;
+						}
+						var escapedName = fieldName.replace(/([\[\]])/g, '\\$1');
+						$form.find('input[name="'+escapedName+'"]:checked').each(function() {
+							var $input = $(this);
+							$input.prop('checked', false);
+							$input.closest('.catalogue-filter-option').removeClass('is-active');
+						});
+						$form.trigger('submit');
+					});
+
+					$(document).on('change', '.catalogue-filters-form input[type="checkbox"]', function() {
+						var $input = $(this);
+						$input.closest('.catalogue-filter-option').toggleClass('is-active', $input.is(':checked'));
+						$input.closest('form').trigger('submit');
+					});
+				});
+			})(jQuery);
+		</script>
 	</body>
 </html>

@@ -555,6 +555,155 @@ header .btn-header {
 		font-size: 0.9em;
 		color: #666;
 	}
+	.catalogue .catalogue-listing-layout {
+		display: flex;
+		align-items: flex-start;
+		gap: 22px;
+		margin-top: 18px;
+	}
+	.catalogue .catalogue-filters-sidebar {
+		flex: 0 0 280px;
+		max-width: 280px;
+		position: sticky;
+		top: 15px;
+		align-self: flex-start;
+	}
+	.catalogue .catalogue-filters-box {
+		background-color: #fafafa;
+		border: 1px solid #e7e7e7;
+		border-radius: 10px;
+		padding: 16px;
+		box-sizing: border-box;
+		display: flex;
+		flex-flow: column nowrap;
+		max-height: calc(100vh - 30px);
+	}
+	.catalogue .catalogue-filters-title {
+		margin: 0 0 14px 0;
+		font-family: "GothamBook";
+		font-size: 0.82em;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #333;
+	}
+	.catalogue .catalogue-filters-form {
+		display: flex;
+		flex-flow: column nowrap;
+		gap: 12px;
+		overflow-y: auto;
+		overflow-x: hidden;
+		padding-right: 4px;
+	}
+	.catalogue .catalogue-filter-group {
+		border: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-flow: column nowrap;
+		gap: 8px;
+		border-bottom: 1px solid #ececec;
+		padding-bottom: 10px;
+	}
+	.catalogue .catalogue-filter-group legend {
+		margin: 0;
+		padding: 0;
+		width: 100%;
+	}
+	.catalogue .catalogue-filter-toggle {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		border: none;
+		background: transparent;
+		padding: 0;
+		font-family: "GothamBook";
+		font-size: 0.72em;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-weight: 700;
+		color: #666;
+		cursor: pointer;
+	}
+	.catalogue .catalogue-filter-toggle:after {
+		content: "−";
+		font-size: 16px;
+		line-height: 1;
+		color: #999;
+	}
+	.catalogue .catalogue-filter-group.is-collapsed .catalogue-filter-toggle:after {
+		content: "+";
+	}
+	.catalogue .catalogue-filter-options {
+		display: flex;
+		flex-flow: column nowrap;
+		gap: 8px;
+	}
+	.catalogue .catalogue-filter-clear {
+		align-self: flex-start;
+		border: none;
+		background: transparent;
+		padding: 0;
+		margin: 2px 0 0 0;
+		font-size: 0.8em;
+		color: #C32E1C;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+	.catalogue .catalogue-filter-option {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		padding: 4px 0;
+		border: none;
+		border-radius: 0;
+		background-color: transparent;
+		cursor: pointer;
+		font-size: 0.88em;
+		color: #303030;
+		transition: color 0.15s ease;
+	}
+	.catalogue .catalogue-filter-option input[type="radio"],
+	.catalogue .catalogue-filter-option input[type="checkbox"] {
+		margin: 0;
+		accent-color: #C32E1C;
+	}
+	.catalogue .catalogue-filter-option input[type="checkbox"] {
+		display: inline-block !important;
+		-webkit-appearance: checkbox;
+		appearance: checkbox;
+		width: 16px;
+		height: 16px;
+		opacity: 1;
+		position: static;
+		flex: 0 0 auto;
+	}
+	.catalogue .catalogue-filter-option.is-active,
+	.catalogue .catalogue-filter-option:hover {
+		color: #C32E1C;
+	}
+	.catalogue .catalogue-filter-actions {
+		display: flex;
+		flex-flow: row nowrap;
+		gap: 8px;
+		padding-top: 4px;
+	}
+	.catalogue .catalogue-filter-actions .btn {
+		padding: 9px 12px;
+	}
+	.catalogue .catalogue-filter-actions .btn-light {
+		background-color: #fff;
+		color: #202020;
+		border: 1px solid #ddd;
+		text-decoration: none;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.catalogue .catalogue-listing-results {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
 	/* BRASSERIES */
 	.catalogue #brasseries-pannel {
 	    display: -webkit-box;
@@ -737,6 +886,31 @@ header .btn-header {
 		padding: 8px 12px;
 	}
 	@media screen and (max-width: 961px) {
+		.catalogue .catalogue-listing-layout {
+			flex-flow: column nowrap;
+			gap: 14px;
+		}
+		.catalogue .catalogue-filters-sidebar {
+			position: static;
+			max-width: 100%;
+			width: 100%;
+			flex: 0 0 auto;
+		}
+		.catalogue .catalogue-filters-box {
+			max-height: none;
+		}
+		.catalogue .catalogue-filters-form {
+			overflow: visible;
+			padding-right: 0;
+		}
+		.catalogue .catalogue-filter-actions {
+			flex-flow: column nowrap;
+		}
+		.catalogue .catalogue-filter-actions .btn,
+		.catalogue .catalogue-filter-actions .btn-light {
+			width: 100%;
+			justify-content: center;
+		}
 		.catalogue #brasseries-pannel .brasseriesc-boxe {
 		    flex: 0 0 calc(100% / 3);
 		}
