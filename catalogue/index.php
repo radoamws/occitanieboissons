@@ -58,7 +58,7 @@
 		],
 		'vins' => [
 			'label' => 'Vins',
-			'categorie_ids' => [20,21,22,23,24,25,26],
+			'categorie_ids' => [20,21,22,23,24,25,26,34],
 			'famille_codes' => [10,11],
 		],
 		'spiritueux' => [
@@ -200,6 +200,7 @@
 		24 => 'Vin blanc moelleux',
 		25 => 'Vin blanc liquoreux',
 		26 => 'Vin pétillant',
+		34 => 'Champagne',
 		28 => 'Cidre / Cider',
 		29 => 'Dubble / Double grains',
 		30 => 'Tourbé',
@@ -1653,7 +1654,7 @@
 					<div class="rechercher" data-base="<?php echo $base_catalogue_url; ?>">
 						<div class="catalogue-tabs" role="menubar" aria-label="Menu catalogue">
 							<?php foreach($univers_definitions as $ukey => $udef) { ?>
-								<button type="button" class="catalogue-tab <?php echo ($ukey === $univers) ? 'is-active' : ''; ?>" data-univers="<?php echo $ukey; ?>">
+								<button type="button" class="catalogue-tab <?php echo ($ukey === $univers) ? 'is-active' : ''; ?>" data-univers="<?php echo $ukey; ?>"<?php if($ukey === 'promotions') { ?> style="display:none"<?php } ?>>
 									<?php echo $udef['label']; ?>
 								</button>
 							<?php } ?>
