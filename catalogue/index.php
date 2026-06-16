@@ -1374,6 +1374,16 @@
 	}
 
 	if($univers === 'bieres') {
+		if($effective_pack_slug !== null && !empty($sidebar_menu_data['sous_familles_top'])) {
+			$sousFamilleTitle = ($effective_pack_slug === 'futs') ? 'Contenance' : 'Format';
+			$sidebar_filter_sections[] = array(
+				'title' => $sousFamilleTitle,
+				'field' => 'filtre_sous_famille',
+				'items' => $sidebar_menu_data['sous_familles_top'],
+				'value_key' => 'slug',
+				'label_key' => 'nom',
+			);
+		}
 		if(!empty($sidebar_menu_data['categories'])) {
 			$sidebar_filter_sections[] = array(
 				'title' => 'Style',
