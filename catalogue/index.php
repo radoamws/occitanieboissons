@@ -90,23 +90,16 @@
 			'sous_famille_2_label' => 'Sous-famille > 1 à 7',
 			'sous_famille_2_btn' => 'Fûts',
 			'col_2_head' => 'Catégorie > 1 à 15 + 33',
-			'col_2_title' => 'Couleur',
+			'col_2_title' => 'Style',
 			'col_2_items' => [
 				['label' => 'Blanche', 'href' => '/univers/bieres/categorie/3'],
 				['label' => 'Blonde', 'href' => '/univers/bieres/categorie/7'],
-				['label' => 'Ambrée', 'href' => '/univers/bieres/categorie/4'],
-			],
-			'col_3_head' => 'Catégorie > 1 à 15 + 33',
-			'col_3_title' => 'Style',
-			'col_3_items' => [
 				['label' => 'IPA', 'href' => '/univers/bieres/categorie/1'],
-				['label' => 'Lager', 'href' => '/univers/bieres/categorie/7'],
-				['label' => 'Stout', 'href' => '/univers/bieres/categorie/5'],
 			],
-			'col_4_head' => 'Fabricant (à trier)',
-			'col_4_title' => 'Brasserie',
-			'col_5_head' => 'Pays',
-			'col_5_title' => 'Pays',
+			'col_3_head' => 'Fabricant (à trier)',
+			'col_3_title' => 'Brasserie',
+			'col_4_head' => 'Pays',
+			'col_4_title' => 'Pays',
 		],
 		'vins' => [
 			'famille_label' => 'Famille > 10',
@@ -563,38 +556,21 @@
 		'spiritueux' => 'Toutes les distilleries',
 		'softs' => 'Toutes les marques',
 	);
-	$beer_color_labels = array('blanche', 'blonde', 'ambre', 'ambree', 'rousse', 'brune', 'red ale', 'fruit');
-	$beer_color_items = array();
-	$beer_style_items = array();
-	foreach($univers_menu['bieres']['categories'] as $categoryItem) {
-		$label = mb_strtolower((string) $categoryItem['nom'], 'UTF-8');
-		$isColor = false;
-		foreach($beer_color_labels as $needle) {
-			if(strpos($label, $needle) !== false) {
-				$isColor = true;
-				break;
-			}
-		}
-		if($isColor) {
-			$beer_color_items[] = $categoryItem;
-		} else {
-			$beer_style_items[] = $categoryItem;
-		}
-	}
+	$beer_all_items = $univers_menu['bieres']['categories'];
 	$submenu_config_by_scope = array(
-		'bieres-couleur' => array(
-			'title' => 'Toutes les couleurs',
-			'items' => $beer_color_items,
+		'bieres-style' => array(
+			'title' => 'Tous les styles',
+			'items' => $beer_all_items,
 			'build_href' => function($item) use ($menu_scope_href) {
-				return $menu_scope_href('bieres', 'bieres-couleur', array('filtre_categorie' => $item['code']));
+				return $menu_scope_href('bieres', 'bieres-style', array('filtre_categorie' => $item['code']));
 			},
 			'get_label' => function($item) {
 				return $item['nom'];
 			},
 		),
-		'bieres-style' => array(
+		'bieres-couleur' => array(
 			'title' => 'Tous les styles',
-			'items' => $beer_style_items,
+			'items' => $beer_all_items,
 			'build_href' => function($item) use ($menu_scope_href) {
 				return $menu_scope_href('bieres', 'bieres-style', array('filtre_categorie' => $item['code']));
 			},
@@ -1153,26 +1129,6 @@
 		}
 		return $filters;
 	};
-	$split_beer_categories = function($menuData) use ($beer_color_labels) {
-		$colors = array();
-		$styles = array();
-		foreach($menuData['categories'] as $categoryItem) {
-			$label = mb_strtolower((string) $categoryItem['nom'], 'UTF-8');
-			$isColor = false;
-			foreach($beer_color_labels as $needle) {
-				if(strpos($label, $needle) !== false) {
-					$isColor = true;
-					break;
-				}
-			}
-			if($isColor) {
-				$colors[] = $categoryItem;
-			} else {
-				$styles[] = $categoryItem;
-			}
-		}
-		return array('colors' => $colors, 'styles' => $styles);
-	};
 	$resolve_scope_pack = function($universKey) use ($filter_pack_slug, $effective_pack_slug, $allowed_pack_by_univers) {
 		if(isset($allowed_pack_by_univers[$universKey]) && in_array($filter_pack_slug, $allowed_pack_by_univers[$universKey], true)) {
 			return $filter_pack_slug;
@@ -1192,24 +1148,23 @@
 	$submenu_vins_menu = $univers_menu_scoped['vins'][$scope_pack['vins']];
 	$submenu_spiritueux_menu = $univers_menu_scoped['spiritueux'][$scope_pack['spiritueux']];
 	$submenu_softs_menu = $univers_menu_scoped['softs'][$scope_pack['softs']];
-	$submenu_bieres_split = $split_beer_categories($submenu_bieres_menu);
 	$submenu_config_by_scope = array(
-		'bieres-couleur' => array(
-			'title' => 'Toutes les couleurs',
-			'items' => $submenu_bieres_split['colors'],
+		'bieres-style' => array(
+			'title' => 'Tous les styles',
+			'items' => $submenu_bieres_menu['categories'],
 			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
 				$filters = array('filtre_categorie' => $item['code']);
 				if($scope_pack['bieres'] !== 'all') {
 					$filters['filtre_pack'] = $scope_pack['bieres'];
 				}
-				return $menu_scope_href('bieres', 'bieres-couleur', $filters);
+				return $menu_scope_href('bieres', 'bieres-style', $filters);
 			},
 			'get_label' => function($item) { return $item['nom']; },
 			'is_active' => function($item) use ($filter_categorie_code) { return ((int) $filter_categorie_code === (int) $item['code']); },
 		),
-		'bieres-style' => array(
+		'bieres-couleur' => array(
 			'title' => 'Tous les styles',
-			'items' => $submenu_bieres_split['styles'],
+			'items' => $submenu_bieres_menu['categories'],
 			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
 				$filters = array('filtre_categorie' => $item['code']);
 				if($scope_pack['bieres'] !== 'all') {
@@ -1419,21 +1374,11 @@
 	}
 
 	if($univers === 'bieres') {
-		$sidebarBeerSplit = $split_beer_categories($sidebar_menu_data);
-		if(!empty($sidebarBeerSplit['colors'])) {
-			$sidebar_filter_sections[] = array(
-				'title' => 'Couleur',
-				'field' => 'filtre_categorie',
-				'items' => $sidebarBeerSplit['colors'],
-				'value_key' => 'code',
-				'label_key' => 'nom',
-			);
-		}
-		if(!empty($sidebarBeerSplit['styles'])) {
+		if(!empty($sidebar_menu_data['categories'])) {
 			$sidebar_filter_sections[] = array(
 				'title' => 'Style',
 				'field' => 'filtre_categorie',
-				'items' => $sidebarBeerSplit['styles'],
+				'items' => $sidebar_menu_data['categories'],
 				'value_key' => 'code',
 				'label_key' => 'nom',
 			);
@@ -1749,25 +1694,13 @@
 
 									<?php if($ukey === 'bieres') { ?>
 										<div class="menu-col">
-											<div class="menu-section-title">Couleur</div>
-											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; $beerGroups = $split_beer_categories($packMenu); ?>
-												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
-													<?php foreach(array_slice($beerGroups['colors'], 0, 3) as $catItem) { ?>
-														<a class="menu-link" href="<?php echo $menu_filter_href('bieres', $with_menu_pack_filter($menuPackKey, array('filtre_categorie' => $catItem['code']))); ?>"><?php echo htmlspecialchars($catItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
-													<?php } ?>
-													<?php if(count($beerGroups['colors']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
-													<a class="menu-more" href="<?php echo $menu_filter_href('bieres', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'bieres-couleur'))); ?>">Voir tout</a>
-												</div>
-											<?php } ?>
-										</div>
-										<div class="menu-col">
 											<div class="menu-section-title">Style</div>
-											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; $beerGroups = $split_beer_categories($packMenu); ?>
+											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
 												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
-													<?php foreach(array_slice($beerGroups['styles'], 0, 3) as $catItem) { ?>
+													<?php foreach(array_slice($packMenu['categories'], 0, 3) as $catItem) { ?>
 														<a class="menu-link" href="<?php echo $menu_filter_href('bieres', $with_menu_pack_filter($menuPackKey, array('filtre_categorie' => $catItem['code']))); ?>"><?php echo htmlspecialchars($catItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
 													<?php } ?>
-													<?php if(count($beerGroups['styles']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<?php if(count($packMenu['categories']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
 													<a class="menu-more" href="<?php echo $menu_filter_href('bieres', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'bieres-style'))); ?>">Voir tout</a>
 												</div>
 											<?php } ?>
