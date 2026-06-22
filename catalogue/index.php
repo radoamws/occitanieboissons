@@ -1815,7 +1815,7 @@
 													<?php } ?>
 													<?php if(count($vins_menu_non_champagne) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
 													<div class="menu-link-with-sub">
-														<a class="menu-link menu-link--has-sub" href="<?php echo htmlspecialchars($menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('filtre_categorie' => $champagne_cat_ids))), ENT_QUOTES, 'UTF-8'); ?>">Champagne</a>
+														<a class="menu-link menu-link--has-sub" href="<?php echo htmlspecialchars($menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('filtre_categorie' => $champagne_cat_ids))), ENT_QUOTES, 'UTF-8'); ?>">CHAMPAGNE</a>
 														<div class="menu-sub-dropdown">
 															<?php foreach($champagne_appellation_items as $champItem) { ?>
 																<a class="menu-link" href="<?php echo htmlspecialchars($menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('filtre_categorie' => $champItem['code']))), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($champItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
