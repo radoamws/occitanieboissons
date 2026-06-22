@@ -493,6 +493,43 @@ header .btn-header {
 		color: #505050;
 		opacity: .85;
 	}
+	/* Champagne sub-dropdown in mega-menu */
+	.catalogue .catalogue-panel .menu-link-with-sub {
+		position: relative;
+		display: block;
+	}
+	.catalogue .catalogue-panel .menu-link-with-sub .menu-sub-dropdown {
+		display: none;
+		position: absolute;
+		left: 100%;
+		top: -4px;
+		background: #fff;
+		border: 1px solid #e2e2e2;
+		border-radius: 4px;
+		min-width: 160px;
+		padding: 6px 0;
+		box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+		z-index: 200;
+	}
+	.catalogue .catalogue-panel .menu-link-with-sub:hover .menu-sub-dropdown {
+		display: block;
+	}
+	.catalogue .catalogue-panel .menu-link-with-sub .menu-sub-dropdown .menu-link {
+		padding: 5px 14px;
+		margin-bottom: 0;
+		font-size: 0.82em;
+		letter-spacing: 0.03em;
+	}
+	.catalogue .catalogue-panel .menu-link--has-sub::after {
+		content: " \203A";
+		font-size: 1em;
+		opacity: 0.55;
+	}
+	/* Champagne sidebar items */
+	.catalogue-filter-option--champagne-appellation {
+		padding-left: 12px;
+		border-left: 2px solid #e8d9b0;
+	}
 	.catalogue .catalogue-submenu {
 		display: block;
 		width: 100%;

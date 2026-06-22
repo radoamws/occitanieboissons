@@ -58,7 +58,7 @@
 		],
 		'vins' => [
 			'label' => 'Vins',
-			'categorie_ids' => [20,21,22,23,24,25,26,34],
+			'categorie_ids' => [20,21,22,23,24,25,26,34,35,36,37],
 			'famille_codes' => [10,11],
 		],
 		'spiritueux' => [
@@ -200,7 +200,10 @@
 		24 => 'Vin blanc moelleux',
 		25 => 'Vin blanc liquoreux',
 		26 => 'Vin pétillant',
-		34 => 'Champagne',
+		34 => 'BLANC DE NOIRS',
+		35 => 'BLANC DE BLANCS',
+		36 => 'DEMI SEC',
+		37 => 'BRUT',
 		28 => 'Cidre / Cider',
 		29 => 'Dubble / Double grains',
 		30 => 'Tourbé',
@@ -214,6 +217,13 @@
 		}
 		return "Catégorie ".$id;
 	};
+	$champagne_cat_ids = [34, 35, 36, 37];
+	$champagne_appellation_items = [
+		['code' => 34, 'nom' => 'BLANC DE NOIRS'],
+		['code' => 35, 'nom' => 'BLANC DE BLANCS'],
+		['code' => 36, 'nom' => 'DEMI SEC'],
+		['code' => 37, 'nom' => 'BRUT'],
+	];
 
 	$base_catalogue_url = $url."/univers/".$univers;
 	$show_univers_products = (isset($_GET['listing']) && $_GET['listing'] === 'produits');
@@ -634,6 +644,21 @@
 			'items' => $univers_menu['vins']['pays_all'],
 			'build_href' => function($item) use ($menu_scope_href) {
 				return $menu_scope_href('vins', 'vins-pays', array('filtre_pays' => $item['code']));
+			},
+			'get_label' => function($item) {
+				return $item['nom'];
+			},
+		),
+		'vins-champagne' => array(
+			'title' => 'Champagne — Types',
+			'items' => [
+				['code' => 34, 'nom' => 'BLANC DE NOIRS'],
+				['code' => 35, 'nom' => 'BLANC DE BLANCS'],
+				['code' => 36, 'nom' => 'DEMI SEC'],
+				['code' => 37, 'nom' => 'BRUT'],
+			],
+			'build_href' => function($item) use ($menu_scope_href) {
+				return $menu_scope_href('vins', 'vins-champagne', array('filtre_categorie' => $item['code']));
 			},
 			'get_label' => function($item) {
 				return $item['nom'];
@@ -1254,6 +1279,24 @@
 			'get_label' => function($item) { return $item['nom']; },
 			'is_active' => function($item) use ($filter_pays_code) { return ((string) $filter_pays_code === (string) $item['code']); },
 		),
+		'vins-champagne' => array(
+			'title' => 'Champagne — Types',
+			'items' => [
+				['code' => 34, 'nom' => 'BLANC DE NOIRS'],
+				['code' => 35, 'nom' => 'BLANC DE BLANCS'],
+				['code' => 36, 'nom' => 'DEMI SEC'],
+				['code' => 37, 'nom' => 'BRUT'],
+			],
+			'build_href' => function($item) use ($menu_scope_href, $scope_pack) {
+				$filters = array('filtre_categorie' => $item['code']);
+				if($scope_pack['vins'] !== 'all') {
+					$filters['filtre_pack'] = $scope_pack['vins'];
+				}
+				return $menu_scope_href('vins', 'vins-champagne', $filters);
+			},
+			'get_label' => function($item) { return $item['nom']; },
+			'is_active' => function($item) use ($filter_categorie_code) { return ((int) $filter_categorie_code === (int) $item['code']); },
+		),
 		'spiritueux-type' => array(
 			'title' => 'Tous les types',
 			'items' => $submenu_spiritueux_menu['sous_familles_all'],
@@ -1413,24 +1456,45 @@
 			);
 		}
 	} elseif($univers === 'vins') {
-		if(!empty($sidebar_menu_data['categories'])) {
-			$sidebar_filter_sections[] = array(
-				'title' => 'Type',
-				'field' => 'filtre_categorie',
-				'items' => $sidebar_menu_data['categories'],
-				'value_key' => 'code',
-				'label_key' => 'nom',
-			);
+		$_champagne_type_active = !empty(array_intersect($filter_categorie_codes, $champagne_cat_ids));
+		$_vins_type_items = array_values(array_filter(!empty($sidebar_menu_data['categories']) ? $sidebar_menu_data['categories'] : [], function($cat) use ($champagne_cat_ids) {
+			return !in_array((int) $cat['code'], $champagne_cat_ids);
+		}));
+		$_vins_type_items[] = ['code' => 'champagne-group', 'nom' => 'Champagne', '_is_champagne_group' => true, '_is_active' => $_champagne_type_active];
+		$sidebar_filter_sections[] = array(
+			'title' => 'Type',
+			'field' => 'filtre_categorie',
+			'items' => $_vins_type_items,
+			'value_key' => 'code',
+			'label_key' => 'nom',
+		);
+		$_non_champagne_type_cats = array_values(array_diff($filter_categorie_codes, $champagne_cat_ids));
+		$_champagne_type_selected = !empty(array_intersect($filter_categorie_codes, $champagne_cat_ids));
+		if(!empty($filter_categorie_codes)) {
+			if(!empty($_non_champagne_type_cats)) {
+				$_inNonChampCats = implode(',', array_map('intval', $_non_champagne_type_cats));
+				$_univWhere = $build_universe_where('vins', 'p');
+				$_sfByTypeStmt = $bdd->query("SELECT DISTINCT sf.id, sf.nom, sf.slug FROM ob_catalogue_produits p INNER JOIN ob_catalogue_sous_familles sf ON p.sous_famille_id = sf.id WHERE $_univWhere AND p.categorie IN ($_inNonChampCats) ORDER BY sf.nom");
+				$_vins_appellation_items = [];
+				while($_sfRow = $_sfByTypeStmt->fetch(PDO::FETCH_OBJ)) {
+					$_vins_appellation_items[] = ['id' => (int) $_sfRow->id, 'nom' => (string) $_sfRow->nom, 'slug' => (string) $_sfRow->slug];
+				}
+			} else {
+				$_vins_appellation_items = [];
+			}
+			$_vins_champagne_cat_items = $_champagne_type_selected ? $champagne_appellation_items : [];
+		} else {
+			$_vins_appellation_items = !empty($sidebar_menu_data['sous_familles_all']) ? $sidebar_menu_data['sous_familles_all'] : [];
+			$_vins_champagne_cat_items = $champagne_appellation_items;
 		}
-		if(!empty($sidebar_menu_data['sous_familles_all'])) {
-			$sidebar_filter_sections[] = array(
-				'title' => 'Appellation',
-				'field' => 'filtre_sous_famille',
-				'items' => $sidebar_menu_data['sous_familles_all'],
-				'value_key' => 'slug',
-				'label_key' => 'nom',
-			);
-		}
+		$sidebar_filter_sections[] = array(
+			'title' => 'Appellation',
+			'field' => 'filtre_sous_famille',
+			'items' => $_vins_appellation_items,
+			'value_key' => 'slug',
+			'label_key' => 'nom',
+			'_champagne_cat_items' => $_vins_champagne_cat_items,
+		);
 		if(!empty($sidebar_menu_data['fabricants_all'])) {
 			$sidebar_filter_sections[] = array(
 				'title' => 'Domaine',
@@ -1745,10 +1809,19 @@
 											<div class="menu-section-title">Type</div>
 											<?php foreach($panelPackKeys as $menuPackKey) { $packMenu = $univers_menu_scoped[$ukey][$menuPackKey]; ?>
 												<div class="menu-pack-view <?php echo ($panelActivePack === $menuPackKey) ? 'is-active' : ''; ?>" data-pack="<?php echo htmlspecialchars($menuPackKey, ENT_QUOTES, 'UTF-8'); ?>">
-													<?php foreach(array_slice($packMenu['categories'], 0, 3) as $catItem) { ?>
+													<?php $vins_menu_non_champagne = array_values(array_filter($packMenu['categories'], function($cat) use ($champagne_cat_ids) { return !in_array((int)$cat['code'], $champagne_cat_ids); })); ?>
+													<?php foreach(array_slice($vins_menu_non_champagne, 0, 3) as $catItem) { ?>
 														<a class="menu-link" href="<?php echo $menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('filtre_categorie' => $catItem['code']))); ?>"><?php echo htmlspecialchars($catItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
 													<?php } ?>
-													<?php if(count($packMenu['categories']) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<?php if(count($vins_menu_non_champagne) > 3) { ?><span class="menu-etc">etc.</span><?php } ?>
+													<div class="menu-link-with-sub">
+														<a class="menu-link menu-link--has-sub" href="<?php echo htmlspecialchars($menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('filtre_categorie' => $champagne_cat_ids))), ENT_QUOTES, 'UTF-8'); ?>">Champagne</a>
+														<div class="menu-sub-dropdown">
+															<?php foreach($champagne_appellation_items as $champItem) { ?>
+																<a class="menu-link" href="<?php echo htmlspecialchars($menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('filtre_categorie' => $champItem['code']))), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($champItem['nom'], ENT_QUOTES, 'UTF-8'); ?></a>
+															<?php } ?>
+														</div>
+													</div>
 													<a class="menu-more" href="<?php echo $menu_filter_href('vins', $with_menu_pack_filter($menuPackKey, array('menu_scope' => 'vins-type'))); ?>">Voir tout</a>
 												</div>
 											<?php } ?>
@@ -1897,13 +1970,30 @@
 												<div class="catalogue-filter-options">
 													<button type="button" class="catalogue-filter-clear" data-clear-field="<?php echo htmlspecialchars($sidebarField, ENT_QUOTES, 'UTF-8'); ?>[]">Tous</button>
 												<?php foreach($sidebarSection['items'] as $sidebarOption) { ?>
-													<?php if(!isset($sidebarOption[$sidebarValueKey]) || !isset($sidebarOption[$sidebarLabelKey])) { continue; } ?>
-													<?php $optionValue = (string) $sidebarOption[$sidebarValueKey]; ?>
-													<?php $optionLabel = (string) $sidebarOption[$sidebarLabelKey]; ?>
+													<?php if(!empty($sidebarOption['_is_champagne_group'])) { ?>
+														<label class="catalogue-filter-option catalogue-filter-option--champagne-group <?php echo !empty($sidebarOption['_is_active']) ? 'is-active' : ''; ?>">
+															<input type="checkbox" class="champagne-group-checkbox" data-champagne-cats="34,35,36,37" <?php echo !empty($sidebarOption['_is_active']) ? 'checked' : ''; ?> />
+															<span>CHAMPAGNE</span>
+														</label>
+													<?php } else { ?>
+														<?php if(!isset($sidebarOption[$sidebarValueKey]) || !isset($sidebarOption[$sidebarLabelKey])) { continue; } ?>
+														<?php $optionValue = (string) $sidebarOption[$sidebarValueKey]; ?>
+														<?php $optionLabel = (string) $sidebarOption[$sidebarLabelKey]; ?>
 														<label class="catalogue-filter-option <?php echo in_array($optionValue, $sidebarActive, true) ? 'is-active' : ''; ?>">
 															<input type="checkbox" name="<?php echo htmlspecialchars($sidebarField, ENT_QUOTES, 'UTF-8'); ?>[]" value="<?php echo htmlspecialchars($optionValue, ENT_QUOTES, 'UTF-8'); ?>" <?php echo in_array($optionValue, $sidebarActive, true) ? 'checked' : ''; ?> />
-														<span><?php echo htmlspecialchars($optionLabel, ENT_QUOTES, 'UTF-8'); ?></span>
-													</label>
+															<span><?php echo htmlspecialchars($optionLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+														</label>
+													<?php } ?>
+												<?php } ?>
+												<?php if(!empty($sidebarSection['_champagne_cat_items'])) { ?>
+													<?php $sidebarChampagneCatActive = isset($sidebar_active_values['filtre_categorie']) && is_array($sidebar_active_values['filtre_categorie']) ? $sidebar_active_values['filtre_categorie'] : array(); ?>
+													<?php foreach($sidebarSection['_champagne_cat_items'] as $champCat) { ?>
+														<?php $champCatValue = (string) $champCat['code']; ?>
+														<label class="catalogue-filter-option catalogue-filter-option--champagne-appellation <?php echo in_array($champCatValue, $sidebarChampagneCatActive, true) ? 'is-active' : ''; ?>">
+															<input type="checkbox" name="filtre_categorie[]" value="<?php echo htmlspecialchars($champCatValue, ENT_QUOTES, 'UTF-8'); ?>" <?php echo in_array($champCatValue, $sidebarChampagneCatActive, true) ? 'checked' : ''; ?> />
+															<span><?php echo htmlspecialchars($champCat['nom'], ENT_QUOTES, 'UTF-8'); ?></span>
+														</label>
+													<?php } ?>
 												<?php } ?>
 												</div>
 											</fieldset>
@@ -2282,6 +2372,10 @@
 						if(!fieldName || $form.length < 1) {
 							return;
 						}
+						if(fieldName === 'filtre_categorie[]') {
+							$form.find('.champagne-group-checkbox').prop('checked', false).closest('.catalogue-filter-option').removeClass('is-active');
+							$form.find('.champagne-hidden-input').remove();
+						}
 						var escapedName = fieldName.replace(/([\[\]])/g, '\\$1');
 						$form.find('input[name="'+escapedName+'"]:checked').each(function() {
 							var $input = $(this);
@@ -2293,6 +2387,26 @@
 
 					$(document).on('change', '.catalogue-filters-form input[type="checkbox"]', function() {
 						var $input = $(this);
+						if($input.hasClass('champagne-group-checkbox')) {
+							$input.closest('.catalogue-filter-option').toggleClass('is-active', $input.is(':checked'));
+							var $form = $input.closest('form');
+							var champCats = ($input.attr('data-champagne-cats') || '').split(',').map(function(c) { return $.trim(c); }).filter(Boolean);
+							$form.find('.champagne-hidden-input').remove();
+							if($input.is(':checked')) {
+								champCats.forEach(function(code) {
+									$('<input>').attr({type:'hidden',name:'filtre_categorie[]',value:code,'class':'champagne-hidden-input'}).appendTo($form);
+								});
+							} else {
+								// Décocher aussi les appellations champagne individuelles (34,35,36,37) encore cochées
+								champCats.forEach(function(code) {
+									$form.find('input[name="filtre_categorie[]"][value="'+code+'"]:checked').each(function() {
+										$(this).prop('checked', false).closest('.catalogue-filter-option').removeClass('is-active');
+									});
+								});
+							}
+							$form.trigger('submit');
+							return;
+						}
 						$input.closest('.catalogue-filter-option').toggleClass('is-active', $input.is(':checked'));
 						$input.closest('form').trigger('submit');
 					});
