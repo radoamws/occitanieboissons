@@ -80,6 +80,14 @@
 	$univers_famille_filter_slugs = [
 		'promotions' => ['remises'],
 	];
+	// Sous-familles à masquer par univers et par pack
+	// '*' = tous les packs; 'futs', 'bouteilles-canettes'... = pack spécifique
+	$univers_excluded_sous_famille_slugs = [
+		'bieres' => [
+			'*'    => ['biere-pression-comptoir'],          // Point N°1 : masqué temporairement (données ERP en cours de correction)
+			'futs' => ['biere-33-44-50-cl-canette', 'boissons-sucrees-vp'], // Point N°2 : canettes/softs ne sont pas des fûts
+		],
+	];
 	// (PDF) Menus: libellés et ordre figés sur les captures.
 	$pdf_menu = [
 		'bieres' => [
@@ -326,6 +334,13 @@
 			}
 		}
 		$univers_menu[$key]['sous_familles_all'] = array_values($univers_menu[$key]['sous_familles_all']);
+		// Exclure les sous-familles masquées du menu global (pack 'all')
+		$_uMenuSfExcl = isset($univers_excluded_sous_famille_slugs[$key]['*']) ? array_flip($univers_excluded_sous_famille_slugs[$key]['*']) : [];
+		if(!empty($_uMenuSfExcl)) {
+			$univers_menu[$key]['sous_familles_all'] = array_values(array_filter($univers_menu[$key]['sous_familles_all'], function($sf) use ($_uMenuSfExcl) {
+				return !isset($_uMenuSfExcl[$sf['slug']]);
+			}));
+		}
 		$famillesTopStmt = $bdd->query("SELECT f.slug, f.nom, COUNT(*) AS total
 			FROM ob_catalogue_produits p
 			INNER JOIN ob_catalogue_familles f ON p.famille_id = f.id
@@ -352,6 +367,13 @@
 				'total' => (int) $sfTop->total,
 			];
 		}
+		// Déduplique par slug + exclut les masquées (Point N°2 : Cidre fût double, etc.)
+		$_uMenuSfSeen = [];
+		$univers_menu[$key]['sous_familles_top'] = array_values(array_filter($univers_menu[$key]['sous_familles_top'], function($sf) use (&$_uMenuSfSeen, $_uMenuSfExcl) {
+			if(isset($_uMenuSfSeen[$sf['slug']]) || isset($_uMenuSfExcl[$sf['slug']])) return false;
+			$_uMenuSfSeen[$sf['slug']] = true;
+			return true;
+		}));
 		$fabIds = [];
 		$fabStmt = $bdd->query("SELECT DISTINCT brasserie FROM ob_catalogue_produits p WHERE $universWhere AND brasserie <> 0");
 		while($f = $fabStmt->fetch(PDO::FETCH_OBJ)) {
@@ -937,7 +959,7 @@
 		}
 		return array('joins' => '', 'where' => '1=1');
 	};
-	$build_menu_dataset = function($universKey, $packSlug = 'all') use ($bdd, $build_universe_where, $build_pack_scope, $univers_famille_filter_slugs, $degre_buckets_definitions, $numeric_slug, $numeric_label) {
+	$build_menu_dataset = function($universKey, $packSlug = 'all') use ($bdd, $build_universe_where, $build_pack_scope, $univers_famille_filter_slugs, $univers_excluded_sous_famille_slugs, $degre_buckets_definitions, $numeric_slug, $numeric_label) {
 		$menuData = array(
 			'familles' => array(),
 			'familles_top' => array(),
@@ -1007,6 +1029,29 @@
 		}
 		$menuData['sous_familles_all'] = array_values($menuData['sous_familles_all']);
 
+		// Déterminer les sous-familles à exclure pour cet univers+pack (Point N°1 et N°2)
+		$_sfExcl = [];
+		if(isset($univers_excluded_sous_famille_slugs[$universKey])) {
+			if(!empty($univers_excluded_sous_famille_slugs[$universKey]['*'])) {
+				$_sfExcl = array_merge($_sfExcl, $univers_excluded_sous_famille_slugs[$universKey]['*']);
+			}
+			if($packSlug !== 'all' && !empty($univers_excluded_sous_famille_slugs[$universKey][$packSlug])) {
+				$_sfExcl = array_merge($_sfExcl, $univers_excluded_sous_famille_slugs[$universKey][$packSlug]);
+			}
+		}
+		$_sfExclFlip = !empty($_sfExcl) ? array_flip($_sfExcl) : [];
+		if(!empty($_sfExclFlip)) {
+			$menuData['sous_familles_all'] = array_values(array_filter($menuData['sous_familles_all'], function($sf) use ($_sfExclFlip) {
+				return !isset($_sfExclFlip[$sf['slug']]);
+			}));
+			foreach($menuData['familles'] as &$_bfam) {
+				$_bfam['sous_familles'] = array_values(array_filter($_bfam['sous_familles'], function($sf) use ($_sfExclFlip) {
+					return !isset($_sfExclFlip[$sf['slug']]);
+				}));
+			}
+			unset($_bfam);
+		}
+
 		$famillesTopStmt = $bdd->query("SELECT f.slug, f.nom, COUNT(*) AS total
 			FROM ob_catalogue_produits p
 			INNER JOIN ob_catalogue_familles f ON p.famille_id = f.id
@@ -1036,6 +1081,13 @@
 				'total' => (int) $sfTop->total,
 			);
 		}
+		// Déduplique par slug (deux sf dans des familles différentes peuvent avoir même slug) + exclut les masquées
+		$_sfTopSeen = [];
+		$menuData['sous_familles_top'] = array_values(array_filter($menuData['sous_familles_top'], function($sf) use (&$_sfTopSeen, $_sfExclFlip) {
+			if(isset($_sfTopSeen[$sf['slug']]) || isset($_sfExclFlip[$sf['slug']])) return false;
+			$_sfTopSeen[$sf['slug']] = true;
+			return true;
+		}));
 
 		$fabricantsStmt = $bdd->query("SELECT p.brasserie AS code, COALESCE(f.nom, b.name, CONCAT('Fabriquant ', p.brasserie)) AS nom, COUNT(*) AS total
 			FROM ob_catalogue_produits p
