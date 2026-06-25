@@ -52,7 +52,7 @@
 	$univers_definitions = [
 		'bieres' => [
 			'label' => 'Bières',
-			'categorie_ids' => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,28,29,32],
+			'categorie_ids' => [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,28,29,32,33],
 			'famille_code_min' => 20,
 			'famille_code_max' => 30,
 		],
@@ -182,49 +182,6 @@
 		],
 	];
 
-	$categorie_labels = [
-		0 => 'Articles divers',
-		1 => 'IPA',
-		2 => 'Sour',
-		3 => 'Blanche',
-		4 => 'Ambrée / Rousse / Red Ale',
-		5 => 'Stout / Porter',
-		6 => 'Barrel Aged',
-		7 => 'Lager / Pils / Ale / Blonde',
-		8 => 'Pale Ale',
-		9 => 'Gose',
-		10 => 'Triple',
-		11 => 'Saison',
-		12 => 'Brune',
-		13 => 'Lambic',
-		14 => 'Fruité',
-		15 => 'Strong Ale',
-		16 => 'Ginger Beer',
-		18 => 'Hiver / Noël',
-		20 => 'Vin rouge',
-		21 => 'Vin rosé',
-		22 => 'Vin blanc sec',
-		23 => 'Vin blanc demi-sec',
-		24 => 'Vin blanc moelleux',
-		25 => 'Vin blanc liquoreux',
-		26 => 'Vin pétillant',
-		34 => 'BLANC DE NOIRS',
-		35 => 'BLANC DE BLANCS',
-		36 => 'DEMI SEC',
-		37 => 'BRUT',
-		28 => 'Cidre / Cider',
-		29 => 'Dubble / Double grains',
-		30 => 'Tourbé',
-		31 => 'Légèrement tourbé',
-		32 => 'Sans alcool',
-	];
-	$categorie_label = function($id) use ($categorie_labels) {
-		$id = (int) $id;
-		if(array_key_exists($id, $categorie_labels)) {
-			return $categorie_labels[$id];
-		}
-		return "Catégorie ".$id;
-	};
 	$champagne_cat_ids = [34, 35, 36, 37];
 	$champagne_appellation_items = [
 		['code' => 34, 'nom' => 'BLANC DE NOIRS'],

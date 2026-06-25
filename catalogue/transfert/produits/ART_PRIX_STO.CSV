@@ -94,12 +94,12 @@ PASSOA 70CL                   	ALCOOL                        	LIQUEURS CREMES   
 BIB 3L MUSCAT RIVESALTES      	VINS                          	MUSCAT                        	483	26.22100009918	3	2
 MUSCAT VALAURIA 100CL         	VINS                          	MUSCAT                        	485	8.1	0	2
 RATZ AMBREE 30L               	BIERES                        	BIERE FUT 30L                 	522	2.9	360	2
-SAS PILS 30L                  	BIERES                        	BIERE FUT 30L                 	525	2.17	5070	2
+SAS PILS 30L                  	BIERES                        	BIERE FUT 30L                 	525	2.17	5010	2
 HOMMELBIER 30L                	BIERES                        	BIERE FUT 30L                 	528	3.15	240	2
 ST STEFANUS BLONDE 20L        	BIERES                        	BIERE FUT 20L                 	535	3.89	-220	2
 RATZ BLANCHE 30L              	BIERES                        	BIERE FUT 30L                 	549	3.05	870	2
 RATZ NOEL 30L                 	BIERES                        	BIERE FUT 30L                 	557	3.252540066242	0	2
-LUPULUS TRIPLE BLONDE 20L     	BIERES                        	BIERE FUT 20L                 	558	4.15	700	2
+LUPULUS TRIPLE BLONDE 20L     	BIERES                        	BIERE FUT 20L                 	558	4.15	660	2
 LUPULUS BRUNE 20L             	BIERES                        	BIERE FUT 20L                 	559	4.329360103607	0	2
 DUPONT MONKS STOUT 20L        	BIERES                        	BIERE FUT 20L                 	561	3.939320135117	360	2
 MOINETTE AMBREE 20L           	BIERES                        	BIERE FUT 20L                 	583	4.602236956358	380	2
@@ -108,7 +108,7 @@ BOON KRIEK 25VC               	BIERES                        	BIERE 25CL VC     
 BOON FARO 25VC                	BIERES                        	BIERE 25CL VC                 	605	1.448404994607	341	2
 DUCHESSE BOURGOGNE 25VC       	BIERES                        	BIERE 25CL VC                 	610	1.627044993639	120	2
 GRISETTE BLANCHE BIO 25VC     	BIERES                        	BIERE 25CL VC                 	611	1.186500036717	239	2
-GRISETTE BLONDE BIO 25VC      	BIERES                        	BIERE 25CL VC                 	612	1.277885046601	247	2
+GRISETTE BLONDE BIO 25VC      	BIERES                        	BIERE 25CL VC                 	612	1.277885046601	246	2
 HOMMELBIER 25VC               	BIERES                        	BIERE 25CL VC                 	614	0.9928800344467	258	2
 LINDEMANS KRIEK 25VC          	BIERES                        	BIERE 25CL VC                 	622	1.357054960728	227	2
 LINDEMANS GUEUZE 25VC         	BIERES                        	BIERE 25CL VC                 	625	1.027179968357	54	2
@@ -271,7 +271,7 @@ RODENBACH CLASSIC 20L         	BIERES                        	BIERE FUT 20L     
 FRANZISKANER WEISS HELL 6L    	BIERES                        	BIERES FUT 5L/6L/12.5L        	1339	23.6	8	2
 JUPILER 6L                    	BIERES                        	BIERES FUT 5L/6L/12.5L        	1342	22.65	0	2
 LEFFE BLONDE 6L               	BIERES                        	BIERES FUT 5L/6L/12.5L        	1343	25	10	2
-STELLA ARTOIS 6L              	BIERES                        	BIERES FUT 5L/6L/12.5L        	1354	24.75	1	2
+STELLA ARTOIS 6L              	BIERES                        	BIERES FUT 5L/6L/12.5L        	1354	24.75	0	2
 RODENBACH CLASSIC 25VC        	BIERES                        	BIERE 25CL VC                 	1366	0.9421999692917	216	2
 DUVEL 19,5 L                  	BIERES                        	BIERE FUT 16L/19,5L           	1372	104.5935752869	10	2
 HOEGAARDEN BLANCHE 6L         	BIERES                        	BIERES FUT 5L/6L/12.5L        	1378	24.05	0	2
@@ -296,7 +296,7 @@ CISAILLE POUR TUYAU POLYAMIDE 	MATERIELS                     	MATERIEL VENTE    
 LAME POUR CISAILLE            	MATERIELS                     	MATERIEL VENTE                	1463	24.16	0	2
 PERONI NASTRO AZZURO 33VP     	BIERES                        	BIERE 20/25/33/35CL VP        	1467	1.167377020121	402	2
 PILSNER URQUEL 33VP           	BIERES                        	BIERE 20/25/33/35CL VP        	1468	1.252125012875	404	2
-GUE MOINES DAME DE COEUR 33VP 	BIERES                        	BIERE 20/25/33/35CL VP        	1469	1.905943926573	257	2
+GUE MOINES DAME DE COEUR 33VP 	BIERES                        	BIERE 20/25/33/35CL VP        	1469	1.905943926573	256	2
 HEINEKEN 33BTE                	BIERES                        	BIERE 33/44/50 CL CANETTE     	1484	0.8058339631558	720	2
 KRONENBOURG 33BTE             	BIERES                        	BIERE 33/44/50 CL CANETTE     	1485	0.6612300083041	336	2
 ERDINGER WEISS HELL 50VC      	BIERES                        	BIERE 50CL VC                 	1505	1.761224738324	-4	2
@@ -367,14 +367,14 @@ ORANGINA S/PLACE 33CL         	SOFTS                         	BOISSONS SUCREES V
 DU CLAU POMME CERISE 75VP     	JUS DE FRUIT                  	JUS DE FRUIT GAZEIFIE VP      	1730	3.587999987602	0	3
 CACOLAC 25BTE                 	SOFTS                         	BOISSONS SUCREES BTE          	1740	0.999269977212	72	3
 COCA COLA 33BTE X24 X24 X24   	SOFTS                         	BOISSONS SUCREES BTE          	1741	0.73	-601	3
-X30 COCA 33BTE                	SOFTS                         	BOISSONS SUCREES BTE          	1742	0.7425000160933	2849	3
+X30 COCA 33BTE                	SOFTS                         	BOISSONS SUCREES BTE          	1742	0.7425000160933	2819	3
 COCA COLA SANS SUCRE 33BTE X24	SOFTS                         	BOISSONS SUCREES BTE          	1743	0.7141499787569	360	3
 FANTA CITRON 33BTE            	SOFTS                         	BOISSONS SUCREES BTE          	1745	0.65	24	3
 FANTA ORANGE 33BTE            	SOFTS                         	BOISSONS SUCREES BTE          	1746	0.7721000313759	1055	3
 ORANGINA JAUNE 33BTE          	SOFTS                         	BOISSONS SUCREES BTE          	1750	0.6637399911881	821	3
 SCHWEPPES INDIAN TONIC 33BTE  	SOFTS                         	BOISSONS SUCREES BTE          	1756	0.7052400290966	347	3
-EAU SOURCE CRISTALINE 150PET  	EAUX                          	EAUX PET                      	1761	0.3	6984	3
-EAU SOURCE CRISTALINE 50PET   	EAUX                          	EAUX PET                      	1762	0.235	16506	3
+EAU SOURCE CRISTALINE 150PET  	EAUX                          	EAUX PET                      	1761	0.3	6966	3
+EAU SOURCE CRISTALINE 50PET   	EAUX                          	EAUX PET                      	1762	0.235	16501	3
 BADOIT 100VC                  	EAUX                          	EAUX VC/VP                    	1766	0.895049983263	300	3
 BADOIT 50VC                   	EAUX                          	EAUX VC/VP                    	1767	0.749250009656	220	3
 PERRIER S/ PLACE 33CL         	EAUX                          	EAUX VC/VP                    	1768	2.727269899964	-2	4
@@ -698,7 +698,7 @@ FRAIS PICKING                 	SERVICES                      	SERVICES FRAIS    
 LOCATION FRIGO 300 BOITES     	SERVICES                      	SERVICES LOCATIONS            	2273	20.8333	-10	2
 LOCATION MACHINE A CAFE 10L   	SERVICES                      	SERVICES LOCATIONS            	2275	16.6666	-13	2
 LOCATION MACHINE 2 TIRAGES    	SERVICES                      	SERVICES LOCATIONS            	2276	20.8333	-15	2
-LOCATION MACHINE 1 TIRAGE     	SERVICES                      	SERVICES LOCATIONS            	2277	20.8333	-41	2
+LOCATION MACHINE 1 TIRAGE     	SERVICES                      	SERVICES LOCATIONS            	2277	20.8333	-44	2
 LOCATION REMORQUE FRIGO       	SERVICES                      	SERVICES LOCATIONS            	2278	350	-4	2
 LOCATION TABLE RONDE PVC      	SERVICES                      	SERVICES LOCATIONS            	2279	1.6666	-59	2
 LOCATION TABLE CARRE PVC      	SERVICES                      	SERVICES LOCATIONS            	2280	1.6666	-15	2
@@ -864,7 +864,7 @@ CAMPLAZENS LA GARRIGUE 75CL   	VINS                          	LA CLAPE          
 LINDEMANS GUEUZE C RENE 75VP  	BIERES                        	BIERE 75VP                    	4012	4.892534959316	60	2
 LINDEMANS KRIEK CUV RENÉ 75VP 	BIERES                        	BIERE 75VP                    	4013	6.851009931564	84	2
 BASQ IMPARABLE 33 BOITE       	BIERES                        	BIERE 33/44/50 CL CANETTE     	4022	2.06294601202	0	2
-BASQ SANTA CLARA LAGER 30L K  	BIERES                        	BIERE FUT 30L                 	4029	3.247847886086	30	2
+BASQ SANTA CLARA LAGER 30L K  	BIERES                        	BIERE FUT 30L                 	4029	3.247847886086	0	2
 SCHWEPPES AGRUME 33BTE        	SOFTS                         	BOISSONS SUCREES BTE          	4048	0.6	384	3
 LAUGAR AUPA TOVARISCH 33VP    	BIERES                        	BIERE 20/25/33/35CL VP        	4054	3.14159992218	30	2
 LAUGAR BASATIA 33VP           	BIERES                        	BIERE 20/25/33/35CL VP        	4056	2.36640001297	2	2
@@ -1081,7 +1081,7 @@ GARAGE SANTAKO 33BTE          	BIERES                        	BIERE 33/44/50 CL 
 GARAGE SANTAKO 30L KK         	BIERES                        	BIERE FUT 30L                 	5431	4.594094667149	180	2
 MUSCAT RIVESALTES 8CL AU VERRE	VINS AU COMPTOIR              	VINS AU COMPTOIR              	5435	2	0	2
 VIN ROSE 12.5CL A 4€          	COMPTOIR TERRASSE             	COMPTOIR TERRASSE             	5436	3.333	-2	2
-BLANCHE DE WATOU 30L          	BIERES                        	BIERE FUT 30L                 	5451	2.75	1740	2
+BLANCHE DE WATOU 30L          	BIERES                        	BIERE FUT 30L                 	5451	2.75	1680	2
 OLIVE COCKTAIL MAROCAINE 2.5KG	ARTICLES DIVERS               	TERRINE - BOCAUX - SAUCIS-FROM	5463	12.7874994278	2	3
 VERRE INCASSABLE MOJITO 43CL  	ARTICLES DIVERS               	ARTICLES DIVERS               	5468	1.961699926853	50	2
 SUCRE BUCHETTES 500 X 5G      	ALIMENTAIRES                  	SUCRE DOSES                   	5470	5.407999801636	0	3
@@ -1179,7 +1179,7 @@ CYCLIC SAISON 75VP            	BIERES                        	BIERE 75VP        
 PIGGY EROICA 33CL BOITE       	BIERES                        	BIERE 33/44/50 CL CANETTE     	6114	2.03687993288	137	2
 PIGGY PICK ME UP 33CL BOITE   	BIERES                        	BIERE 20/25/33/35CL VP        	6120	1.838298046589	56	2
 RHUM SANTIAGO DE CUBA 25A 70CL	ALCOOL                        	RHUMS TIERS                   	6136	227.8320007324	2	2
-KROMBACHER PILS 30L           	BIERES                        	BIERE FUT 30L                 	6145	2.1001	15840	2
+KROMBACHER PILS 30L           	BIERES                        	BIERE FUT 30L                 	6145	2.1001	15570	2
 FUZETEA PECHE THE PECHE 25VC  	SOFTS                         	BOISSONS SUCREES VC           	6146	0.95	1464	3
 LUPULUS FRUCTUS 33VC          	BIERES                        	BIERE 33CL VC                 	6147	1.775090014935	168	2
 LA DEBAUCHE COOL JAZZ 33BTE   	BIERES                        	BIERE 33/44/50 CL CANETTE     	6150	2.12800003171	5	2
@@ -1278,7 +1278,7 @@ CHAT LASCOMBES ROUGE 2016 75CL	VINS                          	MARGAUX           
 CH MALARTICLAGRAVIERE 2016 75C	VINS                          	PESSAC LEOGNAN                	6723	53.72821884155	1	2
 CHAT RIPEAU 2017 ROUGE 75CL   	VINS                          	ST EMILION GD CRU CLASSE      	6727	30.7830904007	3	2
 RHUM LA FAVORITE 2013 70CL    	ALCOOL                        	RHUMS DOMS                    	6728	95.4179	2	2
-LUPULUS TRIPLE BLONDE 33VC    	BIERES                        	BIERE 33CL VC                 	6740	1.62922000885	765	2
+LUPULUS TRIPLE BLONDE 33VC    	BIERES                        	BIERE 33CL VC                 	6740	1.62922000885	741	2
 LUPULUS ORGANICUS BIO 33VC    	BIERES                        	BIERE 33CL VC                 	6741	1.803510063887	276	2
 EAU ABATILLES PETILL 75VP     	EAUX                          	EAUX VC/VP                    	6745	1.340300023556	0	3
 EAU ABATILLES PLATE 75VP      	EAUX                          	EAUX VC/VP                    	6746	1.459900033474	0	3
@@ -1309,7 +1309,7 @@ RAUCH POMME 20VP              	JUS DE FRUIT                  	JUS DE FRUITS VP/V
 RAUCH TOMATE 20VP             	JUS DE FRUIT                  	JUS DE FRUITS VP/VC/PET       	6886	0.6634914085507	816	3
 BIB 5L ISATIS ROSE            	VINS PERMANENTS               	COTES DU TARN                 	6887	14.625	14	2
 MATERIELS DE MANUTENTION      	MATERIELS                     	MATERIELS                     	6890	495.3	6	6
-GARAGE INOX OCATA BLUE 30L    	BIERES                        	BIERE FUT 30L                 	6898	3.95	2070	2
+GARAGE INOX OCATA BLUE 30L    	BIERES                        	BIERE FUT 30L                 	6898	3.95	2010	2
 BASQ LAIA FARMHOUSE ALE 75VP  	BIERES                        	BIERE 75VP                    	6903	6.327684288025	8	2
 MT SALEVE TZARINE 20L K       	BIERES                        	BIERE FUT 20L                 	6933	5.051149940491	20	2
 IPA RATZ 75VP                 	BIERES                        	BIERE 75VP                    	6938	3.310636153221	76	2
@@ -1334,7 +1334,7 @@ SIROP PECHE GIFFARD 100CL     	SIROP                         	SIROP             
 SIROP CARAMEL GIFFARD 100CL   	SIROP                         	SIROP                         	7020	5.822955179215	4	3
 SIROP CERISE GIFFARD 100CL    	SIROP                         	SIROP                         	7021	5.85	6	3
 SIROP CASSIS GIFFARD 100CL    	SIROP                         	SIROP                         	7022	6.038954973221	3	3
-SIROP CITRON GIFFARD 100CL    	SIROP                         	SIROP                         	7023	4.70650498867	136	3
+SIROP CITRON GIFFARD 100CL    	SIROP                         	SIROP                         	7023	4.70650498867	135	3
 SIROP GRENADINE GIFFARD 100CL 	SIROP                         	SIROP                         	7024	4.309469926357	112	3
 SIROP MENTHE GIFFARD 100CL    	SIROP                         	SIROP                         	7025	4.308794975281	91	3
 SIROP BUBBLE GUM GIFFARD 100CL	SIROP                         	SIROP                         	7026	5.5	8	3
@@ -1644,7 +1644,7 @@ AVIATEUR FIRST FLIGHT 20L INOX	BIERES                        	BIERE FUT 20L     
 AVIATEUR SUPER JUMBO 33CL BTE 	BIERES                        	BIERE 33/44/50 CL CANETTE     	8026	1.81453499794	98	2
 AVIATEUR SUPER GUPPY 33CL BTE 	BIERES                        	BIERE 33/44/50 CL CANETTE     	8027	1.823310005665	96	2
 AVIATEUR PETIT PRINCE 44CL BTE	BIERES                        	BIERE 33/44/50 CL CANETTE     	8033	2.93368499279	27	2
-STIG BLACK ALREADY ?  44CL    	BIERES                        	BIERE 33/44/50 CL CANETTE     	8036	5.680999851227	6	2
+STIG BLACK ALREADY ?  44CL    	BIERES                        	BIERE 33/44/50 CL CANETTE     	8036	5.680999851227	5	2
 PICPOUL MAS LAURENT 75CL      	VINS                          	PIC ST LOUP                   	8061	6.45	0	2
 STU MOSTOW TROPICAL LOOK      	BIERES                        	BIERE 33/44/50 CL CANETTE     	8064	2.9925	0	2
 STU M DELIGHT IS RIGHT 44CL   	BIERES                        	BIERE 33/44/50 CL CANETTE     	8067	2.9925	9	2
@@ -1679,7 +1679,7 @@ CHORIZO 500G S/PLACE          	COMPTOIR TERRASSE             	COMPTOIR TERRASSE 
 CAFE GRAIN DUO BRES CONGO 250G	ALIMENTAIRES                  	CAFE                          	8214	6.115200176239	4	3
 CAFE GRAIN DUO BRES CONGO 1KG 	ALIMENTAIRES                  	CAFE                          	8215	21.5	5	3
 CAFE GRAIN DUO COLOMBIE 250G  	ALIMENTAIRES                  	CAFE                          	8216	6.45	3	3
-CAFE GRAIN DUO COLOMBIE 1KG   	ALIMENTAIRES                  	CAFE                          	8217	21.95	8	3
+CAFE GRAIN DUO COLOMBIE 1KG   	ALIMENTAIRES                  	CAFE                          	8217	21.95	6	3
 TEQUILA JOSECUERVO SILVER 70CL	ALCOOL                        	TEQUILA                       	8225	17.6	4	2
 STOUTERICK 33CL VC CAISSE 7€  	BIERES                        	BIERE 33CL VC                 	8227	1.826999986172	92	2
 GIFFARD FLEUR DE SUREAU 70CL  	ALCOOL                        	LIQUEURS CREMES               	8229	16	37	2
@@ -1858,7 +1858,7 @@ LA TOUR SAINT LOUIS 2023      	VINS                          	AOP FRONTON       
 CHÂTEAU SAINT LOUIS 2020      	VINS                          	AOP FRONTON                   	8611	6.583499746323	0	2
 ORANGINA S/PLACE 33CL BOITE   	SOFTS                         	BOISSONS SUCREES VC COMPTOIR  	8615	2.708354900658	-1	4
 PROSECCO MIONETTO 75CL        	VINS PERMANENTS               	VIN MOUSSEUX DE QUALITE       	8616	6.3	333	2
-LA ROUGET DE LISLE BLONDE 30L 	BIERES                        	BIERE FUT 30L                 	8617	2.3	1350	2
+LA ROUGET DE LISLE BLONDE 30L 	BIERES                        	BIERE FUT 30L                 	8617	2.3	1230	2
 CLOS GRAVILLAS I'M ALIVE 75CL 	VINS                          	VIN DE FRANCE                 	8629	8.75	38	2
 CLOS GRAVILLAS COTÉ OBSCUR 75C	VINS                          	VIN DE FRANCE                 	8630	8.5	44	2
 CLOS GRAVILL JOUR DE TEUF 75CL	VINS                          	VIN MOUSSEUX DE QUALITE       	8631	8.95	24	2
@@ -1918,7 +1918,7 @@ EDV CHANT DU CYGNE ORIGIN 50CL	ALCOOL                        	EAU DE VIE        
 VODKA BBV1 BIO 10L BIDON      	ALCOOL                        	VODKA                         	8742	172.3536071777	0	2
 GIN BB6 BIO 10L BIDON         	ALCOOL                        	GIN                           	8743	177.2495910645	0	2
 VODKA BBV1 BIO 70CL           	ALCOOL                        	VODKA                         	8744	14.77512016296	0	2
-CRISTALINE PETILLANTE 150CL   	EAUX                          	EAUX PET                      	8747	0.48	1007	3
+CRISTALINE PETILLANTE 150CL   	EAUX                          	EAUX PET                      	8747	0.48	989	3
 HERITAGE TERRASSE LARZAC 75CL 	VINS                          	AOC LANGUEDOC                 	8748	9.733500051498	0	2
 PATE CAMPAGNE TERR RONDE 2.5KG	ARTICLES DIVERS               	TERRINE - BOCAUX - SAUCIS-FROM	8750	27.30400085449	0	3
 BIB CAMAS SYRAH ROSÉ 5L       	VINS                          	IGP OC                        	8751	12.35249948502	0	2
@@ -1929,9 +1929,9 @@ LA SUPERBE MAREA IPA 33CL X24 	BIERES                        	BIERE 20/25/33/35C
 LA SUPERBE MUXU GOSE 33CL     	BIERES                        	BIERE 20/25/33/35CL VP        	8766	2.178630065918	144	2
 CARTOUCHE CO2 5KG             	GAZ                           	GAZ PLEIN                     	8767	17	4	2
 BASQUELAND GILDA 33CL         	BIERES                        	BIERE 33/44/50 CL CANETTE     	8768	2.187000006437	24	2
-BASQUELAND SANTA CLARA 33CL   	BIERES                        	BIERE 33/44/50 CL CANETTE     	8769	1.606325019598	209	2
+BASQUELAND SANTA CLARA 33CL   	BIERES                        	BIERE 33/44/50 CL CANETTE     	8769	1.606325019598	197	2
 BASQUELAND HERO TOSTADA 33CL  	BIERES                        	BIERE 33/44/50 CL CANETTE     	8773	1.849500006437	46	3
-ROHOZEC FESTIVAL 30L          	BIERES                        	BIERE FUT 30L                 	8774	2.12	12180	2
+ROHOZEC FESTIVAL 30L          	BIERES                        	BIERE FUT 30L                 	8774	2.12	12090	2
 OGEU GAZEUSE 50CL PET X24     	EAUX                          	EAUX PET                      	8775	0.597	792	3
 FLORIS KRIEK 30L              	BIERES                        	BIERE FUT 30L                 	8776	3.900680065155	150	2
 FLORIS CACTUS 20L             	BIERES                        	BIERE FUT 20L                 	8778	4.45	0	2
@@ -2076,7 +2076,7 @@ BASQUELAND ZUGARRAMURDI 66CL  	BIERES                        	BIERE 50/60/66 CL 
 BASQUELAND FLYSCH 30L         	BIERES                        	BIERE FUT 30L                 	9131	4.846625030041	30	2
 BASQ SALTO DEL NERVION 20L    	BIERES                        	BIERE FUT 30L                 	9133	6.253719911575	20	2
 OGEU PLATE 50CL PET X24       	EAUX                          	EAUX PET                      	9134	0.3925799936056	1080	3
-OGEU PLATE 150CL PET          	EAUX                          	EAUX PET                      	9135	0.4002749964595	6	3
+OGEU PLATE 150CL PET          	EAUX                          	EAUX PET                      	9135	0.4002749964595	0	3
 WALDHAUS DIPLOM PILS 50VP     	BIERES                        	BIERE 50/60/66 CL VP          	9136	1.411099960804	189	2
 MARCEL LAPIERR MORGON AOC 75CL	VINS                          	BEAUJOLAIS                    	9137	23.35	1	2
 MARCEL LAPIERR BEAUJOLAIS 75CL	VINS                          	BEAUJOLAIS                    	9138	18.75	2	2
@@ -2284,7 +2284,7 @@ UBY CUB ROSE BIB 5L           	VINS                          	COTES DE GASCOGNE 
 SOMMELIER ADJ ALL BLACK       	ARTICLES DIVERS               	ARTICLES DE CAVE / BIERE & VIN	9402	3.9	12	2
 TRANSAT LE MIGNON             	ARTICLES DIVERS               	ART. PUB.                     	9403	60	8	2
 BIB 3L SANGRIA ROUGE BIGALLET 	SANGRIA                       	SANGRIA                       	9404	12.86999988556	0	2
-BIB 3L SANGRIA BLCHE BIGALLET 	SANGRIA                       	SANGRIA                       	9405	12.69799957275	20	2
+BIB 3L SANGRIA BLCHE BIGALLET 	SANGRIA                       	SANGRIA                       	9405	12.69799957275	18	2
 CREME CERISE GIFFARD 70CL     	ALCOOL                        	LIQUEURS CREMES               	9406	10.00837445259	6	2
 LIQUEUR MANDARINE GIFFARD 70CL	ALCOOL                        	LIQUEURS CREMES               	9407	13.1	6	2
 PERONI NASTRO AZZURO 16L      	BIERES                        	BIERE FUT 16L/19,5L           	9410	3.535994347858	-272	2
@@ -2340,7 +2340,7 @@ AVIA LOST IN TRANSLATION 44BTE	BIERES                        	BIERE 33/44/50 CL 
 BUNDABERG PASSION FRUIT 37.5VP	SOFTS                         	BOISSONS SUCREES VP           	9465	2.007323927879	72	3
 TEMPO DUROC                   	COMPTOIR TERRASSE             	PLANCHES                      	9466	8.998807251453	0	4
 FUET OLIVES 100G A EMPORTER   	ARTICLES DIVERS               	TERRINE - BOCAUX - SAUCIS-FROM	9467	1.61	60	3
-LAUGAR POST MORTEM 44BTE      	BIERES                        	BIERE 33/44/50 CL CANETTE     	9468	4.822399973869	95	2
+LAUGAR POST MORTEM 44BTE      	BIERES                        	BIERE 33/44/50 CL CANETTE     	9468	4.822399973869	94	2
 LAUGAR DEEP WEB 44BTE         	BIERES                        	BIERE 33/44/50 CL CANETTE     	9469	2.986600091457	75	2
 LAUGAR EXODUS 33VP            	BIERES                        	BIERE 20/25/33/35CL VP        	9470	3.493499934673	116	2
 LAUGAR DARK RITUAL 33VP       	BIERES                        	BIERE 20/25/33/35CL VP        	9471	3.383900039196	93	2
@@ -2423,8 +2423,8 @@ GARAGE BRONZE 44BTE           	BIERES                        	BIERE 33/44/50 CL 
 PERRIN CHASSANGRE BLANC 75CL  	VINS                          	VINS                          	9551	5.7375	18	2
 LA SUPERBE CALYPSO SUMMER 30LK	BIERES                        	BIERE FUT 30L                 	9552	3.922858083248	180	2
 LA SUPERBE MAREA 30L KK       	BIERES                        	BIERE FUT 30L                 	9553	4.017194867134	180	2
-LA SUPERBE ZINZINE 44CL BTE   	BIERES                        	BIERE 33/44/50 CL CANETTE     	9554	3.510214095116	47	2
-LA SUPERBE ICARO 44CL BTE     	BIERES                        	BIERE 33/44/50 CL CANETTE     	9555	3.739825980663	94	2
+LA SUPERBE ZINZINE 44CL BTE   	BIERES                        	BIERE 33/44/50 CL CANETTE     	9554	3.510214095116	46	2
+LA SUPERBE ICARO 44CL BTE     	BIERES                        	BIERE 33/44/50 CL CANETTE     	9555	3.739825980663	93	2
 LA SUPERBE CLOUDY 44CL BTE    	BIERES                        	BIERE 33/44/50 CL CANETTE     	9556	3.458970093727	70	2
 LA SUPERBE  717  44CL BTE     	BIERES                        	BIERE 33/44/50 CL CANETTE     	9557	3.538620114327	94	2
 POPIHN X DEBAUCHE 33VP        	BIERES                        	BIERE 75VP                    	9558	4.041500065327	0	2
