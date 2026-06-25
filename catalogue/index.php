@@ -84,8 +84,8 @@
 	// '*' = tous les packs; 'futs', 'bouteilles-canettes'... = pack spécifique
 	$univers_excluded_sous_famille_slugs = [
 		'bieres' => [
-			'*'    => ['biere-pression-comptoir'],          // Point N°1 : masqué temporairement (données ERP en cours de correction)
-			'futs' => ['biere-33-44-50-cl-canette', 'boissons-sucrees-vp'], // Point N°2 : canettes/softs ne sont pas des fûts
+			// Tous packs : softs mal affectés dans famille bières par l'ERP
+			'*' => ['biere-pression-comptoir', 'eaux-boite-aromatisees', 'boissons-sucrees-vp'],
 		],
 	];
 	// (PDF) Menus: libellés et ordre figés sur les captures.
@@ -898,7 +898,9 @@
 		$packSousFamilleAlias = $alias ? ('sf_pack_'.$alias) : 'sf_pack';
 		$joins = " LEFT JOIN ob_catalogue_sous_familles ".$packSousFamilleAlias." ON ".$packSousFamilleAlias.".id = ".$prefix."sous_famille_id ";
 		$upperNom = "UPPER(".$prefix."nom)";
-		$isFut = "(UPPER(COALESCE(".$packSousFamilleAlias.".nom,'')) LIKE '%FUT%' OR $upperNom LIKE '%FUT%' OR $upperNom REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)')";
+		// Fût : sous-famille ERP contient FUT (mot entier) OU nom produit contient capacité litre (ex: 20L)
+		// On n'utilise PAS le nom produit pour FUT : évite les faux positifs (FUTUR, CONFUTER, etc.)
+		$isFut = "(UPPER(COALESCE(".$packSousFamilleAlias.".nom,'')) REGEXP '(^|[^A-Z])FUT([^A-Z]|$)' OR $upperNom REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)')";
 		if($universKey === 'vins') {
 			$isBib = "(UPPER(COALESCE(".$packSousFamilleAlias.".nom,'')) LIKE '%BIB%' OR $upperNom LIKE '%BIB%' OR (".$prefix."contenance IN (300,500,1000) AND $upperNom NOT LIKE '%MAGNUM%'))";
 			if($packSlug === 'bib') {
@@ -1551,6 +1553,15 @@
 			);
 		}
 	} elseif($univers === 'softs') {
+		if(!empty($sidebar_menu_data['sous_familles_all'])) {
+			$sidebar_filter_sections[] = array(
+				'title' => 'Gamme',
+				'field' => 'filtre_sous_famille',
+				'items' => $sidebar_menu_data['sous_familles_all'],
+				'value_key' => 'slug',
+				'label_key' => 'nom',
+			);
+		}
 		if(!empty($sidebar_menu_data['familles'])) {
 			$sidebar_filter_sections[] = array(
 				'title' => 'Type',
@@ -2179,7 +2190,7 @@
 							}
 							if(!empty($effective_pack_slugs)) {
 								$joins = ' LEFT JOIN ob_catalogue_sous_familles sf ON sf.id = p.sous_famille_id ';
-								$isFut = "(UPPER(COALESCE(sf.nom,'')) LIKE '%FUT%' OR UPPER(p.nom) LIKE '%FUT%' OR UPPER(p.nom) REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)')";
+								$isFut = "(UPPER(COALESCE(sf.nom,'')) REGEXP '(^|[^A-Z])FUT([^A-Z]|$)' OR UPPER(p.nom) REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)')";
 								$packWhereParts = array();
 								if($univers === 'vins') {
 									$isBib = "(UPPER(COALESCE(sf.nom,'')) LIKE '%BIB%' OR UPPER(p.nom) LIKE '%BIB%' OR (p.contenance IN (300,500,1000) AND UPPER(p.nom) NOT LIKE '%MAGNUM%'))";
@@ -2237,7 +2248,7 @@
 													// Données réelles: les BIB ne sont pas fiables via condition_vente.
 													// On s'appuie sur la sous-famille, le libellé et la contenance.
 													$joins = " LEFT JOIN ob_catalogue_sous_familles sf ON sf.id = p.sous_famille_id ";
-													$isFut = "(UPPER(COALESCE(sf.nom,'')) LIKE '%FUT%' OR UPPER(p.nom) LIKE '%FUT%' OR UPPER(p.nom) REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)')";
+													$isFut = "(UPPER(COALESCE(sf.nom,'')) REGEXP '(^|[^A-Z])FUT([^A-Z]|$)' OR UPPER(p.nom) REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)')";
 													$isBib = "(UPPER(COALESCE(sf.nom,'')) LIKE '%BIB%' OR UPPER(p.nom) LIKE '%BIB%' OR (p.contenance IN (300,500,1000) AND UPPER(p.nom) NOT LIKE '%MAGNUM%'))";
 													if($pack === 'bib') {
 														$packCondition = $isBib;
@@ -2248,7 +2259,7 @@
 												} else {
 													// Heuristique "Fût": on se base sur la sous-famille (si dispo) et le libellé produit
 													$joins = " LEFT JOIN ob_catalogue_sous_familles sf ON sf.id = p.sous_famille_id ";
-													$isFut = "(UPPER(COALESCE(sf.nom,'')) LIKE '%FUT%' OR UPPER(p.nom) LIKE '%FUT%' OR UPPER(p.nom) REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)')";
+													$isFut = "(UPPER(COALESCE(sf.nom,'')) REGEXP '(^|[^A-Z])FUT([^A-Z]|$)' OR UPPER(p.nom) REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)')";
 													if($pack === 'futs') {
 														$packCondition = $isFut;
 													} else {

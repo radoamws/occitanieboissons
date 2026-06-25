@@ -1,6 +1,6 @@
 # Documentation fonctionnelle — Occitanie Boissons Catalogue
 
-> **Mise à jour** : 2026-06-25  
+> **Mise à jour** : 2026-06-25 (rev. 3)  
 > **À tenir à jour** à chaque modification du catalogue (`catalogue/index.php`, `catalogue/includes/configuration.php`).
 
 ---
@@ -318,12 +318,13 @@ Les packs filtrent les produits par type de contenant. La logique est dans `$bui
 
 Un produit est considéré **fût** si l'une des conditions est vraie :
 ```sql
-UPPER(sf.nom) LIKE '%FUT%'                         -- nom sous-famille contient FUT
-OR UPPER(p.nom) LIKE '%FUT%'                       -- nom produit contient FUT
-OR p.nom REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)'  -- litre : 2L, 5L, 10L, 20L, 30L...
+UPPER(sf.nom) REGEXP '(^|[^A-Z])FUT([^A-Z]|$)'   -- FUT mot entier dans nom sous-famille
+OR UPPER(p.nom) REGEXP '(^|[^A-Z])FUT([^A-Z]|$)' -- FUT mot entier dans nom produit
+OR UPPER(p.nom) REGEXP '(^|[^0-9])([0-9]{1,2})L([^A-Z]|$)'  -- litre : 2L, 5L, 10L, 20L...
 ```
 
-> **Attention** : Le regex litre matche `XL` où X est 1–2 chiffres, L non suivi d'une majuscule. Cela peut générer des faux positifs (ex: produits avec "33CL" sans espace).
+> **Attention** : Le REGEXP litre matche `XL` où X est 1–2 chiffres, L non suivi d'une majuscule. Peut générer des faux positifs si un nom produit contient `XL` comme suffixe numérique.  
+> **Note** : Le match `FUT` utilise un REGEXP à frontière de mot `(^|[^A-Z])FUT([^A-Z]|$)` pour éviter les faux positifs sur des mots comme "FUTUR" (ex : "RETOUR VERS LE FUTUR").
 
 ### Logique de détection BIB (vins)
 
@@ -376,9 +377,10 @@ $univers_excluded_sous_famille_slugs = [
 
 | Exclusion | Raison | Statut |
 |-----------|--------|--------|
-| `biere-pression-comptoir` (tous packs) | Produits d'autres univers (eaux, softs) mal catégorisés dans l'ERP | À vérifier après correction données ERP |
-| `biere-33-44-50-cl-canette` (pack fûts) | Cette sous-famille contient des canettes, pas des fûts, mais des noms de produits triggent le pattern fût | Structurel — à conserver |
-| `boissons-sucrees-vp` (pack fûts) | Softs dans famille bières par erreur ERP | À supprimer si données corrigées en prod |
+| `biere-pression-comptoir` (tous packs) | Produits d'autres univers (eaux, softs) mal catégorisés dans l'ERP | À retirer après correction données ERP |
+| `eaux-boite-aromatisees` (tous packs) | Famille 60 (EAUX) affectée par erreur dans famille bières | À retirer après correction données ERP |
+| `boissons-sucrees-vp` (tous packs) | Famille 40 (SOFTS) affectée par erreur dans famille bières | À retirer après correction données ERP |
+| `biere-33-44-50-cl-canette` (pack fûts) | Contient des canettes — certains noms de produits triggent le pattern fût | Structurel — à conserver |
 
 > Pour supprimer une exclusion devenue inutile, retirer son slug de l'array ci-dessus. Pour vérifier, lancer les requêtes SQL du §9.
 
@@ -579,6 +581,8 @@ GROUP BY p.categorie;
 
 | Date | Description | Fichier(s) |
 |------|-------------|-----------|
+| 2026-06-25 | Fix SQL `famille_id` des produits softs/eaux mal affectés en famille bières : script `fix_softs_dans_bieres.sql`. Après fix DB, ces produits apparaissent dans SOFTS et disparaissent de bières. | `scripts_sql/fix_softs_dans_bieres.sql` |
+| 2026-06-25 | Correction FORMAT bières bouteilles-canettes : ajout exclusion `eaux-boite-aromatisees` et `boissons-sucrees-vp` (tous packs). Fix faux positif fût sur "FUTUR" : LIKE '%FUT%' → REGEXP mot entier. | `index.php`, `DOCUMENTATION.md` |
 | 2026-06-25 | Synchronisation DB locale avec prod. Ajout catégories bières manquantes (17, 19, 33). Suppression code mort `$categorie_labels`. Documentation initiale. | `index.php`, `DOCUMENTATION.md` |
 | 2026-06-25 | Déduplication `sous_familles_top` par slug. Mécanisme d'exclusion `$univers_excluded_sous_famille_slugs`. Script SQL `fix_bieres_sous_familles.sql`. | `index.php` |
 | 2026-06-16 | Implémentation champagnes (catégories 34–37) : méga-menu vins + sidebar vins TYPE/APPELLATION + logique JS. Fusion Couleur+Style bières en colonne unique "Style". | `index.php`, `catalogue.css` |
