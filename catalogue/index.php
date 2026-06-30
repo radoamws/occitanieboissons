@@ -87,6 +87,10 @@
 			// Tous packs : softs mal affectés dans famille bières par l'ERP
 			'*' => ['biere-pression-comptoir', 'eaux-boite-aromatisees', 'boissons-sucrees-vp'],
 		],
+		'softs' => [
+			// 40.11 : vente comptoir, non destinée au catalogue web
+			'*' => ['boissons-sucrees-vc-comptoir'],
+		],
 	];
 	// (PDF) Menus: libellés et ordre figés sur les captures.
 	$pdf_menu = [
@@ -436,6 +440,31 @@
 				'label' => $numeric_label($cv),
 			];
 		}
+	}
+	// Normaliser les libellés softs pour l'affichage : "EAUX PET"→"EAUX", "BOISSONS SUCREES X"→"BOISSONS X"
+	$ob_normalize_softs_label = function($nom) {
+		$nom = str_replace('BOISSONS SUCREES ', 'BOISSONS ', (string) $nom);
+		return ($nom === 'EAUX PET') ? 'EAUX' : $nom;
+	};
+	$ob_apply_softs_norm = function(&$menuData) use ($ob_normalize_softs_label) {
+		foreach($menuData['familles'] as &$_f) {
+			$_f['nom'] = $ob_normalize_softs_label($_f['nom']);
+			foreach($_f['sous_familles'] as &$_sf) {
+				$_sf['nom'] = $ob_normalize_softs_label($_sf['nom']);
+			}
+			unset($_sf);
+		}
+		unset($_f);
+		foreach(['familles_top', 'sous_familles_all', 'sous_familles_top'] as $_nk) {
+			if(!isset($menuData[$_nk])) { continue; }
+			foreach($menuData[$_nk] as &$_item) {
+				$_item['nom'] = $ob_normalize_softs_label($_item['nom']);
+			}
+			unset($_item);
+		}
+	};
+	if(isset($univers_menu['softs'])) {
+		$ob_apply_softs_norm($univers_menu['softs']);
 	}
 	$current_univers_menu = isset($univers_menu[$univers]) ? $univers_menu[$univers] : [
 		'familles' => [],
@@ -1153,6 +1182,15 @@
 		foreach($allowed_pack_by_univers[$menuUniversKey] as $menuPackKey) {
 			$univers_menu_scoped[$menuUniversKey][$menuPackKey] = $build_menu_dataset($menuUniversKey, $menuPackKey);
 		}
+	}
+	// Appliquer la normalisation des libellés aux packs scoped softs (les données pack-spécifiques
+	// viennent de $build_menu_dataset qui relit la DB ; le pack 'all' est déjà normalisé via $univers_menu)
+	if(isset($univers_menu_scoped['softs'])) {
+		foreach($univers_menu_scoped['softs'] as $_spk => &$_spd) {
+			if($_spk === 'all') { continue; }
+			$ob_apply_softs_norm($_spd);
+		}
+		unset($_spd);
 	}
 	$get_active_menu_pack = function($panelUnivers) use ($univers, $effective_pack_slug) {
 		if($panelUnivers === $univers && !empty($effective_pack_slug)) {
