@@ -441,10 +441,11 @@
 			];
 		}
 	}
-	// Normaliser les libellés softs pour l'affichage : "EAUX PET"→"EAUX", "BOISSONS SUCREES X"→"BOISSONS X"
+	// Normaliser les libellés softs pour l'affichage : "EAUX PET"→"EAUX", "BOISSONS SUCREES X"→"BOISSONS X", "BOISSONS PET"→"BOISSONS"
 	$ob_normalize_softs_label = function($nom) {
 		$nom = str_replace('BOISSONS SUCREES ', 'BOISSONS ', (string) $nom);
-		return ($nom === 'EAUX PET') ? 'EAUX' : $nom;
+		if($nom === 'EAUX PET' || $nom === 'BOISSONS PET') { return substr($nom, 0, strpos($nom, ' ')); }
+		return $nom;
 	};
 	$ob_apply_softs_norm = function(&$menuData) use ($ob_normalize_softs_label) {
 		foreach($menuData['familles'] as &$_f) {
