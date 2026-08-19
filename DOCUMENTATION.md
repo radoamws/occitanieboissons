@@ -127,7 +127,7 @@ Structure : `id`, `code` (int, UNIQUE), `nom`, `slug`
 ### 3.2 Sous-familles (`ob_catalogue_sous_familles`)
 
 Structure : `id`, `famille_id` (FK), `code` (int), `nom`, `slug`  
-Contrainte unique : `(famille_id, code)`
+Contraintes uniques : `(famille_id, code)` **ET** `(famille_id, slug)` — voir incohérence §8.10
 
 Exemples pour famille BIERES (code 20) :
 
@@ -508,6 +508,18 @@ $univers_famille_filter_slugs = ['promotions' => ['remises']];
 Cette liste force l'univers Promotions à n'afficher que les produits de la famille dont le slug est `remises`. Si le slug change dans la DB (re-import ERP avec un libellé différent), les promotions disparaissent.  
 → Surveiller le slug de la famille Remises en DB.
 
+### 8.10 Crash import : deux codes sous-famille ERP avec le même libellé (corrigé 2026-08-19)
+
+**Symptôme** : `Fatal error: Uncaught PDOException ... Duplicate entry '4-alcool-de-riz' for key 'ob_catalogue_sous_familles.uniq_fam_slug'` dans `configuration.php:416`, qui casse l'import et donc tout le catalogue (crash au chargement de n'importe quelle page, `connexion_.php` inclus).
+
+**Cause** : la table `ob_catalogue_sous_familles` a DEUX contraintes uniques : `(famille_id, code)` et `(famille_id, slug)`. L'export ERP (Déclic, `TARIFINTERNET_COMPLET.CSV`) peut affecter à une même famille deux codes sous-famille différents portant strictement le même libellé (ex. famille ALCOOL/code 1 : code SF 42 et code SF 84, tous deux `ALCOOL DE RIZ`). La fonction `ob_get_or_create_famille_by_code()` protégeait déjà ce cas via un helper `$resolveSlug` qui suffixe le slug en cas de collision (`slug-code`), mais son équivalent `ob_get_or_create_sous_famille_by_code()` n'avait **aucune** protection : elle mettait à jour/insérait le slug brut sans vérifier qu'il n'était pas déjà pris par une autre sous-famille de la même famille → violation de contrainte non catchée → crash fatal de tout le site.
+
+**Fix** : ajout d'un `$resolveSousFamilleSlug` (même principe que pour les familles, scopé par `famille_id`) dans `ob_get_or_create_sous_famille_by_code()` (`configuration.php`). En cas de collision, le second code obtient un slug suffixé par son code ERP (ex. `alcool-de-riz-42`) au lieu de faire planter l'import.
+
+**À expliquer au client** : ce n'est pas un bug introduit par nous — c'est une incohérence dans les données fournies par le logiciel de gestion (Déclic) : deux codes sous-famille différents affectés au même libellé "ALCOOL DE RIZ" sous la famille ALCOOL. Le script d'import n'était pas assez défensif contre ce cas (contrairement à celui des familles) et une exception SQL non interceptée faisait planter tout le site à chaque page. Corrigé : le site fusionne maintenant proprement ce genre de doublon (le second code garde son libellé et reçoit un slug distinct) au lieu de crasher.
+
+**Fichier** : `catalogue/includes/configuration.php` (fonction `ob_get_or_create_sous_famille_by_code`, ~ligne 399-433)
+
 ---
 
 ## 9. Requêtes SQL de diagnostic
@@ -581,6 +593,7 @@ GROUP BY p.categorie;
 
 | Date | Description | Fichier(s) |
 |------|-------------|-----------|
+| 2026-08-19 | Fix crash fatal import : collision de slug entre 2 codes sous-famille ERP portant le même libellé (`uniq_fam_slug`, ex. ALCOOL DE RIZ codes 42/84). Ajout protection anti-collision (suffixe par code) dans `ob_get_or_create_sous_famille_by_code()`, symétrique à celle déjà existante pour les familles. Voir §8.10. | `catalogue/includes/configuration.php` |
 | 2026-06-25 | Fix SQL `famille_id` des produits softs/eaux mal affectés en famille bières : script `fix_softs_dans_bieres.sql`. Après fix DB, ces produits apparaissent dans SOFTS et disparaissent de bières. | `scripts_sql/fix_softs_dans_bieres.sql` |
 | 2026-06-25 | Correction FORMAT bières bouteilles-canettes : ajout exclusion `eaux-boite-aromatisees` et `boissons-sucrees-vp` (tous packs). Fix faux positif fût sur "FUTUR" : LIKE '%FUT%' → REGEXP mot entier. | `index.php`, `DOCUMENTATION.md` |
 | 2026-06-25 | Synchronisation DB locale avec prod. Ajout catégories bières manquantes (17, 19, 33). Suppression code mort `$categorie_labels`. Documentation initiale. | `index.php`, `DOCUMENTATION.md` |

@@ -408,10 +408,20 @@
 			return (int) $cacheByFamilleAndCode[$key];
 		}
 		$slug = ob_slugify($nom);
+		// Retourne le slug à utiliser en évitant les collisions avec une AUTRE sous-famille
+		// de la même famille (deux codes différents peuvent porter le même libellé côté ERP,
+		// ex. codes 42 et 84 tous deux "ALCOOL DE RIZ"). Si le slug de base est déjà pris par
+		// une ligne différente (id != $excludeId), on suffixe par le code : "alcool-de-riz-84".
+		$resolveSousFamilleSlug = function($slug, $excludeId) use ($bdd, $familleId, $code) {
+			$check = $bdd->prepare('SELECT id FROM ob_catalogue_sous_familles WHERE famille_id = :famille_id AND slug = :slug AND id != :id LIMIT 1');
+			$check->execute(array(':famille_id' => $familleId, ':slug' => $slug, ':id' => (int) $excludeId));
+			return $check->fetch() ? $slug . '-' . $code : $slug;
+		};
 		$select = $bdd->prepare('SELECT id FROM ob_catalogue_sous_familles WHERE famille_id = :famille_id AND code = :code LIMIT 1');
 		$select->execute(array(':famille_id' => $familleId, ':code' => $code));
 		$found = $select->fetch(PDO::FETCH_OBJ);
 		if($found && isset($found->id)) {
+			$slug = $resolveSousFamilleSlug($slug, (int) $found->id);
 			$update = $bdd->prepare('UPDATE ob_catalogue_sous_familles SET nom = :nom, slug = :slug WHERE id = :id');
 			$update->execute(array(':nom' => $nom, ':slug' => $slug, ':id' => (int) $found->id));
 			$cacheByFamilleAndCode[$key] = (int) $found->id;
@@ -426,6 +436,8 @@
 			$cacheByFamilleAndCode[$key] = (int) $foundBySlug->id;
 			return (int) $foundBySlug->id;
 		}
+		// INSERT : vérifier aussi la collision (slug déjà pris par une autre sous-famille de la même famille)
+		$slug = $resolveSousFamilleSlug($slug, 0);
 		$insert = $bdd->prepare('INSERT INTO ob_catalogue_sous_familles (famille_id, code, nom, slug) VALUES (:famille_id, :code, :nom, :slug)');
 		$insert->execute(array(':famille_id' => $familleId, ':code' => $code, ':nom' => $nom, ':slug' => $slug));
 		$cacheByFamilleAndCode[$key] = (int) $bdd->lastInsertId();
