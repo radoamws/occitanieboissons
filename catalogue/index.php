@@ -232,6 +232,38 @@
 		return '('.implode(' OR ', $parts).')';
 	};
 
+	// Fusionne les sous-familles portant EXACTEMENT le même libellé au sein d'une même famille
+	// (ex. codes ERP 42 et 84 tous deux "ALCOOL DE RIZ") en une seule entrée affichée, dont le
+	// 'slug' regroupe les slugs réels séparés par une virgule (ex. "alcool-de-riz,alcool-de-riz-42").
+	// Voir DOCUMENTATION.md §8.10 : sans fusion, le filtre affiche 2 cases identiques.
+	$ob_merge_duplicate_labeled_items = function($items) {
+		$groups = array();
+		$order = array();
+		foreach($items as $item) {
+			$labelKey = mb_strtoupper(trim((string) $item['nom']), 'UTF-8');
+			if(!isset($groups[$labelKey])) {
+				$groups[$labelKey] = $item;
+				$groups[$labelKey]['_slugs'] = array((string) $item['slug']);
+				$order[] = $labelKey;
+			} else {
+				$groups[$labelKey]['_slugs'][] = (string) $item['slug'];
+				if(isset($item['total'])) {
+					$groups[$labelKey]['total'] = (int) $groups[$labelKey]['total'] + (int) $item['total'];
+				}
+			}
+		}
+		$merged = array();
+		foreach($order as $labelKey) {
+			$g = $groups[$labelKey];
+			$slugs = array_values(array_unique($g['_slugs']));
+			sort($slugs);
+			$g['slug'] = implode(',', $slugs);
+			unset($g['_slugs']);
+			$merged[] = $g;
+		}
+		return $merged;
+	};
+
 	// Pré-calcul des données de menu (catégories, fabricants, pays) par univers
 	$univers_menu = [];
 	foreach($univers_definitions as $key => $def) {
@@ -272,7 +304,7 @@
 			}
 		}
 		foreach($familles as $fid => $f) {
-			$familles[$fid]['sous_familles'] = array_values($f['sous_familles']);
+			$familles[$fid]['sous_familles'] = $ob_merge_duplicate_labeled_items(array_values($f['sous_familles']));
 		}
 		$familiesList = array_values($familles);
 		if(isset($univers_famille_filter_slugs[$key]) && !empty($univers_famille_filter_slugs[$key])) {
@@ -299,7 +331,10 @@
 		$_uMenuSfExcl = isset($univers_excluded_sous_famille_slugs[$key]['*']) ? array_flip($univers_excluded_sous_famille_slugs[$key]['*']) : [];
 		if(!empty($_uMenuSfExcl)) {
 			$univers_menu[$key]['sous_familles_all'] = array_values(array_filter($univers_menu[$key]['sous_familles_all'], function($sf) use ($_uMenuSfExcl) {
-				return !isset($_uMenuSfExcl[$sf['slug']]);
+				foreach(explode(',', $sf['slug']) as $sfSlugPart) {
+					if(isset($_uMenuSfExcl[$sfSlugPart])) return false;
+				}
+				return true;
 			}));
 		}
 		$famillesTopStmt = $bdd->query("SELECT f.slug, f.nom, COUNT(*) AS total
@@ -328,13 +363,23 @@
 				'total' => (int) $sfTop->total,
 			];
 		}
-		// Déduplique par slug + exclut les masquées (Point N°2 : Cidre fût double, etc.)
+		// Déduplique par slug, fusionne les libellés strictement identiques (ex. ALCOOL DE RIZ
+		// codes 42/84, voir DOCUMENTATION.md §8.10), puis exclut les masquées (Point N°2 : Cidre fût double, etc.)
 		$_uMenuSfSeen = [];
-		$univers_menu[$key]['sous_familles_top'] = array_values(array_filter($univers_menu[$key]['sous_familles_top'], function($sf) use (&$_uMenuSfSeen, $_uMenuSfExcl) {
-			if(isset($_uMenuSfSeen[$sf['slug']]) || isset($_uMenuSfExcl[$sf['slug']])) return false;
+		$univers_menu[$key]['sous_familles_top'] = array_values(array_filter($univers_menu[$key]['sous_familles_top'], function($sf) use (&$_uMenuSfSeen) {
+			if(isset($_uMenuSfSeen[$sf['slug']])) return false;
 			$_uMenuSfSeen[$sf['slug']] = true;
 			return true;
 		}));
+		$univers_menu[$key]['sous_familles_top'] = $ob_merge_duplicate_labeled_items($univers_menu[$key]['sous_familles_top']);
+		if(!empty($_uMenuSfExcl)) {
+			$univers_menu[$key]['sous_familles_top'] = array_values(array_filter($univers_menu[$key]['sous_familles_top'], function($sf) use ($_uMenuSfExcl) {
+				foreach(explode(',', $sf['slug']) as $sfSlugPart) {
+					if(isset($_uMenuSfExcl[$sfSlugPart])) return false;
+				}
+				return true;
+			}));
+		}
 		$fabIds = [];
 		$fabStmt = $bdd->query("SELECT DISTINCT brasserie FROM ob_catalogue_produits p WHERE $universWhere AND brasserie <> 0");
 		while($f = $fabStmt->fetch(PDO::FETCH_OBJ)) {
@@ -508,8 +553,10 @@
 	$filter_famille_slugs = $ob_get_filter_values('filtre_famille', function($value) {
 		return preg_replace('/[^a-z0-9\-]/i', '', (string) $value);
 	});
+	// Virgule autorisée : une case de filtre peut représenter plusieurs sous-familles fusionnées
+	// (même libellé, codes ERP différents — voir $ob_merge_duplicate_labeled_items, DOCUMENTATION.md §8.10).
 	$filter_sous_famille_slugs = $ob_get_filter_values('filtre_sous_famille', function($value) {
-		return preg_replace('/[^a-z0-9\-]/i', '', (string) $value);
+		return preg_replace('/[^a-z0-9\-,]/i', '', (string) $value);
 	});
 	$filter_categorie_codes = array_map('intval', $ob_get_filter_values('filtre_categorie', function($value) {
 		$value = (int) $value;
@@ -742,15 +789,21 @@
 	if(!empty($filter_sous_famille_slugs)) {
 		$sousFamilleFilterStmt = $bdd->prepare("SELECT id, famille_id FROM ob_catalogue_sous_familles WHERE slug = :slug LIMIT 1");
 		foreach($filter_sous_famille_slugs as $sousFamilleSlugItem) {
-			$sousFamilleFilterStmt->bindParam(':slug', $sousFamilleSlugItem);
-			$sousFamilleFilterStmt->execute();
-			$filterSousFamille = $sousFamilleFilterStmt->fetch(PDO::FETCH_OBJ);
-			if($filterSousFamille && isset($filterSousFamille->id)) {
-				$sfid = (int) $filterSousFamille->id;
-				$ffid = (int) $filterSousFamille->famille_id;
-				$filter_sous_famille_ids[$sfid] = $sfid;
-				if($ffid > 0) {
-					$filter_famille_ids[$ffid] = $ffid;
+			// Une valeur peut regrouper plusieurs slugs réels (case fusionnée, ex. "alcool-de-riz,alcool-de-riz-42")
+			foreach(explode(',', (string) $sousFamilleSlugItem) as $sousFamilleSlugPart) {
+				if($sousFamilleSlugPart === '') {
+					continue;
+				}
+				$sousFamilleFilterStmt->bindParam(':slug', $sousFamilleSlugPart);
+				$sousFamilleFilterStmt->execute();
+				$filterSousFamille = $sousFamilleFilterStmt->fetch(PDO::FETCH_OBJ);
+				if($filterSousFamille && isset($filterSousFamille->id)) {
+					$sfid = (int) $filterSousFamille->id;
+					$ffid = (int) $filterSousFamille->famille_id;
+					$filter_sous_famille_ids[$sfid] = $sfid;
+					if($ffid > 0) {
+						$filter_famille_ids[$ffid] = $ffid;
+					}
 				}
 			}
 		}
@@ -948,7 +1001,7 @@
 		}
 		return array('joins' => '', 'where' => '1=1');
 	};
-	$build_menu_dataset = function($universKey, $packSlug = 'all') use ($bdd, $build_universe_where, $build_pack_scope, $univers_famille_filter_slugs, $univers_excluded_sous_famille_slugs, $degre_buckets_definitions, $numeric_slug, $numeric_label) {
+	$build_menu_dataset = function($universKey, $packSlug = 'all') use ($bdd, $build_universe_where, $build_pack_scope, $univers_famille_filter_slugs, $univers_excluded_sous_famille_slugs, $degre_buckets_definitions, $numeric_slug, $numeric_label, $ob_merge_duplicate_labeled_items) {
 		$menuData = array(
 			'familles' => array(),
 			'familles_top' => array(),
@@ -997,7 +1050,9 @@
 			}
 		}
 		foreach($familles as $fid => $familleItem) {
-			$familles[$fid]['sous_familles'] = array_values($familleItem['sous_familles']);
+			// Fusionne les sous-familles au libellé strictement identique (ex. ALCOOL DE RIZ
+			// codes 42/84, voir DOCUMENTATION.md §8.10) pour éviter 2 cases identiques dans le filtre.
+			$familles[$fid]['sous_familles'] = $ob_merge_duplicate_labeled_items(array_values($familleItem['sous_familles']));
 		}
 		$familiesList = array_values($familles);
 		if(isset($univers_famille_filter_slugs[$universKey]) && !empty($univers_famille_filter_slugs[$universKey])) {
@@ -1029,13 +1084,19 @@
 			}
 		}
 		$_sfExclFlip = !empty($_sfExcl) ? array_flip($_sfExcl) : [];
+		$_sfExclMatches = function($sf) use ($_sfExclFlip) {
+			foreach(explode(',', (string) $sf['slug']) as $sfSlugPart) {
+				if(isset($_sfExclFlip[$sfSlugPart])) return true;
+			}
+			return false;
+		};
 		if(!empty($_sfExclFlip)) {
-			$menuData['sous_familles_all'] = array_values(array_filter($menuData['sous_familles_all'], function($sf) use ($_sfExclFlip) {
-				return !isset($_sfExclFlip[$sf['slug']]);
+			$menuData['sous_familles_all'] = array_values(array_filter($menuData['sous_familles_all'], function($sf) use ($_sfExclMatches) {
+				return !$_sfExclMatches($sf);
 			}));
 			foreach($menuData['familles'] as &$_bfam) {
-				$_bfam['sous_familles'] = array_values(array_filter($_bfam['sous_familles'], function($sf) use ($_sfExclFlip) {
-					return !isset($_sfExclFlip[$sf['slug']]);
+				$_bfam['sous_familles'] = array_values(array_filter($_bfam['sous_familles'], function($sf) use ($_sfExclMatches) {
+					return !$_sfExclMatches($sf);
 				}));
 			}
 			unset($_bfam);
@@ -1070,13 +1131,20 @@
 				'total' => (int) $sfTop->total,
 			);
 		}
-		// Déduplique par slug (deux sf dans des familles différentes peuvent avoir même slug) + exclut les masquées
+		// Déduplique par slug (deux sf dans des familles différentes peuvent avoir même slug),
+		// fusionne les libellés strictement identiques, puis exclut les masquées.
 		$_sfTopSeen = [];
-		$menuData['sous_familles_top'] = array_values(array_filter($menuData['sous_familles_top'], function($sf) use (&$_sfTopSeen, $_sfExclFlip) {
-			if(isset($_sfTopSeen[$sf['slug']]) || isset($_sfExclFlip[$sf['slug']])) return false;
+		$menuData['sous_familles_top'] = array_values(array_filter($menuData['sous_familles_top'], function($sf) use (&$_sfTopSeen) {
+			if(isset($_sfTopSeen[$sf['slug']])) return false;
 			$_sfTopSeen[$sf['slug']] = true;
 			return true;
 		}));
+		$menuData['sous_familles_top'] = $ob_merge_duplicate_labeled_items($menuData['sous_familles_top']);
+		if(!empty($_sfExclFlip)) {
+			$menuData['sous_familles_top'] = array_values(array_filter($menuData['sous_familles_top'], function($sf) use ($_sfExclMatches) {
+				return !$_sfExclMatches($sf);
+			}));
+		}
 
 		$fabricantsStmt = $bdd->query("SELECT p.brasserie AS code, COALESCE(f.nom, b.name, CONCAT('Fabriquant ', p.brasserie)) AS nom, COUNT(*) AS total
 			FROM ob_catalogue_produits p
