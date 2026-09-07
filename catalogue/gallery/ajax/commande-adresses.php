@@ -54,12 +54,13 @@
 								$addAdresse->bindParam(":ville",      $p_ville);
 								$addAdresse->bindParam(":pays",       $p_pays);
 								$addAdresse->bindParam(":phone",      $p_phone);
+								$addAdresse->execute();
+								$lastinserid = $bdd->lastInsertId();
 										/*
 										### MODIFIER DISTANCE
-										$lastinserid = $bdd->lastInsertId();
 										$modifDistance = $bdd->prepare("UPDATE ob_users_adresses SET distance = :distance WHERE id = '".$bdd->lastInsertId()."'");
 										$modifDistance->bindParam(":distance",getDistance($lastinserid,"ob"));
-										$modifDistance->execute();	
+										$modifDistance->execute();
 										*/
 										if(@$_POST['facturation'] == "on") {
 			 								$modifUser = $bdd->prepare("UPDATE ob_users SET adresse_livraison = :adresse_livraison, adresse_facturation = :adresse_livraison, adresse_l_f = '1' WHERE id = '".$u->id."'");
