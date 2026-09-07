@@ -3,6 +3,17 @@
 	<div class="container">
 		<!-- LOGO -->
 		<a href="<?php echo $url; ?>"><figure id="logo"></figure></a>
+		<!-- RECHERCHE GLOBALE (tous produits, tous univers confondus) -->
+		<form class="catalogue-search-bar" method="get" action="<?php echo $url; ?>/recherche/">
+			<div class="catalogue-search-input-wrap">
+				<input type="text" name="q" value="<?php echo isset($_GET['q']) ? htmlspecialchars($_GET['q'], ENT_QUOTES, 'UTF-8') : ''; ?>" placeholder="Rechercher un produit..." aria-label="Rechercher un produit" />
+				<?php if(isset($_GET['recherche']) && !empty($_GET['q'])) { ?>
+					<!-- Revenir à la liste par défaut si la recherche ne convient pas -->
+					<a class="catalogue-search-clear" href="<?php echo $url; ?>/univers/bieres/produits" aria-label="Effacer la recherche et revenir au catalogue" title="Effacer la recherche">×</a>
+				<?php } ?>
+			</div>
+			<button type="submit" aria-label="Rechercher"><i class="icon-loupe"></i></button>
+		</form>
 		<!-- NAV -->
 		<nav>
 			<!-- SOCIAL -->

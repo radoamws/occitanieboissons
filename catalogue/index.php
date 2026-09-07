@@ -12,6 +12,14 @@
 
  	$pagename = "Catalogue";
 
+	// RECHERCHE GLOBALE : mot-clé cherché sur TOUS les produits, tous univers confondus
+	// (barre de recherche du header, cf. includes/catalogue-header.php, route /recherche/ dans .htaccess)
+	$is_global_search = isset($_GET['recherche']);
+	$global_search_query = trim((string) (isset($_GET['q']) ? $_GET['q'] : ''));
+	if($is_global_search) {
+		$pagename = ($global_search_query !== '') ? 'Recherche : '.$global_search_query : 'Recherche';
+	}
+
 	// Univers (menu PDF) : bieres / vins / spiritueux / softs / promotions
 	$univers = isset($_GET['univers']) ? (string) $_GET['univers'] : 'bieres';
 	$univers_allowed = ['bieres', 'vins', 'spiritueux', 'softs', 'promotions'];
@@ -1828,7 +1836,66 @@
 			<?php require("./includes/barre.php"); ?>
 
 			<div class="container">
-				<?php if($droit_catalogue) { ?>
+				<?php if($droit_catalogue && $is_global_search) { ?>
+					<!-- RECHERCHE GLOBALE -->
+					<div class="button">
+						<a href="<?php echo $url; ?>/panier/"><button class="btn" type="button"><i class="icon-cart"></i> Panier <span class="panier-prix-ht"><?php echo PrixPanier("ht"); ?></span>€ HT HD</button></a>
+					</div>
+					<div class="catalogue-search-results">
+						<a class="catalogue-search-back" href="<?php echo $url; ?>/univers/bieres/produits"><i class="icon-fleche-gauche"></i> Retour au catalogue</a>
+						<h1 class="catalogue-search-title">
+							<?php if($global_search_query !== '') { ?>
+								Résultats pour « <?php echo htmlspecialchars($global_search_query, ENT_QUOTES, 'UTF-8'); ?> »
+							<?php } else { ?>
+								Rechercher un produit
+							<?php } ?>
+						</h1>
+						<?php
+							// Cohérent avec ObRenderProduitsGrid() : ne compte que les produits réellement
+							// affichables (carton complet disponible, ou en précommande marque=2).
+							// Attention : marque est un ENUM('0','1','2') — comparer à l'entier 2 comparerait
+						// par index interne de l'ENUM (donc à la chaîne '1') et non à la valeur '2' !
+						$globalSearchWhereParts = array("p.marque IN ('1','2')", "(FLOOR(p.stock/p.uv_caisse) > 0 OR p.marque = '2')");
+							$globalSearchParams = array();
+							if($global_search_query !== '') {
+								$globalSearchWhereParts[] = '(p.nom LIKE :recherche_mot_cle OR p.nom_sup LIKE :recherche_mot_cle)';
+								$globalSearchParams[':recherche_mot_cle'] = '%'.$global_search_query.'%';
+							}
+							switch(@$_GET['trier_prix']) {
+								case 'croissant':
+									$globalSearchOrder = 'ORDER BY p.prix_ht+p.droits, p.marque DESC';
+								break;
+								case 'decroissant':
+									$globalSearchOrder = 'ORDER BY p.prix_ht+p.droits DESC, p.marque DESC';
+								break;
+								default:
+									$globalSearchOrder = 'ORDER BY p.nom, p.marque DESC';
+							}
+							$globalSearchSql = 'SELECT p.* FROM ob_catalogue_produits p WHERE '.implode(' AND ', $globalSearchWhereParts).' '.$globalSearchOrder;
+							$globalSearchStmt = $bdd->prepare($globalSearchSql);
+							$globalSearchStmt->execute($globalSearchParams);
+							$globalSearchCount = $globalSearchStmt->rowCount();
+						?>
+						<?php if($global_search_query === '') { ?>
+							<p class="catalogue-search-empty">Saisissez un mot-clé dans la barre de recherche ci-dessus pour parcourir tous nos produits, tous univers confondus.</p>
+						<?php } elseif($globalSearchCount > 0) { ?>
+							<div class="catalogue-search-toolbar">
+								<span class="catalogue-search-count"><?php echo $globalSearchCount; ?> produit<?php echo ($globalSearchCount > 1) ? 's' : ''; ?> trouvé<?php echo ($globalSearchCount > 1) ? 's' : ''; ?></span>
+								<form method="get" action="<?php echo $url; ?>/recherche/" class="catalogue-search-sort">
+									<input type="hidden" name="q" value="<?php echo htmlspecialchars($global_search_query, ENT_QUOTES, 'UTF-8'); ?>" />
+									<select name="trier_prix" onchange="this.form.submit()">
+										<option value="" <?php echo (empty($_GET['trier_prix'])) ? 'selected' : ''; ?>>Trier par nom</option>
+										<option value="croissant" <?php echo (@$_GET['trier_prix'] === 'croissant') ? 'selected' : ''; ?>>Prix croissant</option>
+										<option value="decroissant" <?php echo (@$_GET['trier_prix'] === 'decroissant') ? 'selected' : ''; ?>>Prix décroissant</option>
+									</select>
+								</form>
+							</div>
+							<?php ObRenderProduitsGrid($globalSearchStmt); ?>
+						<?php } else { ?>
+							<p class="catalogue-search-empty">Aucun produit ne correspond à « <?php echo htmlspecialchars($global_search_query, ENT_QUOTES, 'UTF-8'); ?> ».</p>
+						<?php } ?>
+					</div>
+				<?php } elseif($droit_catalogue) { ?>
 					<!-- PANIER -->
 					<?php if(@$brasseries_select) { ?>
 						<div class="button">
