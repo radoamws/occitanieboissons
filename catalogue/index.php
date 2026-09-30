@@ -2157,9 +2157,12 @@
 											<?php $sidebarValueKey = (string) $sidebarSection['value_key']; ?>
 											<?php $sidebarLabelKey = (string) $sidebarSection['label_key']; ?>
 											<?php $sidebarActive = isset($sidebar_active_values[$sidebarField]) && is_array($sidebar_active_values[$sidebarField]) ? $sidebar_active_values[$sidebarField] : array(); ?>
-											<fieldset class="catalogue-filter-group" data-field="<?php echo htmlspecialchars($sidebarField, ENT_QUOTES, 'UTF-8'); ?>[]">
+											<?php // Repliés par défaut (ergonomie mobile : évite un scroll interminable, cf. retour client) ?>
+											<?php // sauf un groupe qui a déjà un filtre actif, pour qu'il reste visible. ?>
+											<?php $sidebarIsCollapsed = empty($sidebarActive); ?>
+											<fieldset class="catalogue-filter-group<?php echo $sidebarIsCollapsed ? ' is-collapsed' : ''; ?>" data-field="<?php echo htmlspecialchars($sidebarField, ENT_QUOTES, 'UTF-8'); ?>[]">
 												<legend>
-													<button type="button" class="catalogue-filter-toggle" aria-expanded="true"><?php echo htmlspecialchars($sidebarSection['title'], ENT_QUOTES, 'UTF-8'); ?></button>
+													<button type="button" class="catalogue-filter-toggle" aria-expanded="<?php echo $sidebarIsCollapsed ? 'false' : 'true'; ?>"><?php echo htmlspecialchars($sidebarSection['title'], ENT_QUOTES, 'UTF-8'); ?></button>
 												</legend>
 												<div class="catalogue-filter-options">
 													<button type="button" class="catalogue-filter-clear" data-clear-field="<?php echo htmlspecialchars($sidebarField, ENT_QUOTES, 'UTF-8'); ?>[]">Tous</button>

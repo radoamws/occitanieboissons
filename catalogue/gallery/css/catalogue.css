@@ -748,6 +748,10 @@ header .btn-header {
 		flex-flow: column nowrap;
 		gap: 8px;
 	}
+	/* Replié par défaut (rendu serveur) : masqué tant que le JS (slideDown au clic) ne l'affiche pas */
+	.catalogue .catalogue-filter-group.is-collapsed .catalogue-filter-options {
+		display: none;
+	}
 	.catalogue .catalogue-filter-clear {
 		align-self: flex-start;
 		border: none;

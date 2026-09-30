@@ -498,7 +498,9 @@ $(function() {
 		$(document).on("click", ".catalogue-tab", function(e) {
 			var u = $(this).data("univers");
 			if(!u) return;
-			window.location.href = url_ob + "/univers/" + u;
+			// Direct vers le listing produits (pas la page d'univers "nue" qui, pour les bières,
+			// affiche la galerie de brasseries au lieu des produits — cf. retour client).
+			window.location.href = url_ob + "/univers/" + u + "/produits";
 			e.preventDefault();
 		});
 		$(document).on("mouseenter focus", ".catalogue-panel.is-active .menu-dim-btn", function() {
