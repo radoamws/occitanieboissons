@@ -1083,89 +1083,62 @@ header .btn-header {
 			width: 100%;
 			justify-content: center;
 		}
-		.catalogue .univers-hero-grid {
-			grid-template-columns: repeat(2, 1fr);
+		.catalogue #brasseries-pannel .brasseriesc-boxe {
+		    flex: 0 0 calc(100% / 3);
 		}
 	}
-	/* ACCUEIL CATALOGUE : 4 univers (remplace l'ancienne galerie de brasseries, cf. retour client) */
-	.catalogue .univers-hero {
-		margin: 28px 0 10px 0;
+	@media screen and (max-width: 1225px) {
+		.catalogue #brasseries-pannel .brasseriesc-boxe {
+		    flex: 0 0 calc(100% / 4);
+		}
 	}
-	.catalogue .univers-hero-head {
-		margin-bottom: 22px;
+	.catalogue #brasseries-pannel .brasseriesc-boxe {
+	    padding: 15px;
+	    flex: 0 0 25%;
+	    box-sizing: border-box;
+	    position: relative;
+	    cursor: pointer;
+	    align-self: stretch;
+	    overflow: hidden;
 	}
-	.catalogue .univers-hero-title {
-		margin: 0 0 6px 0;
-		font-family: "GothamBold", "Helvetica", sans-serif;
-		font-size: 1.5em;
-		color: #202020;
+	.catalogue #brasseries-pannel .brasseriesc-boxe .image {
+	    background-repeat: no-repeat;
+	    background-size: 100% 100%;
+	    cursor: pointer;
 	}
-	.catalogue .univers-hero-subtitle {
-		margin: 0;
-		font-family: "GothamBook";
-		font-size: 0.95em;
-		color: #666;
+	.catalogue #brasseries-pannel .brasseriesc-boxe .image img {
+	   	max-width: 100%;
+    	height: auto;
 	}
-	.catalogue .univers-hero-grid {
-		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 22px;
+	.catalogue #brasseries-pannel .brasseriesc-boxe .image .transparent {
+	    background-repeat: no-repeat;
+	    position: absolute;
+	    width: 100%;
+	    height: 100%;
+	    background-position: center;
+	    background-size: contain;
+	    filter: grayscale(100%);
+	    background-origin: content-box;
+	    padding: 25px;
+	    box-sizing: border-box;
 	}
-	.catalogue .univers-tile {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 14px;
-		padding: 18px 18px 20px 18px;
-		background-color: #fff;
-		border-radius: 12px;
-		text-decoration: none;
-		box-shadow: 0 1px 3px rgba(0,0,0,.08);
-		transition: transform 0.18s ease-out, box-shadow 0.18s ease-out;
+	.catalogue #brasseries-pannel .brasseriesc-boxe .informations-content {
+	    background: #ffffff;
+	    width: 100%;
+	    box-sizing: border-box;
+	    padding: 9px;
+	    text-align: center;
 	}
-	.catalogue .univers-tile:hover,
-	.catalogue .univers-tile:focus-visible {
-		transform: translateY(-4px);
-		box-shadow: 0 10px 22px rgba(0,0,0,.14);
+	.catalogue #brasseries-pannel .brasseriesc-boxe .informations-content h4 {
+	    font-size: 1.2em;
 	}
-	.catalogue .univers-tile-icon {
-		display: block;
+	.catalogue #brasseries-pannel .brasseriesc-boxe .informations-content h4 img {
+		margin-left: 5px;
+		height: 15px;
+	}
+	.catalogue #brasseries-pannel .brasseriesc-boxe .informations-content button {
 		width: 100%;
-		border-radius: 8px;
-		overflow: hidden;
-		line-height: 0;
-	}
-	.catalogue .univers-tile-icon img {
-		display: block;
-		width: 100%;
-		height: auto;
-		aspect-ratio: 300 / 374;
-		transition: transform 0.25s ease-out;
-	}
-	.catalogue .univers-tile:hover .univers-tile-icon img,
-	.catalogue .univers-tile:focus-visible .univers-tile-icon img {
-		transform: scale(1.035);
-	}
-	.catalogue .univers-tile-label {
-		font-family: "GothamBold", "Helvetica", sans-serif;
-		font-size: 0.95em;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: #202020;
-		transition: color 0.18s ease-out;
-	}
-	.catalogue .univers-tile:hover .univers-tile-label,
-	.catalogue .univers-tile:focus-visible .univers-tile-label {
-		color: #C32E1C;
-	}
-	@media screen and (max-width: 500px) {
-		.catalogue .univers-hero-grid {
-			grid-template-columns: 1fr 1fr;
-			gap: 14px;
-		}
-		.catalogue .univers-tile {
-			padding: 12px 12px 14px 12px;
-		}
+		margin-top: 10px;
 	}
 	/* PRODUITS - NECESSITE PHOTO
 	.catalogue #produits-pannel {

@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<title>Catalogue - Occitanie Boissons</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+		<!-- FAVICON -->
+		<link rel="shortcut icon" type="image/x-icon" href="http://localhost/occitanieboissons/catalogue/gallery/images/favicon.ico">
+
+		<!-- CSS -->
+		<link rel="stylesheet" href="http://localhost/occitanieboissons/catalogue/gallery/css/style.css" type="text/css">
+		<link rel="stylesheet" href="http://localhost/occitanieboissons/catalogue/gallery/css/catalogue.css?v=1790782000" type="text/css">
+		<link rel="stylesheet" href="http://localhost/occitanieboissons/catalogue/gallery/css/screen.css" type="text/css">
+	</head>
+	<body data-catalogue-url="http://localhost/occitanieboissons/catalogue" data-catalogue-base="http://localhost/occitanieboissons/catalogue/univers/bieres" data-catalogue-univers="bieres">
+		<!-- HEADER -->
+		<header>
+	<!-- CONTAINER -->
+	<div class="container">
+		<!-- LOGO -->
+		<a href="http://localhost/occitanieboissons/catalogue"><figure id="logo"></figure></a>
+		<!-- RECHERCHE GLOBALE (tous produits, tous univers confondus) -->
+		<form class="catalogue-search-bar" method="get" action="http://localhost/occitanieboissons/catalogue/recherche/">
+			<div class="catalogue-search-input-wrap">
+				<input type="text" name="q" value="" placeholder="Rechercher un produit..." aria-label="Rechercher un produit" />
+							</div>
+			<button type="submit" aria-label="Rechercher"><i class="icon-loupe"></i></button>
+		</form>
+		<!-- NAV -->
+		<nav>
+			<!-- SOCIAL -->
+			<aside id="social">
+				<a href="https://www.instagram.com/occitanieboissons/" target="meta"><i class="icon-insta"></i></a>
+				<a href="https://www.facebook.com/Occitanie-Boissons-1619195328335124" target="meta"><i class="icon-fb"></i></a>
+			</aside>
+			<!-- BTNS -->
+			<div class="btn-header">
+				<div id="livraison-container">
+					<form id="livraison">
+						<a href="http://localhost/occitanieboissons/catalogue/Tarifs-Transport-OccitanieBoissons-2020.pdf" download><button class="btn" type="button"><i class="icon-livraison"></i> Livraison <span id="livraison_prix"></span></button></a>
+													<div class="content-btn">
+								<input type="text" name="code_postal" placeholder="Code postal" class="form_livraison" />
+								<button type="submit" class="btn form_livraison"><i class="icon-avion"></i></button>
+							</div>
+											</form>
+				</div>
+				<a class="panier-btn" href="http://localhost/occitanieboissons/catalogue/panier/"><button class="btn" type="button"><i class="icon-cart"></i> Panier <span class="panier-prix-ht">0,00</span>€ HT HD</button></a>
+				<a href="http://localhost/occitanieboissons/catalogue/panier/"><button class="btn" type="button"><i class="icon-plus"></i> Consigne <span class="consigne-prix">0,00</span>€</button></a>
+			</div>
+		</nav>
+	</div>
+
+	<!-- MESSAGE -->
+	<div id="message-content">
+		<p></p>
+		<button type="button" class="close" data-message="close">×</button>
+	</div>
+</header>
+		<!-- PAGE -->
+		<div class="page catalogue">
+			<!-- BARRE -->
+			<div id="connexion-barre">
+			<div class="texte">Bonjour Toulouseweb, c'est un plaisir de vous revoir parmis nous !</div>
+		<div class="dropdown">
+		  <button class="dropbtn"><i class="icon-user-circle"></i> Toulouseweb <i class="icon-arrow-dropdown"></i></button>
+		  <div class="dropdown-content">
+		    <a href="http://localhost/occitanieboissons/catalogue/informations-personnelles/">Informations personnelles</a>
+		    <a href="http://localhost/occitanieboissons/catalogue/commande-visualisation/">Commandes</a>
+		    <a href="http://localhost/occitanieboissons/catalogue/panier/">Panier</a>
+		    <a href="http://localhost/occitanieboissons/catalogue/deconnexion/">Déconnexion</a>
+		  </div>
+		</div>
+	</div>
+			<div class="container">
+									<!-- PANIER -->
+											<div class="button">
+							<a href="http://localhost/occitanieboissons/catalogue/panier/"><button class="btn" type="button"><i class="icon-cart"></i> Panier <span class="panier-prix-ht">0,00</span>€ HT HD</button></a>
+							<a href="http://localhost/occitanieboissons/catalogue/Conditions de livraison OB.pdf" download><button class="btn" type="button"><i class="icon-pdf"></i> Conditions de livraison</button></a>
+						</div>
+										<!-- MENU (survol) -->
+					<div class="rechercher" data-base="http://localhost/occitanieboissons/catalogue/univers/bieres">
+						<div class="catalogue-tabs" role="menubar" aria-label="Menu catalogue">
+															<button type="button" class="catalogue-tab is-active" data-univers="bieres">
+									Bières								</button>
+															<button type="button" class="catalogue-tab " data-univers="vins">
+									Vins								</button>
+															<button type="button" class="catalogue-tab " data-univers="spiritueux">
+									Spiritueux								</button>
+															<button type="button" class="catalogue-tab " data-univers="softs">
+									Softs								</button>
+															<button type="button" class="catalogue-tab " data-univers="promotions" style="display:none">
+									Promotions								</button>
+													</div>
+						
+						<div class="mot-cle catalogue-megamenu" data-active="bieres">
+													<div class="catalogue-panel is-active" data-panel="bieres" data-default-pack="all" data-active-pack="all">
+								<div class="menu-grid menu-grid--bieres">
+																			<div class="menu-col menu-col--primary">
+											<div class="menu-primary-stack">
+																									<a class="menu-link menu-link-primary menu-pack-btn is-active" data-pack="all" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits">Toutes les bières</a>
+																																					<a class="menu-pill menu-pack-btn " data-pack="bouteilles-canettes" href="http://localhost/occitanieboissons/catalogue/univers/bieres/pack/bouteilles-canettes">Bouteilles et canettes</a>
+																									<a class="menu-pill menu-pack-btn " data-pack="futs" href="http://localhost/occitanieboissons/catalogue/univers/bieres/pack/futs">Fûts</a>
+																							</div>
+										</div>
+									
+																			<div class="menu-col">
+											<div class="menu-section-title">Style</div>
+																							<div class="menu-pack-view is-active" data-pack="all">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_categorie=1">IPA</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_categorie=7">LAGER / PILS / ALE / BLONDE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_categorie=2">SOUR / GUEUZE</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?menu_scope=bieres-style">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bouteilles-canettes">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_categorie=1&filtre_pack=bouteilles-canettes">IPA</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_categorie=2&filtre_pack=bouteilles-canettes">SOUR / GUEUZE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_categorie=7&filtre_pack=bouteilles-canettes">LAGER / PILS / ALE / BLONDE</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?menu_scope=bieres-style&filtre_pack=bouteilles-canettes">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="futs">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_categorie=1&filtre_pack=futs">IPA</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_categorie=7&filtre_pack=futs">LAGER / PILS / ALE / BLONDE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_categorie=10&filtre_pack=futs">TRIPLE</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?menu_scope=bieres-style&filtre_pack=futs">Voir tout</a>
+												</div>
+																					</div>
+										<div class="menu-col">
+											<div class="menu-section-title">Brasserie</div>
+																							<div class="menu-pack-view is-active" data-pack="all">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_fabriquant=156">GARAGE BREWING</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_fabriquant=191">LA DEBAUCHE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_fabriquant=133">BASQUELAND BREWING PROJECT</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?menu_scope=bieres-brasserie">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bouteilles-canettes">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_fabriquant=156&filtre_pack=bouteilles-canettes">GARAGE BREWING</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_fabriquant=191&filtre_pack=bouteilles-canettes">LA DEBAUCHE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_fabriquant=133&filtre_pack=bouteilles-canettes">BASQUELAND BREWING PROJECT</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?menu_scope=bieres-brasserie&filtre_pack=bouteilles-canettes">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="futs">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_fabriquant=180&filtre_pack=futs">ASAHI</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_fabriquant=48&filtre_pack=futs">BRASSERIE GUE DES MOINES</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_fabriquant=191&filtre_pack=futs">LA DEBAUCHE</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?menu_scope=bieres-brasserie&filtre_pack=futs">Voir tout</a>
+												</div>
+																					</div>
+										<div class="menu-col">
+											<div class="menu-section-title">Pays</div>
+																							<div class="menu-pack-view is-active" data-pack="all">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_pays=FR">FRANCE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_pays=BE">BELGIQUE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_pays=ES">ESPAGNE</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?menu_scope=bieres-pays">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bouteilles-canettes">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_pays=FR&filtre_pack=bouteilles-canettes">FRANCE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_pays=BE&filtre_pack=bouteilles-canettes">BELGIQUE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_pays=ES&filtre_pack=bouteilles-canettes">ESPAGNE</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?menu_scope=bieres-pays&filtre_pack=bouteilles-canettes">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="futs">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_pays=FR&filtre_pack=futs">FRANCE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_pays=ES&filtre_pack=futs">ESPAGNE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?filtre_pays=BE&filtre_pack=futs">BELGIQUE</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/bieres/produits?menu_scope=bieres-pays&filtre_pack=futs">Voir tout</a>
+												</div>
+																					</div>
+																	</div>
+							</div>
+													<div class="catalogue-panel " data-panel="vins" data-default-pack="all" data-active-pack="all">
+								<div class="menu-grid menu-grid--vins">
+																			<div class="menu-col menu-col--primary">
+											<div class="menu-primary-stack">
+																									<a class="menu-link menu-link-primary menu-pack-btn is-active" data-pack="all" href="http://localhost/occitanieboissons/catalogue/univers/vins">Tous les vins</a>
+																																					<a class="menu-pill menu-pack-btn " data-pack="bouteilles" href="http://localhost/occitanieboissons/catalogue/univers/vins/pack/bouteilles">Bouteilles</a>
+																									<a class="menu-pill menu-pack-btn " data-pack="bib" href="http://localhost/occitanieboissons/catalogue/univers/vins/pack/bib">BIB</a>
+																							</div>
+										</div>
+									
+																			<div class="menu-col">
+											<div class="menu-section-title">Type</div>
+																							<div class="menu-pack-view is-active" data-pack="all">
+																																								<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=20">VIN ROUGE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=22">VIN BLANC SEC</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=21">VIN ROSE</a>
+																										<span class="menu-etc">etc.</span>													<div class="menu-link-with-sub">
+														<a class="menu-link menu-link--has-sub" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie%5B0%5D=34&amp;filtre_categorie%5B1%5D=35&amp;filtre_categorie%5B2%5D=36&amp;filtre_categorie%5B3%5D=37">CHAMPAGNE</a>
+														<div class="menu-sub-dropdown">
+																															<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=34">BLANC DE NOIRS</a>
+																															<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=35">BLANC DE BLANCS</a>
+																															<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=36">DEMI SEC</a>
+																															<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=37">BRUT</a>
+																													</div>
+													</div>
+													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?menu_scope=vins-type">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bouteilles">
+																																								<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=20&filtre_pack=bouteilles">VIN ROUGE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=22&filtre_pack=bouteilles">VIN BLANC SEC</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=21&filtre_pack=bouteilles">VIN ROSE</a>
+																										<span class="menu-etc">etc.</span>													<div class="menu-link-with-sub">
+														<a class="menu-link menu-link--has-sub" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie%5B0%5D=34&amp;filtre_categorie%5B1%5D=35&amp;filtre_categorie%5B2%5D=36&amp;filtre_categorie%5B3%5D=37&amp;filtre_pack=bouteilles">CHAMPAGNE</a>
+														<div class="menu-sub-dropdown">
+																															<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=34&amp;filtre_pack=bouteilles">BLANC DE NOIRS</a>
+																															<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=35&amp;filtre_pack=bouteilles">BLANC DE BLANCS</a>
+																															<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=36&amp;filtre_pack=bouteilles">DEMI SEC</a>
+																															<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=37&amp;filtre_pack=bouteilles">BRUT</a>
+																													</div>
+													</div>
+													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?menu_scope=vins-type&filtre_pack=bouteilles">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bib">
+																																								<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=20&filtre_pack=bib">VIN ROUGE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=22&filtre_pack=bib">VIN BLANC SEC</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=24&filtre_pack=bib">VIN BLANC MOELLEUX</a>
+																										<span class="menu-etc">etc.</span>													<div class="menu-link-with-sub">
+														<a class="menu-link menu-link--has-sub" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie%5B0%5D=34&amp;filtre_categorie%5B1%5D=35&amp;filtre_categorie%5B2%5D=36&amp;filtre_categorie%5B3%5D=37&amp;filtre_pack=bib">CHAMPAGNE</a>
+														<div class="menu-sub-dropdown">
+																															<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=34&amp;filtre_pack=bib">BLANC DE NOIRS</a>
+																															<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=35&amp;filtre_pack=bib">BLANC DE BLANCS</a>
+																															<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=36&amp;filtre_pack=bib">DEMI SEC</a>
+																															<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_categorie=37&amp;filtre_pack=bib">BRUT</a>
+																													</div>
+													</div>
+													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?menu_scope=vins-type&filtre_pack=bib">Voir tout</a>
+												</div>
+																					</div>
+										<div class="menu-col">
+											<div class="menu-section-title">Appellation</div>
+																							<div class="menu-pack-view is-active" data-pack="all">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_sous_famille=igp-oc">IGP OC</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_sous_famille=comte-tolosan">COMTE TOLOSAN</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_sous_famille=gaillac">GAILLAC</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?menu_scope=vins-appellation">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bouteilles">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_sous_famille=comte-tolosan&filtre_pack=bouteilles">COMTE TOLOSAN</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_sous_famille=gaillac&filtre_pack=bouteilles">GAILLAC</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_sous_famille=igp-oc&filtre_pack=bouteilles">IGP OC</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?menu_scope=vins-appellation&filtre_pack=bouteilles">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bib">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_sous_famille=cotes-du-tarn&filtre_pack=bib">COTES DU TARN</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_sous_famille=corbieres-bib&filtre_pack=bib">CORBIERES BIB</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_sous_famille=igp-oc&filtre_pack=bib">IGP OC</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?menu_scope=vins-appellation&filtre_pack=bib">Voir tout</a>
+												</div>
+																					</div>
+										<div class="menu-col">
+											<div class="menu-section-title">Domaine</div>
+																							<div class="menu-pack-view is-active" data-pack="all">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_fabriquant=226">DOMAINE LONGUEROCHE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_fabriquant=260">SAS CLOS DU GRAVILLAS</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_fabriquant=578">FAMILLE PERRIN</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?menu_scope=vins-domaine">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bouteilles">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_fabriquant=260&filtre_pack=bouteilles">SAS CLOS DU GRAVILLAS</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_fabriquant=226&filtre_pack=bouteilles">DOMAINE LONGUEROCHE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_fabriquant=578&filtre_pack=bouteilles">FAMILLE PERRIN</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?menu_scope=vins-domaine&filtre_pack=bouteilles">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bib">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_fabriquant=226&filtre_pack=bib">DOMAINE LONGUEROCHE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_fabriquant=217&filtre_pack=bib">CHATEAU PUECH-HAUT</a>
+																																							<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?menu_scope=vins-domaine&filtre_pack=bib">Voir tout</a>
+												</div>
+																					</div>
+										<div class="menu-col">
+											<div class="menu-section-title">Pays</div>
+																							<div class="menu-pack-view is-active" data-pack="all">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_pays=FR">FRANCE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_pays=IT">ITALIE</a>
+																																							<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?menu_scope=vins-pays">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bouteilles">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_pays=FR&filtre_pack=bouteilles">FRANCE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_pays=IT&filtre_pack=bouteilles">ITALIE</a>
+																																							<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?menu_scope=vins-pays&filtre_pack=bouteilles">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bib">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?filtre_pays=FR&filtre_pack=bib">FRANCE</a>
+																																							<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/vins/produits?menu_scope=vins-pays&filtre_pack=bib">Voir tout</a>
+												</div>
+																					</div>
+																	</div>
+							</div>
+													<div class="catalogue-panel " data-panel="spiritueux" data-default-pack="all" data-active-pack="all">
+								<div class="menu-grid menu-grid--spiritueux">
+																			<div class="menu-col menu-col--primary">
+											<div class="menu-primary-stack">
+																									<a class="menu-link menu-link-primary menu-pack-btn is-active" data-pack="all" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux">Tous les spiritueux</a>
+																																					<a class="menu-pill menu-pack-btn " data-pack="bouteilles" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/pack/bouteilles">Bouteilles</a>
+																									<a class="menu-pill menu-pack-btn " data-pack="futs" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/pack/futs">Fûts</a>
+																							</div>
+										</div>
+									
+																			<div class="menu-col">
+											<div class="menu-section-title">Type</div>
+																							<div class="menu-pack-view is-active" data-pack="all">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_sous_famille=liqueurs-cremes">LIQUEURS CREMES</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_sous_famille=rhums-tiers">RHUMS TIERS</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_sous_famille=gin">GIN</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?menu_scope=spiritueux-type">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bouteilles">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_sous_famille=liqueurs-cremes&filtre_pack=bouteilles">LIQUEURS CREMES</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_sous_famille=rhums-tiers&filtre_pack=bouteilles">RHUMS TIERS</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_sous_famille=whisky&filtre_pack=bouteilles">WHISKY</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?menu_scope=spiritueux-type&filtre_pack=bouteilles">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="futs">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_sous_famille=rhums-doms&filtre_pack=futs">RHUMS DOMS</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_sous_famille=cocktail&filtre_pack=futs">COCKTAIL</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_sous_famille=gin&filtre_pack=futs">GIN</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?menu_scope=spiritueux-type&filtre_pack=futs">Voir tout</a>
+												</div>
+																					</div>
+										<div class="menu-col">
+											<div class="menu-section-title">Distillerie</div>
+																							<div class="menu-pack-view is-active" data-pack="all">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_fabriquant=243">GIFFARD</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_fabriquant=263">BM SIGNATURE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_fabriquant=554">DISTILLERIE DU CHANT DU CYGNE</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?menu_scope=spiritueux-distillerie">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bouteilles">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_fabriquant=243&filtre_pack=bouteilles">GIFFARD</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_fabriquant=263&filtre_pack=bouteilles">BM SIGNATURE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_fabriquant=554&filtre_pack=bouteilles">DISTILLERIE DU CHANT DU CYGNE</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?menu_scope=spiritueux-distillerie&filtre_pack=bouteilles">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="futs">
+																																							<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?menu_scope=spiritueux-distillerie&filtre_pack=futs">Voir tout</a>
+												</div>
+																					</div>
+										<div class="menu-col">
+											<div class="menu-section-title">Pays</div>
+																							<div class="menu-pack-view is-active" data-pack="all">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_pays=FR">FRANCE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_pays=SF">ECOSSE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_pays=MQ">MARTINIQUE</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?menu_scope=spiritueux-pays">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bouteilles">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_pays=FR&filtre_pack=bouteilles">FRANCE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_pays=SF&filtre_pack=bouteilles">ECOSSE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_pays=JP&filtre_pack=bouteilles">JAPON</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?menu_scope=spiritueux-pays&filtre_pack=bouteilles">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="futs">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_pays=FR&filtre_pack=futs">FRANCE</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?filtre_pays=GP&filtre_pack=futs">GUADELOUPE</a>
+																																							<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/spiritueux/produits?menu_scope=spiritueux-pays&filtre_pack=futs">Voir tout</a>
+												</div>
+																					</div>
+																	</div>
+							</div>
+													<div class="catalogue-panel " data-panel="softs" data-default-pack="all" data-active-pack="all">
+								<div class="menu-grid menu-grid--softs">
+																			<div class="menu-col menu-col--primary">
+											<div class="menu-primary-stack">
+																									<a class="menu-link menu-link-primary menu-pack-btn is-active" data-pack="all" href="http://localhost/occitanieboissons/catalogue/univers/softs">Tous les softs</a>
+																																					<a class="menu-pill menu-pack-btn " data-pack="bouteilles" href="http://localhost/occitanieboissons/catalogue/univers/softs/pack/bouteilles">Bouteilles</a>
+																									<a class="menu-pill menu-pack-btn " data-pack="futs" href="http://localhost/occitanieboissons/catalogue/univers/softs/pack/futs">Fûts</a>
+																							</div>
+										</div>
+									
+																			<div class="menu-col">
+											<div class="menu-section-title">Type</div>
+																							<div class="menu-pack-view is-active" data-pack="all">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_famille=boissons-sucrees-pet">BOISSONS</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_famille=jus-de-fruits-vp-vc-pet">JUS DE FRUITS VP/VC/PET</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_famille=eaux-pet">EAUX</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?menu_scope=softs-type">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bouteilles">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_famille=boissons-sucrees-pet&filtre_pack=bouteilles">BOISSONS</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_famille=jus-de-fruits-vp-vc-pet&filtre_pack=bouteilles">JUS DE FRUITS VP/VC/PET</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_famille=eaux-pet&filtre_pack=bouteilles">EAUX</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?menu_scope=softs-type&filtre_pack=bouteilles">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="futs">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_famille=boissons-sucrees-pet&filtre_pack=futs">BOISSONS</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_famille=puree-de-fruits&filtre_pack=futs">PUREE DE FRUITS</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_famille=sirop&filtre_pack=futs">SIROP</a>
+																																							<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?menu_scope=softs-type&filtre_pack=futs">Voir tout</a>
+												</div>
+																					</div>
+										<div class="menu-col">
+											<div class="menu-section-title">Marque</div>
+																							<div class="menu-pack-view is-active" data-pack="all">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_fabriquant=243">GIFFARD</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_fabriquant=240">RAUCH</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_fabriquant=596">BRASSERIE LA BERLUE</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?menu_scope=softs-marque">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="bouteilles">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_fabriquant=243&filtre_pack=bouteilles">GIFFARD</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_fabriquant=240&filtre_pack=bouteilles">RAUCH</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_fabriquant=596&filtre_pack=bouteilles">BRASSERIE LA BERLUE</a>
+																										<span class="menu-etc">etc.</span>													<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?menu_scope=softs-marque&filtre_pack=bouteilles">Voir tout</a>
+												</div>
+																							<div class="menu-pack-view " data-pack="futs">
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_fabriquant=243&filtre_pack=futs">GIFFARD</a>
+																											<a class="menu-link" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?filtre_fabriquant=596&filtre_pack=futs">BRASSERIE LA BERLUE</a>
+																																							<a class="menu-more" href="http://localhost/occitanieboissons/catalogue/univers/softs/produits?menu_scope=softs-marque&filtre_pack=futs">Voir tout</a>
+												</div>
+																					</div>
+																	</div>
+							</div>
+													<div class="catalogue-panel " data-panel="promotions" data-default-pack="all" data-active-pack="all">
+								<div class="menu-grid menu-grid--promotions">
+									
+																			<div class="menu-col">
+											<a class="menu-link menu-link-primary" href="http://localhost/occitanieboissons/catalogue/univers/promotions">Voir tout</a>
+										</div>
+																	</div>
+							</div>
+												</div><!-- /.mot-cle.catalogue-megamenu -->
+					</div><!-- /.rechercher -->
+																																											<!-- PANNEL FABRICANTS -->
+							<section id="brasseries-pannel">
+																<div data-id="15" data-titre="Basqueland" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Basqueland-15">
+										<div class="image">
+											<img alt="image-Basqueland.jpg" src="//upload.occitanieboissons.com/brasseries/image-Basqueland.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Basqueland													<img alt="Espagne" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Espagne.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Basqueland-15"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="78" data-titre="Boon" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Boon-78">
+										<div class="image">
+											<img alt="image-Boon.jpg" src="//upload.occitanieboissons.com/brasseries/image-Boon.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Boon													<img alt="Belgique" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Belgique.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Boon-78"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="64" data-titre="Brasserie Dupont" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Brasserie-Dupont-64">
+										<div class="image">
+											<img alt="image-BrasserieDupont.jpg" src="//upload.occitanieboissons.com/brasseries/image-BrasserieDupont.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Brasserie Dupont													<img alt="Belgique" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Belgique.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Brasserie-Dupont-64"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="55" data-titre="Brasserie la Senne" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Brasserie-la-Senne-55">
+										<div class="image">
+											<img alt="image-BrasseriedelaSenne.jpg" src="//upload.occitanieboissons.com/brasseries/image-BrasseriedelaSenne.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Brasserie la Senne													<img alt="Belgique" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Belgique.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Brasserie-la-Senne-55"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="41" data-titre="Carolus" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Carolus-41">
+										<div class="image">
+											<img alt="image-Carolus.jpg" src="//upload.occitanieboissons.com/brasseries/image-Carolus.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Carolus													<img alt="Belgique" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Belgique.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Carolus-41"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="65" data-titre="Crak" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Crak-65">
+										<div class="image">
+											<img alt="image-Crak.jpg" src="//upload.occitanieboissons.com/brasseries/image-Crak.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Crak													<img alt="Italie" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Italie.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Crak-65"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="75" data-titre="Cyclic" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Cyclic-75">
+										<div class="image">
+											<img alt="image-Cyclic.png" src="//upload.occitanieboissons.com/brasseries/image-Cyclic.png"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Cyclic													<img alt="Espagne" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Espagne.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Cyclic-75"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="29" data-titre="De Ranke" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/De-Ranke-29">
+										<div class="image">
+											<img alt="image-DeRanke.jpg" src="//upload.occitanieboissons.com/brasseries/image-DeRanke.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											De Ranke													<img alt="Belgique" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Belgique.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/De-Ranke-29"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="103" data-titre="Doskiwis" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Doskiwis-103">
+										<div class="image">
+											<img alt="png2.png.png" src="//upload.occitanieboissons.com/brasseries/png2.png.png"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Doskiwis													<img alt="Espagne" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Espagne.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Doskiwis-103"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="58" data-titre="Duckpond" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Duckpond-58">
+										<div class="image">
+											<img alt="image-Duckpond.jpg" src="//upload.occitanieboissons.com/brasseries/image-Duckpond.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Duckpond										</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Duckpond-58"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="44" data-titre="Effet Papillon" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Effet-Papillon-44">
+										<div class="image">
+											<img alt="image-EffetPapillon.jpg" src="//upload.occitanieboissons.com/brasseries/image-EffetPapillon.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Effet Papillon													<img alt="France" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/France.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Effet-Papillon-44"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="28" data-titre="Garage" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Garage-28">
+										<div class="image">
+											<img alt="image-Garage.png" src="//upload.occitanieboissons.com/brasseries/image-Garage.png"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Garage													<img alt="Espagne" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Espagne.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Garage-28"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="88" data-titre="Gekko Brew Co" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Gekko-Brew-Co-88">
+										<div class="image">
+											<img alt="image-GekkoBrewCo.jpg" src="//upload.occitanieboissons.com/brasseries/image-GekkoBrewCo.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Gekko Brew Co													<img alt="France" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/France.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Gekko-Brew-Co-88"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="27" data-titre="Gué Des Moines" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Gué-Des-Moines-27">
+										<div class="image">
+											<img alt="gue_des_moines_840x630.jpg" src="//upload.occitanieboissons.com/brasseries/gue_des_moines_840x630.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Gué Des Moines													<img alt="France" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/France.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Gué-Des-Moines-27"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="61" data-titre="Hoppy Road" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Hoppy-Road-61">
+										<div class="image">
+											<img alt="image-HoppyRoad.png" src="//upload.occitanieboissons.com/brasseries/image-HoppyRoad.png"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Hoppy Road													<img alt="France" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/France.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Hoppy-Road-61"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="38" data-titre="Iron" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Iron-38">
+										<div class="image">
+											<img alt="image-Iron.png" src="//upload.occitanieboissons.com/brasseries/image-Iron.png"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Iron													<img alt="France" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/France.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Iron-38"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="105" data-titre="Krombacher" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Krombacher-105">
+										<div class="image">
+											<img alt="503755380_4114592615481846_8829698662513931813_n.jpg.jpg" src="//upload.occitanieboissons.com/brasseries/503755380_4114592615481846_8829698662513931813_n.jpg.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Krombacher										</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Krombacher-105"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="11" data-titre="Kupela" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Kupela-11">
+										<div class="image">
+											<img alt="Kupela.jpg" src="//upload.occitanieboissons.com/brasseries/Kupela.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Kupela													<img alt="France" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/France.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Kupela-11"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="63" data-titre="La Calavera " class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/La-Calavera--63">
+										<div class="image">
+											<img alt="image-LaCalavera.png" src="//upload.occitanieboissons.com/brasseries/image-LaCalavera.png"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											La Calavera 													<img alt="Espagne" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Espagne.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/La-Calavera--63"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="60" data-titre="La Débauche" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/La-Débauche-60">
+										<div class="image">
+											<img alt="image-LaDebauche.png" src="//upload.occitanieboissons.com/brasseries/image-LaDebauche.png"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											La Débauche													<img alt="France" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/France.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/La-Débauche-60"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="90" data-titre="La Superbe" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/La-Superbe-90">
+										<div class="image">
+											<img alt="image-LaSuperbe.png" src="//upload.occitanieboissons.com/brasseries/image-LaSuperbe.png"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											La Superbe													<img alt="France" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/France.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/La-Superbe-90"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="46" data-titre="Laugar" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Laugar-46">
+										<div class="image">
+											<img alt="image-Laugar.jpg" src="//upload.occitanieboissons.com/brasseries/image-Laugar.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Laugar													<img alt="Espagne" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Espagne.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Laugar-46"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="94" data-titre="Le Détour" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Le-Détour-94">
+										<div class="image">
+											<img alt="image-LeDetour.png" src="//upload.occitanieboissons.com/brasseries/image-LeDetour.png"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Le Détour													<img alt="France" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/France.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Le-Détour-94"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="36" data-titre="Lindemans" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Lindemans-36">
+										<div class="image">
+											<img alt="image-Lindemans.jpg" src="//upload.occitanieboissons.com/brasseries/image-Lindemans.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Lindemans													<img alt="Belgique" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Belgique.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Lindemans-36"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="35" data-titre="Lupulus" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Lupulus-35">
+										<div class="image">
+											<img alt="image-Lupulus.jpg" src="//upload.occitanieboissons.com/brasseries/image-Lupulus.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Lupulus													<img alt="Belgique" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Belgique.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Lupulus-35"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="95" data-titre="Meta" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Meta-95">
+										<div class="image">
+											<img alt="image-Meta.jpg" src="//upload.occitanieboissons.com/brasseries/image-Meta.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Meta													<img alt="Espagne" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Espagne.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Meta-95"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="52" data-titre="Mister B" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Mister-B-52">
+										<div class="image">
+											<img alt="image-MisterB.jpg" src="//upload.occitanieboissons.com/brasseries/image-MisterB.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Mister B													<img alt="Italie" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Italie.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Mister-B-52"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="87" data-titre="Mont Salève" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Mont-Salève-87">
+										<div class="image">
+											<img alt="image-MontSaleve.jpg" src="//upload.occitanieboissons.com/brasseries/image-MontSaleve.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Mont Salève													<img alt="France" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/France.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Mont-Salève-87"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="69" data-titre="Oud Beersel" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Oud-Beersel-69">
+										<div class="image">
+											<img alt="image-OudBeersel.jpg" src="//upload.occitanieboissons.com/brasseries/image-OudBeersel.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Oud Beersel													<img alt="Belgique" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Belgique.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Oud-Beersel-69"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="24" data-titre="Piggy Brewing" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Piggy-Brewing-24">
+										<div class="image">
+											<img alt="20900719_725209201001261_5054009587015330572_o_840x630.jpg" src="//upload.occitanieboissons.com/brasseries/20900719_725209201001261_5054009587015330572_o_840x630.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Piggy Brewing													<img alt="France" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/France.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Piggy-Brewing-24"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="104" data-titre="Rothaus" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Rothaus-104">
+										<div class="image">
+											<img alt="rothaus.jpg.jpg" src="//upload.occitanieboissons.com/brasseries/rothaus.jpg.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Rothaus										</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Rothaus-104"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="77" data-titre="Saint Bernardus" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Saint-Bernardus-77">
+										<div class="image">
+											<img alt="image-SaintBernardus.jpg" src="//upload.occitanieboissons.com/brasseries/image-SaintBernardus.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Saint Bernardus													<img alt="Belgique" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Belgique.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Saint-Bernardus-77"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="37" data-titre="Saint Feuillien" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Saint-Feuillien-37">
+										<div class="image">
+											<img alt="image-SaintFeuillien.jpg" src="//upload.occitanieboissons.com/brasseries/image-SaintFeuillien.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Saint Feuillien													<img alt="Belgique" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Belgique.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Saint-Feuillien-37"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+															<div data-id="101" data-titre="Stigbergets" class="brasseriesc-boxe">
+									<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Stigbergets-101">
+										<div class="image">
+											<img alt="60587950_2360498677304149_7747098043853307904_n.jpg.jpg" src="//upload.occitanieboissons.com/brasseries/60587950_2360498677304149_7747098043853307904_n.jpg.jpg"/>
+										</div>
+									</a>
+									<div class="informations-content">
+										<h4>
+											Stigbergets													<img alt="Suède" src="http://localhost/occitanieboissons/catalogue/gallery/images/drapeaux/Suede.png"/>
+																						</h4>
+										<a href="http://localhost/occitanieboissons/catalogue/univers/bieres/Stigbergets-101"><button class="button-vide" type="button"><i class="icon-plus"></i> Découvrir la gamme</button></a>
+									</div>
+								</div>			
+													</section>
+																																				
+				<!-- FOOTER -->
+				<footer>
+	L'abus d'alcool est dangereux pour la santé, à consommer avec modération. Copyright 2021 &copy; Occitanie Boissons - 3 rue des Artisans 31140 Pechbonnieu | © photo header - Nicolas Jahan | <a target="meta" href="http://localhost/occitanieboissons/catalogue/mentions-legales/">Mentions légales</a>
+</footer>			</div>
+		</div>
+		<!-- JAVASCRIPT -->
+		<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+		<script src="http://localhost/occitanieboissons/catalogue/gallery/js/general.js?v=1790783807"></script>
+		<script>
+			(function($) {
+				$(function() {
+					var $forms = $('.catalogue-filters-form');
+					if($forms.length < 1) {
+						return;
+					}
+
+					$(document).on('click', '.catalogue-filter-toggle', function() {
+						var $btn = $(this);
+						var $group = $btn.closest('.catalogue-filter-group');
+						var $options = $group.find('.catalogue-filter-options').first();
+						var expanded = $btn.attr('aria-expanded') === 'true';
+						$btn.attr('aria-expanded', expanded ? 'false' : 'true');
+						$group.toggleClass('is-collapsed', expanded);
+						$options.stop(true, true)[expanded ? 'slideUp' : 'slideDown'](140);
+					});
+
+					$(document).on('click', '.catalogue-filter-clear', function() {
+						var $btn = $(this);
+						var fieldName = $btn.attr('data-clear-field');
+						var $form = $btn.closest('form');
+						if(!fieldName || $form.length < 1) {
+							return;
+						}
+						if(fieldName === 'filtre_categorie[]') {
+							$form.find('.champagne-group-checkbox').prop('checked', false).closest('.catalogue-filter-option').removeClass('is-active');
+							$form.find('.champagne-hidden-input').remove();
+						}
+						var escapedName = fieldName.replace(/([\[\]])/g, '\\$1');
+						$form.find('input[name="'+escapedName+'"]:checked').each(function() {
+							var $input = $(this);
+							$input.prop('checked', false);
+							$input.closest('.catalogue-filter-option').removeClass('is-active');
+						});
+						$form.trigger('submit');
+					});
+
+					$(document).on('change', '.catalogue-filters-form input[type="checkbox"]', function() {
+						var $input = $(this);
+						if($input.hasClass('champagne-group-checkbox')) {
+							$input.closest('.catalogue-filter-option').toggleClass('is-active', $input.is(':checked'));
+							var $form = $input.closest('form');
+							var champCats = ($input.attr('data-champagne-cats') || '').split(',').map(function(c) { return $.trim(c); }).filter(Boolean);
+							$form.find('.champagne-hidden-input').remove();
+							if($input.is(':checked')) {
+								champCats.forEach(function(code) {
+									$('<input>').attr({type:'hidden',name:'filtre_categorie[]',value:code,'class':'champagne-hidden-input'}).appendTo($form);
+								});
+							} else {
+								// Décocher aussi les appellations champagne individuelles (34,35,36,37) encore cochées
+								champCats.forEach(function(code) {
+									$form.find('input[name="filtre_categorie[]"][value="'+code+'"]:checked').each(function() {
+										$(this).prop('checked', false).closest('.catalogue-filter-option').removeClass('is-active');
+									});
+								});
+							}
+							$form.trigger('submit');
+							return;
+						}
+						$input.closest('.catalogue-filter-option').toggleClass('is-active', $input.is(':checked'));
+						$input.closest('form').trigger('submit');
+					});
+				});
+			})(jQuery);
+		</script>
+	</body>
+</html>
