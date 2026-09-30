@@ -1,7 +1,10 @@
 <?php
  	require("../../../includes/configuration.php");
-  
+
   	$ip = $_SERVER['REMOTE_ADDR'];
+  	$message = null;
+  	$couleur = null;
+  	$redirect = null;
 
   	if($_GET['action'] == "demande") {
 		if(isset($_POST['email'])) {
@@ -10,7 +13,8 @@
 	 			$couleur = "rouge";
 			} else {
 				$verif = $bdd->prepare("SELECT * FROM ob_users WHERE email = :email");
-				$verif->bindParam(":email", htmlentities($_POST['email']));
+				$emailPropre = htmlentities($_POST['email']);
+				$verif->bindParam(":email", $emailPropre);
 				$verif->execute();
 				$v = $verif->fetch(PDO::FETCH_OBJ); 
 			  	if($verif->rowCount() < 1) {
@@ -88,6 +92,7 @@
 
 					//========== CREATION DE LA BOUNDARY
 						$boundary = "-----=".md5(rand());
+						$boundary_alt = "-----=".md5(rand());
 					//==========
 
 					//========== DEFINITION DU SUJET
@@ -143,8 +148,10 @@
 	 			$couleur = "rouge";
 			} else {
 				$verif = $bdd->prepare("SELECT * FROM ob_users_password WHERE email = :email AND token = :token");
-				$verif->bindParam(":email", htmlentities($_POST['email']));
-				$verif->bindParam(":token", htmlentities($_POST['token']));
+				$emailPropre = htmlentities($_POST['email']);
+				$tokenPropre = htmlentities($_POST['token']);
+				$verif->bindParam(":email", $emailPropre);
+				$verif->bindParam(":token", $tokenPropre);
 				$verif->execute();
 				$v = $verif->fetch(PDO::FETCH_OBJ); 
 			  	if($verif->rowCount() < 1) {
@@ -164,7 +171,8 @@
 			  			} else {
 			  				// MODIFICATION DU MOT DE PASSE
 			  				$updatePwd = $bdd->prepare("UPDATE ob_users SET mdp = :password WHERE email = '".$v->email."'");
-			  				$updatePwd->bindParam(":password", password_hash($_POST['pwd'], PASSWORD_DEFAULT));
+			  				$nouveauMdpHache = password_hash($_POST['pwd'], PASSWORD_DEFAULT);
+			  				$updatePwd->bindParam(":password", $nouveauMdpHache);
 			  				$updatePwd->execute();
 			  				// SUPPRESSION DU TOKEN
 			  				$bdd->query("DELETE FROM ob_users_password WHERE email = '".$v->email."'");
